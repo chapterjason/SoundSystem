@@ -3,19 +3,24 @@
 
 ## Prerequisites
 
-1. Docker
-
+Install docker:
 ```
 curl -fsSL https://get.docker.com -o get-docker.sh
 sudo sh get-docker.sh
 sudo usermod -aG docker pi
 ```
 
+Install required packages:
+
+```
+sudo apt install -y --no-install-recommends git docker-compose
+```
+
 ## Install
 
 Clone the code:
 ```
-git clone git@github.com:chapterjason/SoundSystem.git
+git clone https://github.com/chapterjason/SoundSystem.git
 ```
 
 Change settings in files:
@@ -26,7 +31,7 @@ Change settings in files:
 Start:
 
 ```
-docker-compose docker-compose.prod.yml up -d
+docker-compose -f docker-compose.prod.yaml up -d
 ```
 
 ## Update
