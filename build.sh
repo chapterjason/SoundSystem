@@ -10,7 +10,7 @@ echo "Build scripts"
 ###################################
 ###################################
 # shellcheck source=./scripts/build.sh
-"$SCRIPT_DIRECTORY/scripts/build.sh"
+exec "$SCRIPT_DIRECTORY/scripts/build.sh"
 
 mkdir -p "$SCRIPT_DIRECTORY/server/public/scripts"
 mv "$SCRIPT_DIRECTORY/scripts/dist/scripts.zip" "$SCRIPT_DIRECTORY/server/public/scripts"
