@@ -11,7 +11,9 @@ zip -r "$SCRIPT_DIRECTORY/scripts.zip" "$SCRIPT_DIRECTORY/src"
 mkdir -p "$SCRIPT_DIRECTORY/dist"
 
 # Delete old file
-rm "$SCRIPT_DIRECTORY/dist/scripts.zip"
+if test -f "$SCRIPT_DIRECTORY/dist/scripts.zip"; then
+  rm "$SCRIPT_DIRECTORY/dist/scripts.zip"
+fi
 
 # Move script into dist
 mv "$SCRIPT_DIRECTORY/scripts.zip" "$SCRIPT_DIRECTORY/dist"
