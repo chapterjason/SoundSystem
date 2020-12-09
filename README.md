@@ -34,7 +34,7 @@ Build with `./build.sh`
 
 Install the supervisor service with `./services.sh`
 
-## Update
+### Update
 
 ```
 git add -A
@@ -42,3 +42,27 @@ git stash
 git pull --rebase
 git stash pop
 ```
+
+## Add client
+
+```
+wget http://SERVER:PORT/scripts/scripts.zip
+unzip scripts.zip
+./scripts/install.sh
+```
+
+
+### Reconfigure
+
+```
+./scripts/configure.sh
+./scripts/client/client_configure.sh
+./scripts/client/client_update.sh
+```
+
+### Update
+
+```
+./scripts/client/client_update.sh
+```
+
