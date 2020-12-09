@@ -9,7 +9,7 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 
 ###################################
 ###################################
-# Configure shairport
+echo "Configure shairport"
 ###################################
 ###################################
 pushd "$SCRIPT_DIRECTORY/shairport-sync" || exit

@@ -6,7 +6,7 @@ mkdir -p "$SCRIPT_DIRECTORY/server/public"
 
 ###################################
 ###################################
-# Build scripts
+echo "Build scripts"
 ###################################
 ###################################
 # shellcheck source=./scripts/build.sh
@@ -17,7 +17,7 @@ mv "$SCRIPT_DIRECTORY/scripts/dist/scripts.zip" "$SCRIPT_DIRECTORY/server/public
 
 ###################################
 ###################################
-# Build ui
+echo "Build ui"
 ###################################
 ###################################
 pushd "$SCRIPT_DIRECTORY/ui" || exit
@@ -30,7 +30,7 @@ mv "$SCRIPT_DIRECTORY/ui/dist/*" "$SCRIPT_DIRECTORY/server/public/build"
 
 ###################################
 ###################################
-# Build client
+echo "Build client"
 ###################################
 ###################################
 pushd "$SCRIPT_DIRECTORY/client" || exit

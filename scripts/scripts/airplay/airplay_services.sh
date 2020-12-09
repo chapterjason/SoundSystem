@@ -14,7 +14,7 @@ systemctl stop shairport-playback
 
 ###################################
 ###################################
-# Create airplay service
+echo "Create airplay service"
 ###################################
 ###################################
 cat <<EOF > /etc/systemd/system/shairport-playback.service
@@ -36,7 +36,7 @@ EOF
 
 ###################################
 ###################################
-# Reload systemctl daemon
+echo "Reload systemctl daemon"
 ###################################
 ###################################
 systemctl daemon-reload

@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Bluetooth configuration
+echo "Bluetooth configuration"
 ###################################
 ###################################
 cat <<'EOF' > /etc/bluetooth/main.conf
@@ -21,7 +21,7 @@ EOF
 
 ###################################
 ###################################
-# Bluetooth udev script
+echo "Bluetooth udev script"
 ###################################
 ###################################
 cat <<'EOF' > /usr/local/bin/bluetooth-udev
@@ -44,7 +44,7 @@ EOF
 
 ###################################
 ###################################
-# Playback configuration for the bluemusic user
+echo "Playback configuration for the bluemusic user"
 ###################################
 ###################################
 # Alsa settings to file

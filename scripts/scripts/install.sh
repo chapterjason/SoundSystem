@@ -15,21 +15,21 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 
 ###################################
 ###################################
-# Disable wifi sleep
+echo "Disable wifi sleep"
 ###################################
 ###################################
 sudo /sbin/iw wlan0 set power_save off
 
 ###################################
 ###################################
-# Updates
+echo "Updates"
 ###################################
 ###################################
 sudo apt-get update && sudo apt-get upgrade -y
 
 ###################################
 ###################################
-# Set hostname and expand fs
+echo "Set hostname and expand fs"
 ###################################
 ###################################
 sudo raspi-config nonint do_hostname "$HOSTNAME"
@@ -37,7 +37,7 @@ sudo raspi-config nonint do_expand_rootfs
 
 ###################################
 ###################################
-# Install airplay
+echo "Install airplay"
 ###################################
 ###################################
 # shellcheck source=./airplay/airplay_install.sh
@@ -45,7 +45,7 @@ sudo raspi-config nonint do_expand_rootfs
 
 ###################################
 ###################################
-# Install bluetooth
+echo "Install bluetooth"
 ###################################
 ###################################
 # shellcheck source=./bluetooth/bluetooth_install.sh
@@ -53,7 +53,7 @@ sudo raspi-config nonint do_expand_rootfs
 
 ###################################
 ###################################
-# Install snapcast
+echo "Install snapcast"
 ###################################
 ###################################
 # shellcheck source=./snapcast/snapcast_install.sh
@@ -61,7 +61,7 @@ sudo raspi-config nonint do_expand_rootfs
 
 ###################################
 ###################################
-# Install client
+echo "Install client"
 ###################################
 ###################################
 # shellcheck source=./client/client_install.sh

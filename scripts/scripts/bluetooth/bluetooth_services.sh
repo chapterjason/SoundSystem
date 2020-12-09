@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Create bthelper service
+echo "Create bthelper service"
 # Make Bluetooth discoverable after initialisation
 ###################################
 ###################################
@@ -23,7 +23,7 @@ EOF
 
 ###################################
 ###################################
-# Create bt-agent service
+echo "Create bt-agent service"
 ###################################
 ###################################
 systemctl stop bt-agent
@@ -45,7 +45,7 @@ EOF
 
 ###################################
 ###################################
-# Create bluealsa service
+echo "Create bluealsa service"
 ###################################
 ###################################
 systemctl stop bluealsa
@@ -60,7 +60,7 @@ EOF
 
 ###################################
 ###################################
-# Bluemusic playback service
+echo "Bluemusic playback service"
 ###################################
 ###################################
 systemctl stop bluemusic-playback
@@ -84,7 +84,7 @@ EOF
 
 ###################################
 ###################################
-# Bluetooth playback service
+echo "Bluetooth playback service"
 ###################################
 ###################################
 systemctl stop bluetooth-playback
@@ -108,7 +108,7 @@ EOF
 
 ###################################
 ###################################
-# Reload systemctl daemon
+echo "Reload systemctl daemon"
 ###################################
 ###################################
 systemctl daemon-reload

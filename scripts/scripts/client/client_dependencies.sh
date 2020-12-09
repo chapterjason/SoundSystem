@@ -12,14 +12,14 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 
 ###################################
 ###################################
-# Install dependencies
+echo "Install dependencies"
 ###################################
 ###################################
 apt install -y --no-install-recommends supervisor
 
 ###################################
 ###################################
-# Install nodejs
+echo "Install nodejs"
 ###################################
 ###################################
 curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
@@ -27,21 +27,21 @@ apt-get install -y nodejs
 
 ###################################
 ###################################
-# Fix supervisor cof to be usable for the pi user
+echo "Fix supervisor cof to be usable for the pi user"
 ###################################
 ###################################
 sed -i 's/chmod=0700/chmod=0766/' /etc/supervisor/supervisord.conf
 
 ###################################
 ###################################
-# Install the client
+echo "Install the client"
 ###################################
 ###################################
 wget -O /home/pi/client/client.js "http://$MAIN_SERVER_ADDRESS:$MAIN_SERVER_PORT/client/client.js"
 
 ###################################
 ###################################
-# Set permissions
+echo "Set permissions"
 ###################################
 ###################################
 chown -R pi:pi /home/pi/client

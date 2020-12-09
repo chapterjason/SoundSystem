@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Create user for the bluemusic-playback service
+echo "Create user for the bluemusic-playback service"
 ###################################
 ###################################
 getent group bluemusic &>/dev/null || sudo groupadd -r bluemusic >/dev/null

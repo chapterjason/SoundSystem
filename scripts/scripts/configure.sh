@@ -9,7 +9,7 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 
 ###################################
 ###################################
-# Gather information
+echo "Gather information"
 ###################################
 ###################################
 read -p "Hostname?: " HOSTNAME
@@ -26,7 +26,7 @@ echo $SERVICE_PORT
 
 ###################################
 ###################################
-# Write configuration
+echo "Write configuration"
 ###################################
 ###################################
 cat <<EOF > "$SCRIPT_DIRECTORY/.configuration"

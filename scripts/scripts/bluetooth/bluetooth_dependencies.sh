@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Install dependencies to play from bluetooth
+echo "Install dependencies to play from bluetooth"
 ###################################
 ###################################
 
@@ -15,7 +15,7 @@ apt install -y --no-install-recommends alsa-base alsa-utils bluealsa bluez-tools
 
 ###################################
 ###################################
-# Fix bluetooth service
+echo "Fix bluetooth service"
 ###################################
 ###################################
 sed -i 's/ExecStart=.*/ExecStart=\/usr\/lib\/bluetooth\/bluetoothd --compat --noplugin=sap -E/g' /lib/systemd/system/bluetooth.service

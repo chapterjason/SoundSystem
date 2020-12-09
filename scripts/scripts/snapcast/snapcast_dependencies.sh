@@ -9,14 +9,14 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 
 ###################################
 ###################################
-# Install dependencies
+echo "Install dependencies"
 ###################################
 ###################################
 apt-get install -y --no-install-recommends libavahi-client3 libflac8 libogg0 libopus0 libsoxr0 libvorbis0a libvorbisenc2
 
 ###################################
 ###################################
-# Download and install snapcast files
+echo "Download and install snapcast files"
 ###################################
 ###################################
 mkdir -p "$SCRIPT_DIRECTORY/snapcast"
@@ -30,7 +30,7 @@ popd || exit
 
 ###################################
 ###################################
-# Stop and disable autostart services
+echo "Stop and disable autostart services"
 ###################################
 ###################################
 systemctl stop snapserver

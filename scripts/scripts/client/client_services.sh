@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Create supervisor client service
+echo "Create supervisor client service"
 ###################################
 ###################################
 supervisorctl stop client
@@ -32,7 +32,7 @@ EOF
 
 ###################################
 ###################################
-# Reload supervisor
+echo "Reload supervisor"
 ###################################
 ###################################
 supervisorctl clear all

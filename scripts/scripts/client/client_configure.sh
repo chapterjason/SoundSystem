@@ -12,14 +12,14 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 
 ###################################
 ###################################
-# Prepare client directory
+echo "Prepare client directory"
 ###################################
 ###################################
 mkdir -p /home/pi/client
 
 ###################################
 ###################################
-# Client environment file
+echo "Client environment file"
 ###################################
 ###################################
 cat <<EOF > /home/pi/client/.env

@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Add nodejs and yarn sources
+echo "Add nodejs and yarn sources"
 ###################################
 ###################################
 curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
@@ -16,7 +16,7 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 
 ###################################
 ###################################
-# Update sources and install database, nodejs and yarn
+echo "Update sources and install database, nodejs and yarn"
 ###################################
 ###################################
 sudo apt-get update

@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Create supervisor server service
+echo "Create supervisor server service"
 ###################################
 ###################################
 supervisorctl stop server
@@ -32,7 +32,7 @@ EOF
 
 ###################################
 ###################################
-# Reload supervisor
+echo "Reload supervisor"
 ###################################
 ###################################
 supervisorctl clear all

@@ -7,7 +7,7 @@ fi
 
 ###################################
 ###################################
-# Create shairport group, user and add to audio group
+echo "Create shairport group, user and add to audio group"
 ###################################
 ###################################
 getent group shairport-sync &>/dev/null || sudo groupadd -r shairport-sync >/dev/null
