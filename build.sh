@@ -2,6 +2,15 @@
 
 SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+###################################
+###################################
+echo "Prepare server"
+###################################
+###################################
+pushd "$SCRIPT_DIRECTORY/server" || exit
+yarn
+popd || exit
+
 mkdir -p "$SCRIPT_DIRECTORY/server/public"
 
 ###################################
@@ -42,3 +51,4 @@ popd || exit
 
 mkdir -p "$SCRIPT_DIRECTORY/server/public/client"
 mv "$SCRIPT_DIRECTORY/client/dist"/* "$SCRIPT_DIRECTORY/server/public/client"
+

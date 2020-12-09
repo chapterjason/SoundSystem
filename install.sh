@@ -21,5 +21,10 @@ echo "Update sources and install database, nodejs and yarn"
 ###################################
 sudo apt-get update
 sudo apt install -y --no-install-recommends mariadb-server nodejs yarn supervisor zip
-# gcc g++ make
 
+###################################
+###################################
+echo "Fix supervisor permission"
+###################################
+###################################
+sed -i 's/chmod=0700/chmod=0766/' /etc/supervisor/supervisord.conf
