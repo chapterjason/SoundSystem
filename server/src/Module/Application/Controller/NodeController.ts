@@ -94,4 +94,38 @@ export class NodeController {
         };
     }
 
+    @Get("/node/:id/update")
+    public update(@Param("id") id: string) {
+        console.log("NodeController", "update", id);
+
+        const nodes = this.service.getNodes();
+
+        if (id in nodes) {
+            const node = nodes[id];
+
+            node.getSocket().write(Buffer.from("command:update:"));
+        } else {
+            throw new NotFoundException(`Node ${id} not found.`);
+        }
+
+        return { "success": true };
+    }
+
+    @Get("/nodeUpdate")
+    public nodeUpdate() {
+        console.log("NodeController", "nodeUpdate");
+        const nodes = this.service.getNodes();
+        const ids = Object.keys(nodes);
+
+        for (const id of ids) {
+            const node = nodes[id];
+
+            node.getSocket().write(Buffer.from("command:update:"));
+        }
+
+        return {
+            "status": "Update dispatched.",
+        };
+    }
+
 }

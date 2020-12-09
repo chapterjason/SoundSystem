@@ -8,6 +8,7 @@ import { Snapclient } from "./Snapclient";
 import { Snapserver } from "./Snapserver";
 import { Services } from "./Services";
 import { Alsa } from "./Alsa";
+import { update } from "./Utils/Update";
 
 export class Client extends Socket {
 
@@ -42,6 +43,8 @@ export class Client extends Socket {
                 const configuration = await Configuration.load();
                 const server = rest.slice(7);
                 await this.listen(configuration, server);
+            } else if (rest.startsWith("update:")) {
+                await update();
             } else if (rest.startsWith("volume:")) {
                 const configuration = await Configuration.load();
                 const volume = parseInt(rest.slice(7));
