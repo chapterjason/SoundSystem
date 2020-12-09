@@ -13,8 +13,8 @@ fi
 supervisorctl stop server
 cat <<EOF > /etc/supervisor/conf.d/server.conf
 [program:server]
-directory=/home/pi/server
-command=bash /home/pi/SoundSystem/service.sh
+directory=/home/pi/SoundSystem/server
+command=bash /home/pi/SoundSystem/server/service.sh
 priority=10
 autostart=true
 autorestart=true

@@ -33,12 +33,3 @@ ENV NODE_ENV=development
 
 CMD node_modules/.bin/nodemon
 
-# ---- production ----
-FROM base as production
-
-ENV NODE_ENV=production
-
-COPY --from=dependencies /app/prod_node_modules ./node_modules
-COPY src /app/src
-
-CMD node_modules/.bin/ts-node src/main.ts
