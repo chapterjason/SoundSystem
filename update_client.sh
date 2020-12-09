@@ -7,5 +7,5 @@ git stash
 git pull --rebase
 git stash pop
 
-"$SCRIPT_DIRECTORY/build_client.sh"
+. "$SCRIPT_DIRECTORY/build_client.sh"
 
