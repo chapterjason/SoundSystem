@@ -20,14 +20,6 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 ###################################
 ###################################
 sudo apt-get update
-sudo apt install -y --no-install-recommends mariadb-server nodejs yarn git supervisor zip
+sudo apt install -y --no-install-recommends mariadb-server nodejs yarn supervisor zip
 # gcc g++ make
-
-###################################
-###################################
-# Clone project
-###################################
-###################################
-git clone https://github.com/chapterjason/SoundSystem.git
-
 

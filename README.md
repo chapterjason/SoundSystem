@@ -4,6 +4,13 @@
 
 ## Install
 
+```
+cd ~
+sudo apt update && sudo apt install -y --no-install-recommends zip
+rm -rf SoundSystem
+git clone https://github.com/chapterjason/SoundSystem.git
+```
+
 Run `./install.sh`, for further information take a look into the file.
 
 ### Prerequisites
