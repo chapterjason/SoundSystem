@@ -3,8 +3,6 @@ import { Client } from "./Client";
 import { EnvironmentLoader, ProcessEnvironment } from "@mscs/environment";
 import path from "path";
 
-console.log("FIND ME!");
-
 async function runtime() {
     const environment = new ProcessEnvironment();
     const environmentLoader = new EnvironmentLoader(environment);
