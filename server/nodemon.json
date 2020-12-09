@@ -1,0 +1,10 @@
+{
+    "exec": "node -r ts-node/register --inspect=0.0.0.0:9230 src/main.ts",
+    "ext": "ts,js,twig,css,zip",
+    "delay": 1,
+    "watch": [
+    "./src",
+    "./public",
+    "./templates"
+]
+}

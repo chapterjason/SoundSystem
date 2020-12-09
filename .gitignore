@@ -1,0 +1,9 @@
+# IDE
+.idea/
+
+# Depedencies
+node_modules/
+
+# Outputs
+dist/
+scripts.zip
