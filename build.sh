@@ -28,7 +28,7 @@ yarn run build:prod
 popd || exit
 
 mkdir -p "$SCRIPT_DIRECTORY/server/public/build"
-mv "$SCRIPT_DIRECTORY/ui/dist/*" "$SCRIPT_DIRECTORY/server/public/build"
+mv "$SCRIPT_DIRECTORY/ui/dist"/* "$SCRIPT_DIRECTORY/server/public/build"
 
 ###################################
 ###################################
@@ -41,4 +41,4 @@ yarn run build:prod
 popd || exit
 
 mkdir -p "$SCRIPT_DIRECTORY/server/public/client"
-mv "$SCRIPT_DIRECTORY/client/dist/*" "$SCRIPT_DIRECTORY/server/public/client"
+mv "$SCRIPT_DIRECTORY/client/dist"/* "$SCRIPT_DIRECTORY/server/public/client"
