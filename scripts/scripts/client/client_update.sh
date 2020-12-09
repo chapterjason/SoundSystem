@@ -11,5 +11,5 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 . "$SCRIPT_DIRECTORY/../.configuration"
 
 sudo supervisorctl stop client
-wget --no-cache --no-cookies -O /home/pi/client/client.js "http://$MAIN_SERVER_ADDRESS:$MAIN_SERVER_PORT/client"
+wget --no-cache --no-cookies -O /home/pi/client/client.js "http://$MAIN_SERVER_ADDRESS:$MAIN_SERVER_PORT/client/client.js"
 sudo supervisorctl start client

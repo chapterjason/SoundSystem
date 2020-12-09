@@ -16,9 +16,9 @@ services:
   server:
     build:
       context: ./server
-      target: development
+      target: production
+    restart: always
     volumes:
-      - './server:/app'
       - 'assets:/app/public/build'
       - 'client:/app/public/client'
       - 'scripts:/app/public/scripts'
@@ -37,23 +37,20 @@ services:
   ui:
     build:
       context: ./ui
-      target: development
+      target: production
     volumes:
-      - './ui/src:/app/src'
       - 'assets:/app/dist'
   client:
     build:
       context: ./client
-      target: development
+      target: production
     volumes:
-      - './client/src:/app/src'
       - 'client:/app/dist'
   scripts:
     build:
       context: ./scripts
-      target: development
+      target: production
     volumes:
-      - './scripts:/app'
       - 'scripts:/app/dist'
 volumes:
   assets:
