@@ -5,8 +5,9 @@ import { NodeLogic } from "./NodeLogic";
 import { SetMode } from "../SetMode";
 import { SetStream } from "../SetStream";
 import { SetServer } from "../SetServer";
-import { Badge, Button, Col, Container, Form, InputGroup, Row } from "react-bootstrap";
+import { Button, Col, Container, Form, InputGroup, Row } from "react-bootstrap";
 import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
+import classNames from "classnames";
 
 export interface NodeProps {
     id: string;
@@ -30,15 +31,18 @@ export function Node(props: NodeProps) {
         }
     }
 
-    const classes = [];
+    const tableRowClasses = classNames({
+        "table-warning": mode === "idle",
+    });
 
-    if (mode === "idle") {
-        classes.push("table-warning");
-    }
+    const modeTextClasses = classNames({
+       "text-success": mode === "stream",
+       "text-info": mode === "listen"
+    });
 
     return (
-        <tr className={classes.join(" ")}>
-            <td>{node.hostname} <Badge variant={"secondary"}>{mode}</Badge></td>
+        <tr className={tableRowClasses}>
+            <td>{node.hostname}</td>
             <td>
                 <InputGroup size={"sm"}>
                     <InputGroup.Prepend>
@@ -62,7 +66,7 @@ export function Node(props: NodeProps) {
                             )}
                         </InputGroup.Prepend>
                         <InputGroup.Append>
-                            <InputGroup.Text>
+                            <InputGroup.Text className={modeTextClasses}>
                                 {mode === "stream" && stream}
                                 {mode === "listen" && (listenNode?.hostname ?? "<unknown node>")}
                             </InputGroup.Text>
