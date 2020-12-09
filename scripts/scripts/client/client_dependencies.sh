@@ -37,7 +37,7 @@ sed -i 's/chmod=0700/chmod=0766/' /etc/supervisor/supervisord.conf
 # Install the client
 ###################################
 ###################################
-wget -O /home/pi/client/client.js "http://$MAIN_SERVER_ADDRESS:$MAIN_SERVER_PORT/client"
+wget -O /home/pi/client/client.js "http://$MAIN_SERVER_ADDRESS:$MAIN_SERVER_PORT/client/client.js"
 
 ###################################
 ###################################

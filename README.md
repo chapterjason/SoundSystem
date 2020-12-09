@@ -1,45 +1,36 @@
 
 # SoundSystem
 
-## Prerequisites
-
-Install docker:
-```
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
-sudo usermod -aG docker pi
-```
-
-Install required packages:
-
-```
-sudo apt install -y --no-install-recommends git docker-compose
-```
 
 ## Install
 
-Clone the code:
-```
-git clone https://github.com/chapterjason/SoundSystem.git
+Run `./install.sh`, for further information take a look into the file.
+
+### Prerequisites
+
+Create the database and user with a password:
+Get into mysql console with: `sudo mysql`
+
+```mysql
+CREATE DATABASE soundsystem;
+CREATE USER soundsystem@localhost IDENTIFIED BY 'password-here';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, INDEX, DROP, ALTER, CREATE TEMPORARY TABLES, LOCK TABLES ON soundsystem.* TO soundsystem@localhost;
 ```
 
-Change settings in files:
+### Build
 
-- `docker-compose.prod.yaml`
-- `server/.env`
+Change settings in the file: `server/.env`
+Build with `./build.sh`
 
-Start:
+### Supervisor
 
-```
-docker-compose -f docker-compose.prod.yaml up -d
-```
+Install the supervisor service with `./services.sh`
 
 ## Update
 
 ```
+git add -A
+git stash
 git pull --rebase
-docker-compose up --build --force-recreate --no-deps scripts
-docker-compose up --build --force-recreate --no-deps client
-docker-compose up --build --force-recreate --no-deps ui
-docker-compose up --build --force-recreate --no-deps server
+git stash pop
 ```

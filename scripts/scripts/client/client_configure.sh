@@ -24,7 +24,8 @@ mkdir -p /home/pi/client
 ###################################
 cat <<EOF > /home/pi/client/.env
 HOST=$MAIN_SERVER_ADDRESS
-PORT=$SERVICE_PORT
+PORT=$MAIN_SERVER_PORT
+SERVICE_PORT=$SERVICE_PORT
 EOF
 
 

@@ -20,12 +20,3 @@ FROM dependencies as development
 ENV NODE_ENV=development
 
 CMD node_modules/.bin/webpack --mode=development --watch
-
-# ---- production ----
-FROM dependencies as production
-
-ENV NODE_ENV=production
-
-COPY src /app/src
-
-CMD node_modules/.bin/webpack --mode=production

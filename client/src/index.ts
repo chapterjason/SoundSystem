@@ -15,7 +15,7 @@ async function runtime() {
 
     client.connect({
         host: environment.get("HOST"),
-        port: parseInt(environment.get("PORT"), 10),
+        port: parseInt(environment.get("SERVICE_PORT"), 10),
     });
 
     client.on("connect", async () => {
