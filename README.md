@@ -69,3 +69,13 @@ unzip scripts.zip
 ./scripts/client/client_update.sh
 ```
 
+# Todo
+
+- [ ] Tests
+    - [ ] Server
+    - [ ] Client
+    - [ ] UI
+- [ ] GitHub build pipeline
+- [ ] Decouple the scripts more the location (hardcoded paths in services)
+- [ ] Decouple the server more in a separate user
+- [ ] Own script package for server
