@@ -5,7 +5,7 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 echo "Rebuild scripts..."
 
 # Zip new file
-zip -r "$SCRIPT_DIRECTORY/scripts.zip" "$SCRIPT_DIRECTORY/scripts/*"
+zip -r "$SCRIPT_DIRECTORY/scripts.zip" "$SCRIPT_DIRECTORY/src"
 
 # Ensure dist exist
 mkdir -p "$SCRIPT_DIRECTORY/dist"
@@ -14,4 +14,4 @@ mkdir -p "$SCRIPT_DIRECTORY/dist"
 rm "$SCRIPT_DIRECTORY/dist/scripts.zip"
 
 # Move script into dist
-mv "$SCRIPT_DIRECTORY/scripts.zip "$SCRIPT_DIRECTORY/dist"
+mv "$SCRIPT_DIRECTORY/scripts.zip" "$SCRIPT_DIRECTORY/dist"

@@ -27,7 +27,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, INDEX, DROP, ALTER, CREATE TEMPORA
 
 ### Build
 
-Change settings in the file: `server/.env`
+Change settings in the file: `~/SoundSystem/server/.env`
 Build with `./build.sh`
 
 ### Supervisor
