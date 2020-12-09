@@ -50,7 +50,7 @@ export function Node(props: NodeProps) {
                         {setModeVisible && <SetMode id={id} node={node}/>}
                     </InputGroup.Prepend>
                     <InputGroup.Append>
-                        <InputGroup.Text>{mode}</InputGroup.Text>
+                        <InputGroup.Text classNames={modeTextClasses}>{mode}</InputGroup.Text>
                     </InputGroup.Append>
                 </InputGroup>
             </td>
@@ -66,7 +66,7 @@ export function Node(props: NodeProps) {
                             )}
                         </InputGroup.Prepend>
                         <InputGroup.Append>
-                            <InputGroup.Text className={modeTextClasses}>
+                            <InputGroup.Text>
                                 {mode === "stream" && stream}
                                 {mode === "listen" && (listenNode?.hostname ?? "<unknown node>")}
                             </InputGroup.Text>

@@ -41,6 +41,9 @@ git add -A
 git stash
 git pull --rebase
 git stash pop
+./build.sh
+supervisorctl stop server
+supervisorctl start server
 ```
 
 ## Add client
