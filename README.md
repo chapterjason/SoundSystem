@@ -75,6 +75,7 @@ unzip scripts.zip
     - [ ] Server
     - [ ] Client
     - [ ] UI
+- [ ] Client single mode
 - [ ] GitHub build pipeline
 - [ ] Decouple the scripts more the location (hardcoded paths in services)
 - [ ] Decouple the server more in a separate user

@@ -180,7 +180,7 @@ export class Client extends Socket {
     }
 
     public async init(): Promise<void> {
-        console.log("---- Initialize...");
+        console.log("---- Initialize ----");
         const { mode, server, stream, volume } = await Configuration.load();
 
         if (mode === "idle") {
@@ -197,7 +197,7 @@ export class Client extends Socket {
 
         console.log(await Configuration.load());
 
-        console.log("---- Initialized!");
+        console.log("---- Initialized! ----");
     }
 
     private async setAndStart(stream: Stream): Promise<void> {
