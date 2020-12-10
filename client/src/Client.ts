@@ -44,6 +44,7 @@ export class Client extends Socket {
                 const server = rest.slice(7);
                 await this.listen(configuration, server);
             } else if (rest.startsWith("update:")) {
+                console.log("Update...");
                 await update();
             } else if (rest.startsWith("volume:")) {
                 const configuration = await Configuration.load();
