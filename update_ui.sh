@@ -9,3 +9,5 @@ git stash pop
 
 . "$SCRIPT_DIRECTORY/build_ui.sh"
 
+supervisorctl stop server
+supervisorctl start server
