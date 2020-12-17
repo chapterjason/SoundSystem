@@ -36,8 +36,8 @@ export function Node(props: NodeProps) {
     });
 
     const modeTextClasses = classNames({
-       "text-success": mode === "stream",
-       "text-info": mode === "listen"
+        "text-success": mode === "stream",
+        "text-info": mode === "listen",
     });
 
     return (
@@ -61,13 +61,13 @@ export function Node(props: NodeProps) {
                             {mode === "listen" && (
                                 <Button variant={"primary"} size={"sm"} onClick={showSetServer}>set Server</Button>
                             )}
-                            {mode === "stream" && (
+                            {(mode === "stream" || mode === "single") && (
                                 <Button variant={"primary"} size={"sm"} onClick={showSetStream}>set Stream</Button>
                             )}
                         </InputGroup.Prepend>
                         <InputGroup.Append>
                             <InputGroup.Text>
-                                {mode === "stream" && stream}
+                                {(mode === "stream" || "single") && stream}
                                 {mode === "listen" && (listenNode?.hostname ?? "<unknown node>")}
                             </InputGroup.Text>
                         </InputGroup.Append>
