@@ -54,6 +54,12 @@ export function SetMode(props: SetModeProps) {
                         </label>
                     </div>
                     <div className="form-check">
+                        <input className="form-check-input" type="radio" name="mode" id={"mode_single"} value="single" checked={"single" === currentMode} onChange={handleModeChange}/>
+                        <label className="form-check-label" htmlFor={"mode_single"}>
+                            Single
+                        </label>
+                    </div>
+                    <div className="form-check">
                         <input className="form-check-input" type="radio" name="mode" id={"mode_listen"} value="listen" checked={"listen" === currentMode} onChange={handleModeChange}/>
                         <label className="form-check-label" htmlFor={"mode_listen"}>
                             Listen

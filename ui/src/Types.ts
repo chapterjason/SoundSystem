@@ -1,4 +1,4 @@
-export type Mode = "stream" | "listen" | "idle";
+export type Mode = "stream" | "listen" | "single" | "idle";
 export type Stream = "airplay" | "bluetooth";
 
 export interface Node {

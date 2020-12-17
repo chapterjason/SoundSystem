@@ -45,6 +45,23 @@ export class NodeController {
         return { "success": true };
     }
 
+    @Post("/node/:id/single")
+    public single(@Param("id") id: string, @Body() update: { stream: Stream }) {
+        console.log("NodeController", "single", id, update);
+
+        const nodes = this.service.getNodes();
+
+        if (id in nodes) {
+            const node = nodes[id];
+
+            node.getSocket().write(Buffer.from("command:single:" + update.stream));
+        } else {
+            throw new NotFoundException(`Node ${id} not found.`);
+        }
+
+        return { "success": true };
+    }
+
     @Post("/node/:id/listen")
     public listen(@Param("id") id: string, @Body() update: { server: string }) {
         console.log("NodeController", "listen", id, update);

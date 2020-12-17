@@ -79,10 +79,18 @@ export const NodeLogic = kea<NodeLogicType>({
 
             console.log("save", { targetMode, targetStream, targetServer });
 
-            if (targetStream) {
-                await Axios.post("/node/" + props.id + "/stream", { "stream": targetStream });
-            } else if (targetServer) {
-                await Axios.post("/node/" + props.id + "/listen", { "server": targetServer });
+            if (targetMode === "stream") {
+                if (targetStream) {
+                    await Axios.post("/node/" + props.id + "/stream", { "stream": targetStream });
+                }
+            } else if (targetMode === "single") {
+                if (targetStream) {
+                    await Axios.post("/node/" + props.id + "/single", { "stream": targetStream });
+                }
+            } else if (targetMode === "listen") {
+                if (targetServer) {
+                    await Axios.post("/node/" + props.id + "/listen", { "server": targetServer });
+                }
             } else if (targetMode === "idle") {
                 await Axios.post("/node/" + props.id + "/idle");
             }
