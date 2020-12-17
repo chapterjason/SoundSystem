@@ -1,5 +1,5 @@
 import { Node, Stream } from "../Types";
-import { Button, Modal } from "react-bootstrap";
+import { Button, Col, Modal, Row } from "react-bootstrap";
 import * as React from "react";
 import { useState } from "react";
 import { NodeLogic } from "./Node/NodeLogic";
@@ -12,25 +12,11 @@ export interface SetStreamProps {
 }
 
 export function SetStream(props: SetStreamProps) {
-    const { node: { stream } } = props;
     const logic = NodeLogic(props);
     const { setStream, hideSetStream } = useActions(logic);
-    const [currentStream, setCurrentStream] = useState(stream);
 
     function handleAbort() {
         hideSetStream();
-    }
-
-    function handleSave() {
-        setStream(currentStream);
-    }
-
-    function handleStreamChange(event: React.ChangeEvent<HTMLInputElement>) {
-        const currentTarget = event.currentTarget;
-
-        if (currentTarget) {
-            setCurrentStream(currentTarget.value as Stream);
-        }
     }
 
     return (
@@ -41,26 +27,25 @@ export function SetStream(props: SetStreamProps) {
             <Modal.Body>
                 <div className="form-group">
                     <h6>Stream:</h6>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="mode" id={"stream_airplay"} value="airplay" checked={"airplay" === currentStream} onChange={handleStreamChange}/>
-                        <label className="form-check-label" htmlFor={"stream_airplay"}>
-                            Airplay
-                        </label>
-                    </div>
-                    <div className="form-check">
-                        <input className="form-check-input" type="radio" name="mode" id={"stream_bluetooth"} value="bluetooth" checked={"bluetooth" === currentStream} onChange={handleStreamChange}/>
-                        <label className="form-check-label" htmlFor={"stream_bluetooth"}>
-                            Bluetooth
-                        </label>
-                    </div>
+                    <Row>
+                        <Col>
+                            <Button variant={"primary"} onClick={() => setStream("airplay")}>
+                                <span className={"fas fa-fw fa-rss"}/>
+                                Airplay
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button variant={"primary"} onClick={() => setStream("bluetooth")}>
+                                <span className={"fab fa-fw fa-bluetooth"}/>
+                                Bluetooth
+                            </Button>
+                        </Col>
+                    </Row>
                 </div>
             </Modal.Body>
             <Modal.Footer>
                 <Button variant="secondary" onClick={handleAbort}>
                     Close
-                </Button>
-                <Button variant="primary" onClick={handleSave}>
-                    Save Changes
                 </Button>
             </Modal.Footer>
         </Modal>

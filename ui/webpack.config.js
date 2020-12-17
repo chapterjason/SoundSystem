@@ -24,6 +24,14 @@ module.exports = {
                     "sass-loader",
                 ],
             },
+            {
+                test: /\.(svg|eot|woff|woff2|ttf)$/,
+                loader: "file-loader",
+                options: {
+                    outputPath: "fonts",
+                    publicPath: "fonts",
+                },
+            },
         ],
     },
     plugins: [
