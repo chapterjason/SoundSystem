@@ -28,14 +28,14 @@ export function SetStream(props: SetStreamProps) {
                     <h6>Stream:</h6>
                     <Row>
                         <Col>
-                            <Button variant={"primary"} onClick={() => setStream("airplay")}>
+                            <Button variant={"primary"} block onClick={() => setStream("airplay")}>
                                 <span className={"fas fa-fw fa-rss"}/>
                                 {" "}
                                 Airplay
                             </Button>
                         </Col>
                         <Col>
-                            <Button variant={"primary"} onClick={() => setStream("bluetooth")}>
+                            <Button variant={"primary"} block onClick={() => setStream("bluetooth")}>
                                 <span className={"fab fa-fw fa-bluetooth"}/>
                                 {" "}
                                 Bluetooth

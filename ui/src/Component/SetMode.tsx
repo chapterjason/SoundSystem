@@ -26,25 +26,25 @@ export function SetMode(props: SetModeProps) {
             <Modal.Body>
                 <div className="form-group">
                     <h6>Modus:</h6>
-                    <Row>
+                    <Row className={"mb-3"}>
                         <Col>
-                            <Button variant={"secondary"} onClick={() => setMode("idle")}>
+                            <Button variant={"secondary"} block onClick={() => setMode("idle")}>
                                 <span className={"fas fa-fw fa-times"}/>
                                 {" "}
                                 Idle
                             </Button>
                         </Col>
                     </Row>
-                    <Row>
+                    <Row className={"mb-3"}>
                         <Col>
-                            <Button variant={"primary"} onClick={() => setMode("stream")}>
+                            <Button variant={"primary"} block onClick={() => setMode("stream")}>
                                 <span className={"fas fa-fw fa-broadcast-tower"}/>
                                 {" "}
                                 Stream
                             </Button>
                         </Col>
                         <Col>
-                            <Button variant={"primary"} onClick={() => setMode("single")}>
+                            <Button variant={"primary"} block onClick={() => setMode("single")}>
                                 <span className={"far fa-fw fa-dot-circle"}/>
                                 {" "}
                                 Single
@@ -53,7 +53,7 @@ export function SetMode(props: SetModeProps) {
                     </Row>
                     <Row>
                         <Col>
-                            <Button variant={"warning"} onClick={() => setMode("listen")}>
+                            <Button variant={"warning"} block onClick={() => setMode("listen")}>
                                 <span className={"fas fa-fw fa-satellite-dish"}/>
                                 {" "}
                                 Listen
