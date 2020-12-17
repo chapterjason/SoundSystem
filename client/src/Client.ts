@@ -9,6 +9,7 @@ import { Snapserver } from "./Snapserver";
 import { Services } from "./Services";
 import { Alsa } from "./Alsa";
 import { update } from "./Utils/Update";
+import { ENVIRONMENT } from "./meta";
 
 export class Client extends Socket {
 
@@ -216,7 +217,7 @@ export class Client extends Socket {
 
     private async setVolume(configuration: ConfigurationData, volume: number): Promise<void> {
         if (configuration.volume !== volume) {
-            await Alsa.setVolume(volume);
+            await Alsa.setVolume(volume, ENVIRONMENT.has('DEVICE') ? ENVIRONMENT.get('DEVICE') : "Headphone");
             await Configuration.setVolume(volume);
         }
     }
