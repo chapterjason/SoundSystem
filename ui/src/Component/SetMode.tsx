@@ -28,28 +28,36 @@ export function SetMode(props: SetModeProps) {
                     <h6>Modus:</h6>
                     <Row>
                         <Col>
-                            <span className={"fas fa-fw fa-times"}/>
-                            <Button variant={"secondary"} onClick={() => setMode("idle")}>Idle</Button>
+                            <Button variant={"secondary"} onClick={() => setMode("idle")}>
+                                <span className={"fas fa-fw fa-times"}/>
+                                {" "}
+                                Idle
+                            </Button>
                         </Col>
                     </Row>
                     <Row>
                         <Col>
                             <Button variant={"primary"} onClick={() => setMode("stream")}>
                                 <span className={"fas fa-fw fa-broadcast-tower"}/>
+                                {" "}
                                 Stream
                             </Button>
                         </Col>
                         <Col>
                             <Button variant={"primary"} onClick={() => setMode("single")}>
                                 <span className={"far fa-fw fa-dot-circle"}/>
+                                {" "}
                                 Single
                             </Button>
                         </Col>
                     </Row>
                     <Row>
                         <Col>
-                            <span className={"fas fa-fw fa-satellite-dish"}/>
-                            <Button variant={"warning"} onClick={() => setMode("listen")}>Listen</Button>
+                            <Button variant={"warning"} onClick={() => setMode("listen")}>
+                                <span className={"fas fa-fw fa-satellite-dish"}/>
+                                {" "}
+                                Listen
+                            </Button>
                         </Col>
                     </Row>
                 </div>

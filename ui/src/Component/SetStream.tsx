@@ -1,7 +1,6 @@
-import { Node, Stream } from "../Types";
+import { Node } from "../Types";
 import { Button, Col, Modal, Row } from "react-bootstrap";
 import * as React from "react";
-import { useState } from "react";
 import { NodeLogic } from "./Node/NodeLogic";
 import { useActions } from "kea";
 
@@ -31,12 +30,14 @@ export function SetStream(props: SetStreamProps) {
                         <Col>
                             <Button variant={"primary"} onClick={() => setStream("airplay")}>
                                 <span className={"fas fa-fw fa-rss"}/>
+                                {" "}
                                 Airplay
                             </Button>
                         </Col>
                         <Col>
                             <Button variant={"primary"} onClick={() => setStream("bluetooth")}>
                                 <span className={"fab fa-fw fa-bluetooth"}/>
+                                {" "}
                                 Bluetooth
                             </Button>
                         </Col>
