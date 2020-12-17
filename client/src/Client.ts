@@ -39,7 +39,7 @@ export class Client extends Socket {
             const rest = data.slice(8);
 
             if (rest.startsWith("idle:")) {
-                await this.idle();
+                await this.idle(true);
             } else if (rest.startsWith("listen:")) {
                 const configuration = await Configuration.load();
                 const server = rest.slice(7);
