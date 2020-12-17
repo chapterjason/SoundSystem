@@ -32,12 +32,9 @@ export function Node(props: NodeProps) {
     }
 
     const tableRowClasses = classNames({
-        "table-warning": mode === "idle",
-    });
-
-    const modeTextClasses = classNames({
-        "text-success": mode === "stream",
-        "text-info": mode === "listen",
+        "table-secondary": mode === "idle",
+        "table-primary": mode === "stream" || mode === "single",
+        "table-warning": mode === "listen",
     });
 
     return (
@@ -50,7 +47,7 @@ export function Node(props: NodeProps) {
                         {setModeVisible && <SetMode id={id} node={node}/>}
                     </InputGroup.Prepend>
                     <InputGroup.Append>
-                        <InputGroup.Text className={modeTextClasses}>{mode}</InputGroup.Text>
+                        <InputGroup.Text>{mode}</InputGroup.Text>
                     </InputGroup.Append>
                 </InputGroup>
             </td>
@@ -85,9 +82,9 @@ export function Node(props: NodeProps) {
                             </div>
                         </Col>
                         <Col xs={12} md={true}>
-                            <div style={{ minWidth: "320px" }} className={"d-flex"}>
+                            <div style={{ minWidth: "280px" }} className={"d-flex justify-content-center align-items-center"}>
                                 <span className={"fas fa-fw fa-volume-down"}/>
-                                <Form.Control type="range" min={0} max={100} onChange={handleVolumeChange} value={volume} custom/>
+                                <Form.Control className={"ml-2 mr-2"} type="range" min={0} max={100} onChange={handleVolumeChange} value={volume} custom/>
                                 <span className={"fas fa-fw fa-volume-up"}/>
                             </div>
                         </Col>
