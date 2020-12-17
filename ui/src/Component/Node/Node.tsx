@@ -85,8 +85,10 @@ export function Node(props: NodeProps) {
                             </div>
                         </Col>
                         <Col xs={12} md={true}>
-                            <div style={{ minWidth: "150px" }}>
+                            <div style={{ minWidth: "320px" }} className={"d-flex"}>
+                                <span className={"fas fa-fw fa-volume-down"}/>
                                 <Form.Control type="range" min={0} max={100} onChange={handleVolumeChange} value={volume} custom/>
+                                <span className={"fas fa-fw fa-volume-up"}/>
                             </div>
                         </Col>
                     </Row>
