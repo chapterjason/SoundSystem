@@ -49,8 +49,9 @@ supervisorctl start server
 ## Add client
 
 ```
+rm scripts.zip
 wget http://SERVER:PORT/scripts/scripts.zip
-unzip scripts.zip
+unzip -o scripts.zip
 ./scripts/install.sh
 ```
 

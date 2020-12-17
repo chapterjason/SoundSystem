@@ -54,7 +54,7 @@ export class Client extends Socket {
             } else if (rest.startsWith("volume:")) {
                 const configuration = await Configuration.load();
                 const volume = parseInt(rest.slice(7));
-                await this.setVolume(configuration, volume);
+                await this.setVolume(configuration.volume, volume);
             } else if (rest.startsWith("stream:")) {
                 const configuration = await Configuration.load();
                 const stream = rest.slice(7) as Stream;
@@ -149,10 +149,21 @@ export class Client extends Socket {
         console.log("--> [Stream]", stream);
     }
 
-    public async idle() {
+    public async idle(preserveVolume: boolean = false) {
         console.log("<-- [Idle]");
+        let volume = 60;
+
+        if (preserveVolume) {
+            volume = await Configuration.getVolume();
+        }
+
         await this.reset();
         await Configuration.setMode("idle");
+
+        if (preserveVolume) {
+            await this.setVolume(Configuration.empty.volume, volume);
+        }
+
         console.log("--> [Idle]");
     }
 
@@ -187,7 +198,7 @@ export class Client extends Socket {
         const { mode, server, stream, volume } = await Configuration.load();
 
         if (mode === "idle") {
-            await this.idle();
+            await this.idle(true);
         } else if (mode === "single") {
             await this.single(Configuration.empty, stream);
         } else if (mode === "stream") {
@@ -198,7 +209,7 @@ export class Client extends Socket {
             await this.idle();
         }
 
-        await this.setVolume(Configuration.empty, volume);
+        await this.setVolume(Configuration.empty.volume, volume);
 
         console.log(await Configuration.load());
 
@@ -239,8 +250,8 @@ export class Client extends Socket {
         await Snapserver.start();
     }
 
-    private async setVolume(configuration: ConfigurationData, volume: number): Promise<void> {
-        if (configuration.volume !== volume) {
+    private async setVolume(previousVolume: number, volume: number): Promise<void> {
+        if (previousVolume !== volume) {
             await Alsa.setVolume(volume, ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone");
             await Configuration.setVolume(volume);
         }
