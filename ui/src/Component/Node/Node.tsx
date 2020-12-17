@@ -67,7 +67,7 @@ export function Node(props: NodeProps) {
                         </InputGroup.Prepend>
                         <InputGroup.Append>
                             <InputGroup.Text>
-                                {(mode === "stream" || "single") && stream}
+                                {(mode === "stream" || mode === "single") && stream}
                                 {mode === "listen" && (listenNode?.hostname ?? "<unknown node>")}
                             </InputGroup.Text>
                         </InputGroup.Append>
