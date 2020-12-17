@@ -75,9 +75,14 @@ export const NodeLogic = kea<NodeLogicType>({
             actions.save();
         },
         save: async () => {
-            const { targetMode, targetStream, targetServer } = values;
+            const { targetStream, targetServer } = values;
+            let { targetMode } = values;
 
             console.log("save", { targetMode, targetStream, targetServer });
+
+            if (!targetMode) {
+                targetMode = props.node.mode;
+            }
 
             if (targetMode === "stream") {
                 if (targetStream) {
