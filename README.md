@@ -54,7 +54,6 @@ unzip scripts.zip
 ./scripts/install.sh
 ```
 
-
 ### Reconfigure
 
 ```

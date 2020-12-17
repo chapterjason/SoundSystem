@@ -10,7 +10,7 @@ SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pw
 # shellcheck disable=SC1090
 . "$SCRIPT_DIRECTORY/../.configuration"
 
-systemctl stop shairport-playback
+systemctl stop airplay-playback
 
 ###################################
 ###################################
