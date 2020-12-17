@@ -175,6 +175,8 @@ export class Client extends Socket {
         await Snapserver.stop();
         await Snapclient.stop();
         await this.disableMultipleBluetooth();
+        await this.disableSingleBluetooth();
+        await this.disableSingleAirplay();
     }
 
     public async disableMultipleBluetooth() {
