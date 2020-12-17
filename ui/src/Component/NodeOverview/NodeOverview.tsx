@@ -13,7 +13,7 @@ export function NodeOverview() {
         if (autoRefresh) {
             const intervalId = setInterval(() => {
                 update();
-            }, 2000);
+            }, 500);
             return () => clearInterval(intervalId);
         }
     }, [autoRefresh]);
