@@ -10,8 +10,8 @@ enabled = false
 [stream]
 bind_to_address = 0.0.0.0
 port = 1704
-chunk_ms = 10
-buffer = 10`;
+chunk_ms = 20
+buffer = 1000`;
 
     public static async start() {
         await Services.startService("snapserver");
