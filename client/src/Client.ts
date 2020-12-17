@@ -44,6 +44,10 @@ export class Client extends Socket {
                 const configuration = await Configuration.load();
                 const server = rest.slice(7);
                 await this.listen(configuration, server);
+            } else if (rest.startsWith("single:")) {
+                const configuration = await Configuration.load();
+                const stream = rest.slice(7) as Stream;
+                await this.single(configuration, stream);
             } else if (rest.startsWith("update:")) {
                 console.log("Update...", (new Date()).toISOString());
                 await update();
@@ -187,6 +191,8 @@ export class Client extends Socket {
 
         if (mode === "idle") {
             await this.idle();
+        } else if (mode === "single") {
+            await this.single(Configuration.empty, stream);
         } else if (mode === "stream") {
             await this.stream(Configuration.empty, stream);
         } else if (mode === "listen") {
@@ -220,6 +226,10 @@ export class Client extends Socket {
             await Alsa.setVolume(volume, ENVIRONMENT.has('DEVICE') ? ENVIRONMENT.get('DEVICE') : "Headphone");
             await Configuration.setVolume(volume);
         }
+    }
+
+    private async single(configuration: ConfigurationData, stream: Stream): Promise<void> {
+
     }
 }
 

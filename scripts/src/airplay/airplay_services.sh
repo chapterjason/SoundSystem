@@ -17,9 +17,9 @@ systemctl stop shairport-playback
 echo "Create airplay service"
 ###################################
 ###################################
-cat <<EOF > /etc/systemd/system/shairport-playback.service
+cat <<EOF > /etc/systemd/system/airplay-playback.service
 [Unit]
-Description=Shairport Playback
+Description=Airplay Playback
 After=syslog.service
 
 [Service]
@@ -27,7 +27,7 @@ ExecStartPre=/bin/sleep 3
 ExecStart=/usr/local/bin/shairport-sync --output=alsa --name=$HOSTNAME
 StandardOutput=syslog
 StandardError=syslog
-SyslogIdentifier=Shairport-Playback
+SyslogIdentifier=Airplay-Playback
 User=shairport-sync
 
 [Install]
@@ -41,6 +41,6 @@ echo "Reload systemctl daemon"
 ###################################
 systemctl daemon-reload
 
-systemctl start shairport-playback
+systemctl start airplay-playback
 
-systemctl stop shairport-playback
+systemctl stop airplay-playback
