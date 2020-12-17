@@ -94,7 +94,7 @@ export const NodeLogic = kea<NodeLogicType>({
     }),
     selectors: ({ props }) => ({
         listenNode: [
-            () => [() => NodeOverviewLogic.values.nodes, () => props.node],
+            () => [() => NodeOverviewLogic.values.nodes, () => props.node.server],
             (nodes: Record<string, Node>, node: Node) => Object.keys(nodes).map(id => {
                 return nodes[id];
             }).find((item) => item.address === node.address) ?? null,
