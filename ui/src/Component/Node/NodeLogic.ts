@@ -53,7 +53,7 @@ export const NodeLogic = kea<NodeLogicType>({
         setMode: ({ mode }) => {
             actions.hideSetMode();
 
-            if (mode === "stream") {
+            if (mode === "stream" || mode === "single") {
                 actions.showSetStream();
             } else if (mode === "listen") {
                 actions.showSetServer();
