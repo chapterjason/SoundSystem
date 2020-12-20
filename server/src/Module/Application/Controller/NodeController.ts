@@ -111,7 +111,7 @@ export class NodeController {
         };
     }
 
-    @Get("/node/update")
+    @Get("/nodeUpdate")
     public async nodeUpdate() {
         console.log("NodeController", "nodeUpdate");
         const nodes = this.service.getNodes();
