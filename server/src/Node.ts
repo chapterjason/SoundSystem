@@ -126,7 +126,7 @@ export class Node {
 
     private onData(buffer: Buffer) {
         const [command, id, data] = buffer.toString().split(":");
-        const encodedData = new Buffer(data, "base64").toString("ascii");
+        const encodedData = Buffer.from(data, "base64").toString("ascii");
 
         if (command !== "configuration") {
             console.log({ command, id, data, encodedData });

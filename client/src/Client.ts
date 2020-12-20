@@ -34,7 +34,7 @@ export class Client extends Socket {
 
     public async onData(buffer: Buffer) {
         const [command, id, data] = buffer.toString().split(":");
-        const encodedData = new Buffer(data, "base64").toString("ascii");
+        const encodedData = Buffer.from(data, "base64").toString("ascii");
 
         console.log({ command, id, data, encodedData });
 
