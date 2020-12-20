@@ -10,6 +10,9 @@ import { Services } from "./Services";
 import { Alsa } from "./Alsa";
 import { update } from "./Utils/Update";
 import { ENVIRONMENT } from "./meta";
+import * as fs from "fs";
+import { existsSync } from "fs";
+import * as path from "path";
 
 export class Client extends Socket {
 
@@ -27,7 +30,14 @@ export class Client extends Socket {
         this.setNoDelay(true);
 
         this.hostname = os.hostname();
-        this.id = uuidv4();
+
+        const idFile = path.join(__dirname, ".id");
+
+        if (!existsSync(idFile)) {
+            fs.writeFileSync(idFile, uuidv4());
+        }
+
+        this.id = fs.readFileSync(idFile).toString();
 
         this.on("data", this.onData.bind(this));
     }
