@@ -39,23 +39,25 @@ export class Client extends Socket {
         console.log({ command, id, data, encodedData });
 
         try {
+            const configuration = await Configuration.load();
+
             if (command === "idle") {
                 await this.idle(true);
             } else if (command === "listen") {
-                const configuration = await Configuration.load();
                 await this.listen(configuration, encodedData);
+            } else if (command === "mute") {
+                await this.setMuted(configuration.muted, data === "false");
+            } else if (command === "unmute") {
+                await this.setMuted(configuration.muted, data === "true");
             } else if (command === "single") {
-                const configuration = await Configuration.load();
                 await this.single(configuration, encodedData as Stream);
             } else if (command === "update") {
                 console.log("Update...", (new Date()).toISOString());
                 await update();
             } else if (command === "volume") {
-                const configuration = await Configuration.load();
                 const volume = parseInt(encodedData, 10);
                 await this.setVolume(configuration.volume, volume);
             } else if (command === "stream") {
-                const configuration = await Configuration.load();
                 await this.stream(configuration, encodedData as Stream);
             }
 
@@ -156,7 +158,7 @@ export class Client extends Socket {
 
     public async idle(preserveVolume: boolean = false) {
         console.log("<-- [Idle]");
-        let volume = 60;
+        let volume = 32;
 
         if (preserveVolume) {
             volume = await Configuration.getVolume();
@@ -203,7 +205,7 @@ export class Client extends Socket {
 
     public async init(): Promise<void> {
         console.log("---- Initialize ----");
-        const { mode, server, stream, volume } = await Configuration.load();
+        const { mode, server, stream, volume, muted } = await Configuration.load();
 
         if (mode === "idle") {
             await this.idle(true);
@@ -217,6 +219,7 @@ export class Client extends Socket {
             await this.idle();
         }
 
+        await this.setMuted(Configuration.empty.muted, muted);
         await this.setVolume(Configuration.empty.volume, volume);
 
         console.log(await Configuration.load());
@@ -268,6 +271,20 @@ export class Client extends Socket {
         }
 
         await Snapserver.start();
+    }
+
+    private async setMuted(previousMuted: boolean, muted: boolean): Promise<void> {
+        const device = ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone";
+
+        if (previousMuted !== muted) {
+            if (muted) {
+                await Alsa.mute(device);
+            } else {
+                await Alsa.unmute(device);
+            }
+
+            await Configuration.setMuted(muted);
+        }
     }
 
     private async setVolume(previousVolume: number, volume: number): Promise<void> {

@@ -25,6 +25,7 @@ export function NodeOverview() {
                     <th>Node</th>
                     <th>Mode</th>
                     <th>Stream/Server</th>
+                    <th>Muted</th>
                     <th>Volume</th>
                 </tr>
             </thead>

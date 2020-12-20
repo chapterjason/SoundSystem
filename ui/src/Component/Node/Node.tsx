@@ -17,9 +17,9 @@ export interface NodeProps {
 export function Node(props: NodeProps) {
     const { id, node } = props;
     const logic = NodeLogic(props);
-    const { showSetMode, showSetServer, showSetStream, setVolume } = useActions(logic);
+    const { showSetMode, unmute, mute, showSetServer, showSetStream, setVolume } = useActions(logic);
     const { loading, volume, listenNode, showSetMode: setModeVisible, showSetStream: setStreamVisible, showSetServer: setServerVisible } = useValues(logic);
-    const { mode, stream } = node;
+    const { mode, stream, muted } = node;
 
     function handleVolumeChange(event: React.ChangeEvent<HTMLInputElement>) {
         const currentTarget = event.currentTarget;
@@ -76,6 +76,17 @@ export function Node(props: NodeProps) {
                 )}
                 {setStreamVisible && <SetStream id={id} node={node}/>}
                 {setServerVisible && <SetServer id={id} node={node}/>}
+            </td>
+            <td>
+                {muted ? (
+                    <Button variant={"primary"} disabled={loading} size={"sm"} onClick={unmute}>
+                        <span className={"fas fa-fw fa-volume-mute"}/>
+                    </Button>
+                ) : (
+                    <Button variant={"primary"} disabled={loading} size={"sm"} onClick={mute}>
+                        <span className={"fas fa-fw fa-volume-up"}/>
+                    </Button>
+                )}
             </td>
             <td>
                 <Container fluid>

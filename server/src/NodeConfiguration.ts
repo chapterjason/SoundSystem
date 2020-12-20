@@ -12,4 +12,6 @@ export interface NodeConfiguration {
     stream: Stream;
 
     server: string;
+
+    muted: boolean;
 }

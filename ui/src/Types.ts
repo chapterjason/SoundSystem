@@ -15,4 +15,6 @@ export interface Node {
     volume: number;
 
     address: string;
+
+    muted: boolean;
 }

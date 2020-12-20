@@ -28,6 +28,40 @@ export class NodeController {
         return { "success": true };
     }
 
+    @Post("/node/:id/mute")
+    public async mute(@Param("id") id: string) {
+        console.log("NodeController", "mute", id);
+
+        const nodes = this.service.getNodes();
+
+        if (id in nodes) {
+            const node = nodes[id];
+
+            await node.request("mute");
+        } else {
+            throw new NotFoundException(`Node ${id} not found.`);
+        }
+
+        return { "success": true };
+    }
+
+    @Post("/node/:id/unmute")
+    public async unmute(@Param("id") id: string) {
+        console.log("NodeController", "unmute", id);
+
+        const nodes = this.service.getNodes();
+
+        if (id in nodes) {
+            const node = nodes[id];
+
+            await node.request("unmute");
+        } else {
+            throw new NotFoundException(`Node ${id} not found.`);
+        }
+
+        return { "success": true };
+    }
+
     @Post("/node/:id/stream")
     public async stream(@Param("id") id: string, @Body() update: { stream: Stream }) {
         console.log("NodeController", "stream", id, update);

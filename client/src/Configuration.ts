@@ -5,14 +5,15 @@ import { Mode, Stream } from "./Types";
 
 export class Configuration {
 
-    private static file: string = path.join(__dirname, "client.json");
-
     public static empty: ConfigurationData = {
         stream: "reset",
         mode: "reset",
         server: "",
-        volume: 60,
+        volume: 32,
+        muted: false,
     };
+
+    private static file: string = path.join(__dirname, "client.json");
 
     public static afterSave: () => Promise<void> = async () => {
     };
@@ -83,4 +84,9 @@ export class Configuration {
         await this.save(config);
     }
 
+    public static async setMuted(muted: boolean): Promise<void> {
+        const config = await this.load();
+        config.muted = muted;
+        await this.save(config);
+    }
 }

@@ -3,7 +3,6 @@ import { NodeLogicType } from "./NodeLogicType";
 import Axios from "axios";
 import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
 import { Node } from "../../Types";
-import { Simulate } from "react-dom/test-utils";
 
 export const NodeLogic = kea<NodeLogicType>({
     key: props => props.node.id,
@@ -21,6 +20,8 @@ export const NodeLogic = kea<NodeLogicType>({
         hideSetMode: true,
         afterSave: true,
         save: true,
+        mute: true,
+        unmute: true,
     },
     reducers: ({ props }) => ({
         loading: [false, {
@@ -66,10 +67,22 @@ export const NodeLogic = kea<NodeLogicType>({
                 actions.save();
             }
         },
+        mute: async () => {
+            actions.setLoading(true);
+            await Axios.post("/node/" + props.id + "/mute");
+            actions.setLoading(false);
+        },
+        unmute: async () => {
+            actions.setLoading(true);
+            await Axios.post("/node/" + props.id + "/unmute");
+            actions.setLoading(false);
+        },
         setVolume: async ({ volume }, breakpoint) => {
             await breakpoint(200);
 
+            actions.setLoading(true);
             await Axios.post("/node/" + props.id + "/volume", { volume });
+            actions.setLoading(false);
         },
         setStream: () => {
             actions.hideSetStream();

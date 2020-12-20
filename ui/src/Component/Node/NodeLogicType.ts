@@ -32,6 +32,10 @@ interface Actions {
 
     setLoading: (loading: boolean) => { loading: boolean };
 
+    mute: () => void;
+
+    unmute: () => void;
+
     showSetMode: () => void;
 
     hideSetMode: () => void;

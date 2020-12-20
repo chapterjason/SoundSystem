@@ -9,5 +9,6 @@ export interface ConfigurationData {
 
     volume: number;
 
+    muted: boolean;
 
 }

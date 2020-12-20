@@ -13,9 +13,10 @@ export class Node {
         hostname: "unset",
         mode: "reset",
         id: "unset",
-        volume: 60,
+        volume: 32,
         server: "unset",
         stream: "reset",
+        muted: false,
     };
 
     private onConnect: (node: Node) => void;
