@@ -274,6 +274,7 @@ export class Client extends Socket {
     }
 
     private async setMuted(previousMuted: boolean, muted: boolean): Promise<void> {
+        console.log("--> [Muted]", muted);
         const device = ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone";
 
         if (previousMuted !== muted) {
@@ -285,13 +286,16 @@ export class Client extends Socket {
 
             await Configuration.setMuted(muted);
         }
+        console.log("<-- [Muted]", muted);
     }
 
     private async setVolume(previousVolume: number, volume: number): Promise<void> {
+        console.log("<-- [Volume]", volume);
         if (previousVolume !== volume) {
             await Alsa.setVolume(volume, ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone");
             await Configuration.setVolume(volume);
         }
+        console.log("--> [Single]", volume);
     }
 
     private async single(configuration: ConfigurationData, stream: Stream): Promise<void> {
