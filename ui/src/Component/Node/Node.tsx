@@ -5,8 +5,7 @@ import { NodeLogic } from "./NodeLogic";
 import { SetMode } from "../SetMode";
 import { SetStream } from "../SetStream";
 import { SetServer } from "../SetServer";
-import { Button, Col, Container, Form, InputGroup, Row } from "react-bootstrap";
-import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
+import { Button, Col, Container, Form, InputGroup, Row, Spinner } from "react-bootstrap";
 import classNames from "classnames";
 
 export interface NodeProps {
@@ -18,10 +17,9 @@ export interface NodeProps {
 export function Node(props: NodeProps) {
     const { id, node } = props;
     const logic = NodeLogic(props);
-    const { nodes } = useValues(NodeOverviewLogic);
     const { showSetMode, showSetServer, showSetStream, setVolume } = useActions(logic);
-    const { volume, listenNode, showSetMode: setModeVisible, showSetStream: setStreamVisible, showSetServer: setServerVisible } = useValues(logic);
-    const { server, mode, stream } = node;
+    const { loading, volume, listenNode, showSetMode: setModeVisible, showSetStream: setStreamVisible, showSetServer: setServerVisible } = useValues(logic);
+    const { mode, stream } = node;
 
     function handleVolumeChange(event: React.ChangeEvent<HTMLInputElement>) {
         const currentTarget = event.currentTarget;
@@ -39,11 +37,16 @@ export function Node(props: NodeProps) {
 
     return (
         <tr className={tableRowClasses}>
-            <td>{node.hostname}</td>
+            <td>
+                {loading && (
+                    <Spinner animation={"border"} size={"sm"} variant={"primary"}/>
+                )}
+                {node.hostname}
+            </td>
             <td>
                 <InputGroup size={"sm"}>
                     <InputGroup.Prepend>
-                        <Button variant={"primary"} size={"sm"} onClick={showSetMode}>set Mode</Button>
+                        <Button variant={"primary"} disabled={loading} size={"sm"} onClick={showSetMode}>set Mode</Button>
                         {setModeVisible && <SetMode id={id} node={node}/>}
                     </InputGroup.Prepend>
                     <InputGroup.Append>
@@ -56,10 +59,10 @@ export function Node(props: NodeProps) {
                     <InputGroup size={"sm"}>
                         <InputGroup.Prepend>
                             {mode === "listen" && (
-                                <Button variant={"primary"} size={"sm"} onClick={showSetServer}>set Server</Button>
+                                <Button variant={"primary"} disabled={loading} size={"sm"} onClick={showSetServer}>set Server</Button>
                             )}
                             {(mode === "stream" || mode === "single") && (
-                                <Button variant={"primary"} size={"sm"} onClick={showSetStream}>set Stream</Button>
+                                <Button variant={"primary"} disabled={loading} size={"sm"} onClick={showSetStream}>set Stream</Button>
                             )}
                         </InputGroup.Prepend>
                         <InputGroup.Append>
@@ -84,7 +87,7 @@ export function Node(props: NodeProps) {
                         <Col xs={12} md={true}>
                             <div style={{ minWidth: "280px" }} className={"d-flex justify-content-center align-items-center"}>
                                 <span className={"fas fa-fw fa-volume-down"}/>
-                                <Form.Control className={"ml-2 mr-2"} type="range" min={0} max={100} onChange={handleVolumeChange} value={volume} custom/>
+                                <Form.Control disabled={loading} className={"ml-2 mr-2"} type="range" min={0} max={100} onChange={handleVolumeChange} value={volume} custom/>
                                 <span className={"fas fa-fw fa-volume-up"}/>
                             </div>
                         </Col>

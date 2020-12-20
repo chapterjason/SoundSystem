@@ -8,6 +8,8 @@ interface Values {
 
     showSetServer: boolean;
 
+    loading: boolean;
+
     targetMode: Mode | null;
 
     targetStream: Stream | null;
@@ -27,6 +29,8 @@ interface Actions {
     setServer: (server: string) => { server: string };
 
     setVolume: (volume: number) => { volume: number };
+
+    setLoading: (loading: boolean) => { loading: boolean };
 
     showSetMode: () => void;
 

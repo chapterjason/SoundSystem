@@ -3,6 +3,7 @@ import { NodeLogicType } from "./NodeLogicType";
 import Axios from "axios";
 import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
 import { Node } from "../../Types";
+import { Simulate } from "react-dom/test-utils";
 
 export const NodeLogic = kea<NodeLogicType>({
     key: props => props.node.id,
@@ -11,6 +12,7 @@ export const NodeLogic = kea<NodeLogicType>({
         setServer: (server) => ({ server }),
         setStream: (stream) => ({ stream }),
         setVolume: (volume) => ({ volume }),
+        setLoading: (loading) => ({ loading }),
         showSetStream: true,
         showSetServer: true,
         showSetMode: true,
@@ -21,6 +23,9 @@ export const NodeLogic = kea<NodeLogicType>({
         save: true,
     },
     reducers: ({ props }) => ({
+        loading: [false, {
+            setLoading: (_, { loading }) => loading,
+        }],
         showSetMode: [false, {
             showSetMode: () => true,
             hideSetMode: () => false,
@@ -75,6 +80,8 @@ export const NodeLogic = kea<NodeLogicType>({
             actions.save();
         },
         save: async () => {
+            actions.setLoading(true);
+
             const { targetStream, targetServer } = values;
             let { targetMode } = values;
 
@@ -103,6 +110,7 @@ export const NodeLogic = kea<NodeLogicType>({
             NodeOverviewLogic.actions.update();
 
             actions.afterSave();
+            actions.setLoading(false);
         },
     }),
     selectors: ({ props }) => ({
