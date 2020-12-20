@@ -78,15 +78,17 @@ export function Node(props: NodeProps) {
                 {setServerVisible && <SetServer id={id} node={node}/>}
             </td>
             <td>
-                {muted ? (
-                    <Button variant={"primary"} disabled={loading} size={"sm"} onClick={unmute}>
-                        <span className={"fas fa-fw fa-volume-mute"}/>
-                    </Button>
-                ) : (
-                    <Button variant={"primary"} disabled={loading} size={"sm"} onClick={mute}>
-                        <span className={"fas fa-fw fa-volume-up"}/>
-                    </Button>
-                )}
+                <div style={{ width: "20px" }}>
+                    {muted ? (
+                        <Button variant={"primary"} disabled={loading} size={"sm"} onClick={unmute}>
+                            <span className={"fas fa-fw fa-volume-mute"}/>
+                        </Button>
+                    ) : (
+                        <Button variant={"primary"} disabled={loading} size={"sm"} onClick={mute}>
+                            <span className={"fas fa-fw fa-volume-up"}/>
+                        </Button>
+                    )}
+                </div>
             </td>
             <td>
                 <Container fluid>
