@@ -36,6 +36,8 @@ export class Client extends Socket {
         const [command, id, data] = buffer.toString().split(":");
         const encodedData = new Buffer(data, "base64").toString("ascii");
 
+        console.log({ command, id, data, encodedData });
+
         try {
             if (command === "idle") {
                 await this.idle(true);
@@ -57,8 +59,10 @@ export class Client extends Socket {
                 await this.stream(configuration, encodedData as Stream);
             }
 
+            console.log("response", { id });
             this.send("response", id);
         } catch (exception) {
+            console.log("response", { id, exception });
             this.send("response", id, JSON.stringify(exception));
         }
     }

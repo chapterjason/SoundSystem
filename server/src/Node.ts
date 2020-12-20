@@ -128,25 +128,31 @@ export class Node {
         const [command, id, data] = buffer.toString().split(":");
         const encodedData = new Buffer(data, "base64").toString("ascii");
 
-        if (command === "response") {
-            if (!(id in this.responses)) {
-                throw new Error(`No response found for: ${JSON.stringify({ command, id, data })}`);
+        console.log({ command, id, data, encodedData });
+
+        try {
+            if (command === "response") {
+                if (!(id in this.responses)) {
+                    throw new Error(`No response found for: ${JSON.stringify({ command, id, data })}`);
+                }
+
+                const handler = this.responses[id];
+
+                handler(data);
+            } else if (command === "configuration") {
+                const configuration = JSON.parse(encodedData) as NodeConfiguration;
+
+                const id = this.configuration.id;
+
+                this.configuration = configuration;
+
+                // The first configuration data on set id official makes it available
+                if (id !== configuration.id) {
+                    this.onConnect(this);
+                }
             }
-
-            const handler = this.responses[id];
-
-            handler(data);
-        } else if (command === "configuration") {
-            const configuration = JSON.parse(encodedData) as NodeConfiguration;
-
-            const id = this.configuration.id;
-
-            this.configuration = configuration;
-
-            // The first configuration data on set id official makes it available
-            if (id !== configuration.id) {
-                this.onConnect(this);
-            }
+        } catch (exception) {
+            console.log({ command, id, data, encodedData, exception });
         }
     }
 
