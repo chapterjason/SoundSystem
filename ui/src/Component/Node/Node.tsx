@@ -38,10 +38,11 @@ export function Node(props: NodeProps) {
     return (
         <tr className={tableRowClasses}>
             <td>
+                {node.hostname}
+                {loading && " "}
                 {loading && (
                     <Spinner animation={"border"} size={"sm"} variant={"primary"}/>
                 )}
-                {node.hostname}
             </td>
             <td>
                 <InputGroup size={"sm"}>
