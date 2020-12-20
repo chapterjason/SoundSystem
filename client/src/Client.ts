@@ -34,26 +34,27 @@ export class Client extends Socket {
 
     public async onData(buffer: Buffer) {
         const [command, id, data] = buffer.toString().split(":");
+        const encodedData = new Buffer(data, "base64").toString("ascii");
 
         try {
             if (command === "idle") {
                 await this.idle(true);
             } else if (command === "listen") {
                 const configuration = await Configuration.load();
-                await this.listen(configuration, data);
+                await this.listen(configuration, encodedData);
             } else if (command === "single") {
                 const configuration = await Configuration.load();
-                await this.single(configuration, data as Stream);
+                await this.single(configuration, encodedData as Stream);
             } else if (command === "update") {
                 console.log("Update...", (new Date()).toISOString());
                 await update();
             } else if (command === "volume") {
                 const configuration = await Configuration.load();
-                const volume = parseInt(data, 10);
+                const volume = parseInt(encodedData, 10);
                 await this.setVolume(configuration.volume, volume);
             } else if (command === "stream") {
                 const configuration = await Configuration.load();
-                await this.stream(configuration, data as Stream);
+                await this.stream(configuration, encodedData as Stream);
             }
 
             this.send("response", id);
@@ -174,8 +175,9 @@ export class Client extends Socket {
 
         await Snapserver.stop();
         await Snapclient.stop();
-        await this.disableMultipleBluetooth();
-        await this.disableSingleBluetooth();
+        await Services.stopService("bluetooth-playback");
+        await Services.stopService("bluemusic-playback");
+        await this.disableBluetooth();
         await this.disableSingleAirplay();
     }
 
