@@ -18,6 +18,8 @@ interface Values {
 
     volume: number;
 
+    savedVolume: number;
+
     listenNode: Node | null;
 }
 
@@ -29,6 +31,8 @@ interface Actions {
     setServer: (server: string) => { server: string };
 
     setVolume: (volume: number) => { volume: number };
+
+    setSavedVolume: (volume: number) => { volume: number };
 
     setLoading: (loading: boolean) => { loading: boolean };
 

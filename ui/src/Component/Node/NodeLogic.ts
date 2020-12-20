@@ -11,6 +11,7 @@ export const NodeLogic = kea<NodeLogicType>({
         setServer: (server) => ({ server }),
         setStream: (stream) => ({ stream }),
         setVolume: (volume) => ({ volume }),
+        setSavedVolume: (volume) => ({ volume }),
         setLoading: (loading) => ({ loading }),
         showSetStream: true,
         showSetServer: true,
@@ -41,6 +42,10 @@ export const NodeLogic = kea<NodeLogicType>({
         }],
         volume: [props.node.volume, {
             setVolume: (_, { volume }) => volume,
+            setSavedVolume: (_, { volume }) => volume,
+        }],
+        savedVolume: [props.node.volume, {
+            setSavedVolume: (_, { volume }) => volume,
         }],
         targetMode: [null, {
             setMode: (_, { mode }) => mode,
@@ -78,7 +83,7 @@ export const NodeLogic = kea<NodeLogicType>({
             actions.setLoading(false);
         },
         setVolume: async ({ volume }, breakpoint) => {
-            await breakpoint(200);
+            await breakpoint(100);
 
             actions.setLoading(true);
             await Axios.post("/node/" + props.id + "/volume", { volume });

@@ -1,5 +1,6 @@
 import { Node as SoundNode } from "../../Types";
 import * as React from "react";
+import { useEffect } from "react";
 import { useActions, useValues } from "kea";
 import { NodeLogic } from "./NodeLogic";
 import { SetMode } from "../SetMode";
@@ -17,9 +18,15 @@ export interface NodeProps {
 export function Node(props: NodeProps) {
     const { id, node } = props;
     const logic = NodeLogic(props);
-    const { showSetMode, unmute, mute, showSetServer, showSetStream, setVolume } = useActions(logic);
-    const { loading, volume, listenNode, showSetMode: setModeVisible, showSetStream: setStreamVisible, showSetServer: setServerVisible } = useValues(logic);
-    const { mode, stream, muted } = node;
+    const { showSetMode, setSavedVolume, unmute, mute, showSetServer, showSetStream, setVolume } = useActions(logic);
+    const { loading, savedVolume, volume, listenNode, showSetMode: setModeVisible, showSetStream: setStreamVisible, showSetServer: setServerVisible } = useValues(logic);
+    const { mode, stream, muted, volume: nodeVolume } = node;
+
+    useEffect(() => {
+        if (savedVolume !== nodeVolume) {
+            setSavedVolume(nodeVolume);
+        }
+    }, [nodeVolume]);
 
     function handleVolumeChange(event: React.ChangeEvent<HTMLInputElement>) {
         const currentTarget = event.currentTarget;
@@ -38,11 +45,17 @@ export function Node(props: NodeProps) {
     return (
         <tr className={tableRowClasses}>
             <td>
-                {node.hostname}
-                {loading && " "}
-                {loading && (
-                    <Spinner animation={"border"} size={"sm"} variant={"primary"}/>
-                )}
+                <Row noGutters>
+                    <Col>
+                        {node.hostname}
+                    </Col>
+                    <div style={{ width: "30px" }}>
+                        {loading && " "}
+                        {loading && (
+                            <Spinner animation={"border"} size={"sm"} variant={"primary"}/>
+                        )}
+                    </div>
+                </Row>
             </td>
             <td>
                 <InputGroup size={"sm"}>
@@ -78,7 +91,7 @@ export function Node(props: NodeProps) {
                 {setServerVisible && <SetServer id={id} node={node}/>}
             </td>
             <td>
-                <div style={{ width: "20px" }}>
+                <div>
                     {muted ? (
                         <Button variant={"primary"} disabled={loading} size={"sm"} onClick={unmute}>
                             <span className={"fas fa-fw fa-volume-mute"}/>
