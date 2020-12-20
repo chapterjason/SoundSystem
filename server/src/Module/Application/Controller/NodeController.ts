@@ -96,6 +96,19 @@ export class NodeController {
         return { "success": true };
     }
 
+    @Post("/node/:id")
+    public getNode(@Param("id") id: string) {
+        const nodes = this.service.getNodes();
+
+        if (!(id in nodes)) {
+            throw new NotFoundException(`Not with id ${id} not found`);
+        }
+
+        return {
+            node: nodes[id].toJSON(),
+        };
+    }
+
     @Get("/node")
     public getNodes() {
         const nodes = this.service.getNodes();
