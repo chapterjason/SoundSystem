@@ -130,7 +130,7 @@ export class NodeController {
         return { "success": true };
     }
 
-    @Post("/node/:id")
+    @Get("/node/:id")
     public getNode(@Param("id") id: string) {
         const nodes = this.service.getNodes();
 
