@@ -46,9 +46,9 @@ export class Client extends Socket {
             } else if (command === "listen") {
                 await this.listen(configuration, encodedData);
             } else if (command === "mute") {
-                await this.setMuted(configuration.muted, data === "false");
+                await this.setMuted(configuration.muted, true);
             } else if (command === "unmute") {
-                await this.setMuted(configuration.muted, data === "true");
+                await this.setMuted(configuration.muted, false);
             } else if (command === "single") {
                 await this.single(configuration, encodedData as Stream);
             } else if (command === "update") {
