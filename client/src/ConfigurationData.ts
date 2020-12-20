@@ -8,4 +8,6 @@ export interface ConfigurationData {
     server: string;
 
     volume: number;
+
+
 }

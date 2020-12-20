@@ -12,7 +12,7 @@ export class NodeController {
     }
 
     @Post("/node/:id/idle")
-    public idle(@Param("id") id: string) {
+    public async idle(@Param("id") id: string) {
         console.log("NodeController", "idle", id);
 
         const nodes = this.service.getNodes();
@@ -20,7 +20,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            node.getSocket().write(Buffer.from("command:idle:true"));
+            await node.request("idle");
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -29,7 +29,7 @@ export class NodeController {
     }
 
     @Post("/node/:id/stream")
-    public stream(@Param("id") id: string, @Body() update: { stream: Stream }) {
+    public async stream(@Param("id") id: string, @Body() update: { stream: Stream }) {
         console.log("NodeController", "stream", id, update);
 
         const nodes = this.service.getNodes();
@@ -37,7 +37,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            node.getSocket().write(Buffer.from("command:stream:" + update.stream));
+            await node.request("stream", Buffer.from(update.stream));
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -46,7 +46,7 @@ export class NodeController {
     }
 
     @Post("/node/:id/single")
-    public single(@Param("id") id: string, @Body() update: { stream: Stream }) {
+    public async single(@Param("id") id: string, @Body() update: { stream: Stream }) {
         console.log("NodeController", "single", id, update);
 
         const nodes = this.service.getNodes();
@@ -54,7 +54,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            node.getSocket().write(Buffer.from("command:single:" + update.stream));
+            await node.request("single", Buffer.from(update.stream));
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -63,7 +63,7 @@ export class NodeController {
     }
 
     @Post("/node/:id/listen")
-    public listen(@Param("id") id: string, @Body() update: { server: string }) {
+    public async listen(@Param("id") id: string, @Body() update: { server: string }) {
         console.log("NodeController", "listen", id, update);
 
         const nodes = this.service.getNodes();
@@ -71,7 +71,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            node.getSocket().write(Buffer.from("command:listen:" + update.server));
+            await node.request("listen", Buffer.from(update.server));
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -80,7 +80,7 @@ export class NodeController {
     }
 
     @Post("/node/:id/volume")
-    public volume(@Param("id") id: string, @Body() update: { volume: number }) {
+    public async volume(@Param("id") id: string, @Body() update: { volume: number }) {
         console.log("NodeController", "volume", id, update);
 
         const nodes = this.service.getNodes();
@@ -88,7 +88,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            node.getSocket().write(Buffer.from("command:volume:" + update.volume));
+            await node.request("volume", Buffer.from(update.volume.toString()));
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -111,8 +111,23 @@ export class NodeController {
         };
     }
 
+    @Get("/node/update")
+    public async nodeUpdate() {
+        console.log("NodeController", "nodeUpdate");
+        const nodes = this.service.getNodes();
+        const ids = Object.keys(nodes);
+
+        for await (const id of ids) {
+            const node = nodes[id];
+
+            await node.request("update");
+        }
+
+        return { "success": true, nodes: ids };
+    }
+
     @Get("/node/:id/update")
-    public update(@Param("id") id: string) {
+    public async update(@Param("id") id: string) {
         console.log("NodeController", "update", id);
 
         const nodes = this.service.getNodes();
@@ -120,29 +135,12 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            node.getSocket().write(Buffer.from("command:update:"));
+            await node.request("update");
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
 
         return { "success": true };
-    }
-
-    @Get("/nodeUpdate")
-    public nodeUpdate() {
-        console.log("NodeController", "nodeUpdate");
-        const nodes = this.service.getNodes();
-        const ids = Object.keys(nodes);
-
-        for (const id of ids) {
-            const node = nodes[id];
-
-            node.getSocket().write(Buffer.from("command:update:"));
-        }
-
-        return {
-            "status": "Update dispatched.",
-        };
     }
 
 }

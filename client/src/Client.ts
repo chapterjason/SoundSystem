@@ -33,33 +33,32 @@ export class Client extends Socket {
     }
 
     public async onData(buffer: Buffer) {
-        const data = buffer.toString();
+        const [command, id, data] = buffer.toString().split(":");
 
-        if (data.startsWith("command:")) {
-            const rest = data.slice(8);
-
-            if (rest.startsWith("idle:")) {
+        try {
+            if (command === "idle") {
                 await this.idle(true);
-            } else if (rest.startsWith("listen:")) {
+            } else if (command === "listen") {
                 const configuration = await Configuration.load();
-                const server = rest.slice(7);
-                await this.listen(configuration, server);
-            } else if (rest.startsWith("single:")) {
+                await this.listen(configuration, data);
+            } else if (command === "single") {
                 const configuration = await Configuration.load();
-                const stream = rest.slice(7) as Stream;
-                await this.single(configuration, stream);
-            } else if (rest.startsWith("update:")) {
+                await this.single(configuration, data as Stream);
+            } else if (command === "update") {
                 console.log("Update...", (new Date()).toISOString());
                 await update();
-            } else if (rest.startsWith("volume:")) {
+            } else if (command === "volume") {
                 const configuration = await Configuration.load();
-                const volume = parseInt(rest.slice(7));
+                const volume = parseInt(data, 10);
                 await this.setVolume(configuration.volume, volume);
-            } else if (rest.startsWith("stream:")) {
+            } else if (command === "stream") {
                 const configuration = await Configuration.load();
-                const stream = rest.slice(7) as Stream;
-                await this.stream(configuration, stream);
+                await this.stream(configuration, data as Stream);
             }
+
+            this.send("response", id);
+        } catch (exception) {
+            this.send("response", id, JSON.stringify(exception));
         }
     }
 
@@ -68,15 +67,16 @@ export class Client extends Socket {
             clearTimeout(this.sendConfigurationTimeoutId);
         }
 
-        this.sendConfigurationTimeoutId = setTimeout(async () => {
-            const configuration = await Configuration.load();
-            const buffer = Buffer.from(`configuration:${JSON.stringify({
-                ...configuration,
-                hostname: this.hostname,
-                id: this.id,
-            })}`);
+        const configuration = await Configuration.load();
 
-            this.write(buffer);
+        this.send("configuration", "-1", JSON.stringify({
+            ...configuration,
+            hostname: this.hostname,
+            id: this.id,
+        }));
+
+        this.sendConfigurationTimeoutId = setTimeout(async () => {
+            await this.sendConfiguration();
         }, 1000);
     }
 
@@ -216,6 +216,18 @@ export class Client extends Socket {
         console.log(await Configuration.load());
 
         console.log("---- Initialized! ----");
+    }
+
+    public send(command: string, id: string = "-1", data: string = ""): void {
+        const responseBuffer = Buffer.concat([
+            Buffer.from(command),
+            Buffer.from(":"),
+            Buffer.from(id),
+            Buffer.from(":"),
+            Buffer.from(Buffer.from(data).toString("base64")),
+        ]);
+
+        this.write(responseBuffer);
     }
 
     private async setAndListen(server: string): Promise<void> {

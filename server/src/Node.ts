@@ -1,6 +1,7 @@
 import { Socket } from "net";
 import { NodeConfiguration } from "./NodeConfiguration";
 import { Logger } from "@nestjs/common";
+import { v4 as uuidv4 } from "uuid";
 
 export class Node {
 
@@ -22,6 +23,8 @@ export class Node {
     private onDisconnect: (node: Node) => void;
 
     private disconnected: boolean = false;
+
+    private responses: Record<string, (data: string) => void> = {};
 
     public constructor(socket: Socket, onConnect: (node: Node) => void, onDisconnect: (node: Node) => void) {
         this.onConnect = onConnect;
@@ -85,6 +88,35 @@ export class Node {
         };
     }
 
+    public request(command: string, buffer: Buffer = Buffer.from("")) {
+        const [dataBuffer, id] = this.create(command, buffer);
+
+        return new Promise<string>((resolve, reject) => {
+            const send = this.socket.write(dataBuffer);
+
+            if (!send) {
+                reject("Message not send");
+                return;
+            }
+
+            this.responses[id] = (data: string) => {
+                resolve(data);
+            };
+        });
+    }
+
+    private create(command: string, buffer: Buffer): [Buffer, string] {
+        const id = uuidv4();
+
+        return [Buffer.concat([
+            Buffer.from(command),
+            Buffer.from(":"),
+            Buffer.from(id),
+            Buffer.from(":"),
+            Buffer.from(buffer.toString("base64")),
+        ]), id];
+    }
+
     private onClose() {
         if (!this.disconnected) {
             this.disconnected = true;
@@ -93,11 +125,19 @@ export class Node {
     }
 
     private onData(buffer: Buffer) {
-        const data = buffer.toString();
+        const [command, id, data] = buffer.toString().split(":");
+        const encodedData = new Buffer(data, "base64").toString("ascii");
 
-        if (data.startsWith("configuration:")) {
-            const configurationData = data.slice(14);
-            const configuration = JSON.parse(configurationData) as NodeConfiguration;
+        if (command === "response") {
+            if (!(id in this.responses)) {
+                throw new Error(`No response found for: ${JSON.stringify({ command, id, data })}`);
+            }
+
+            const handler = this.responses[id];
+
+            handler(data);
+        } else if (command === "configuration") {
+            const configuration = JSON.parse(encodedData) as NodeConfiguration;
 
             const id = this.configuration.id;
 
