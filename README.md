@@ -1,6 +1,19 @@
 
 # SoundSystem
 
+## Features
+
+- Airplay and Bluetooth as input sources.
+- Synchronous sound playback
+- Synchronous sound/audio playback (airplay in single mode)
+- Web UI
+  - Mute/Unmute
+  - Control Volume
+  - Control over the nodes
+  
+![](./docs/assets/web-ui.png)
+
+![](./docs/assets/set-mode.png)
 
 ## Install
 
@@ -75,7 +88,9 @@ unzip -o scripts.zip
     - [ ] Server
     - [ ] Client
     - [ ] UI
-- [ ] Client single mode
+- [x] Client single mode
+- [x] Mute
+- [ ] Homebridge plugin
 - [ ] GitHub build pipeline
 - [ ] Decouple the scripts more the location (hardcoded paths in services)
 - [ ] Decouple the server more in a separate user
