@@ -159,7 +159,7 @@ export class Node {
         }
     }
 
-    private getAddress(): string {
+    public getAddress(): string {
         return this.socket.remoteAddress as string;
     }
 }

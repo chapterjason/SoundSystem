@@ -36,6 +36,8 @@ interface Actions {
 
     setLoading: (loading: boolean) => { loading: boolean };
 
+    party: () => void;
+
     mute: () => void;
 
     unmute: () => void;

@@ -158,7 +158,34 @@ export class NodeController {
         };
     }
 
-    @Get("/nodeUpdate")
+    @Post("/node/:id/party")
+    public async party(@Param("id") id: string, @Body() data: { stream: Stream }) {
+        const nodeRecords = this.service.getNodes();
+
+        if (id in nodeRecords) {
+            const streamer = nodeRecords[id];
+
+            await streamer.request("stream", Buffer.from(data.stream));
+            await streamer.request("unmute");
+
+            const nodes = Object.values(nodeRecords).filter(node => node.getId() !== streamer.getId());
+
+            for await (const node of nodes) {
+                await node.request("listen", Buffer.from(streamer.getAddress()));
+                await node.request("unmute");
+            }
+
+            return {
+                "success": true,
+                streamer: streamer.getId(),
+                listeners: nodes.map(node => node.getId()),
+            };
+        } else {
+            throw new NotFoundException(`Node ${id} not found.`);
+        }
+    }
+
+    @Get("/nodes/update")
     public async nodeUpdate() {
         console.log("NodeController", "nodeUpdate");
         const nodes = this.service.getNodes();

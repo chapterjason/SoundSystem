@@ -12,7 +12,7 @@ export interface SetModeProps {
 
 export function SetMode(props: SetModeProps) {
     const logic = NodeLogic(props);
-    const { setMode, hideSetMode } = useActions(logic);
+    const { setMode, hideSetMode, party } = useActions(logic);
 
     function handleAbort() {
         hideSetMode();
@@ -57,6 +57,15 @@ export function SetMode(props: SetModeProps) {
                                 <span className={"fas fa-fw fa-satellite-dish"}/>
                                 {" "}
                                 Listen
+                            </Button>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <Button variant={"danger"} block onClick={party}>
+                                <span className={"fas fa-fw fa-glass-cheers"}/>
+                                {" "}
+                                Party
                             </Button>
                         </Col>
                     </Row>

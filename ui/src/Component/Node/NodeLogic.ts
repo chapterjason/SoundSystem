@@ -23,6 +23,7 @@ export const NodeLogic = kea<NodeLogicType>({
         save: true,
         mute: true,
         unmute: true,
+        party: true,
     },
     reducers: ({ props }) => ({
         loading: [false, {
@@ -72,6 +73,10 @@ export const NodeLogic = kea<NodeLogicType>({
                 actions.save();
             }
         },
+        party: async () => {
+            actions.hideSetMode();
+            actions.showSetStream();
+        },
         mute: async () => {
             actions.setLoading(true);
             await Axios.post("/node/" + props.id + "/mute");
@@ -83,15 +88,23 @@ export const NodeLogic = kea<NodeLogicType>({
             actions.setLoading(false);
         },
         setVolume: async ({ volume }, breakpoint) => {
-            await breakpoint(100);
+            await breakpoint(300);
 
             actions.setLoading(true);
             await Axios.post("/node/" + props.id + "/volume", { volume });
             actions.setLoading(false);
         },
-        setStream: () => {
+        setStream: async () => {
             actions.hideSetStream();
-            actions.save();
+
+            if (values.targetMode) {
+                actions.save();
+            } else {
+                actions.setLoading(true);
+                await Axios.post("/node/" + props.id + "/party", { stream: values.targetStream });
+                actions.afterSave();
+                actions.setLoading(false);
+            }
         },
         setServer: () => {
             actions.hideSetServer();
