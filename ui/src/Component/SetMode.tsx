@@ -51,7 +51,7 @@ export function SetMode(props: SetModeProps) {
                             </Button>
                         </Col>
                     </Row>
-                    <Row>
+                    <Row className={"mb-3"}>
                         <Col>
                             <Button variant={"warning"} block onClick={() => setMode("listen")}>
                                 <span className={"fas fa-fw fa-satellite-dish"}/>
