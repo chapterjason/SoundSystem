@@ -3,13 +3,18 @@
 
 ## Features
 
-- Airplay and Bluetooth as input sources.
+- Airplay and Bluetooth support
 - Synchronous sound playback
 - Synchronous sound/audio playback (airplay in single mode)
+- API
 - Web UI
   - Mute/Unmute
   - Control Volume
-  - Control over the nodes
+  - Stream/Single Modes
+    - Airplay
+    - Bluetooth
+  - Listen
+- Every Node can work as a streamer or just as a listener (streamer is also listening to itself)
   
 ![](./docs/assets/web-ui.png)
 
