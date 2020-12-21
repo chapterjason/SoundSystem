@@ -13,7 +13,7 @@ export function NodeOverview() {
         if (updated && autoRefresh) {
             let timeoutId = setTimeout(() => {
                 update();
-            });
+            }, 1000);
 
             return () => clearInterval(timeoutId);
         }
