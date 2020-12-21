@@ -8,6 +8,7 @@ export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
         setAutoRefresh: (autoRefresh) => ({ autoRefresh }),
         setNodes: (nodes) => ({ nodes }),
         update: true,
+        updateDone: true,
     },
     reducers: {
         autoRefresh: [true, {
@@ -16,11 +17,16 @@ export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
         nodes: [{}, {
             setNodes: (_, { nodes }) => ({ ...nodes }),
         }],
+        updated: [false, {
+            update: () => false,
+            updateDone: () => true,
+        }],
     },
     listeners: ({ actions }) => ({
         update: async () => {
             const response = await Axios.get<{ nodes: Record<string, Node> }>("/node");
             actions.setNodes(response.data.nodes);
+            actions.updateDone();
         },
     }),
     events: ({ actions, values }) => ({

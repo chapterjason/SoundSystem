@@ -2,21 +2,22 @@ import * as React from "react";
 import { useEffect } from "react";
 import { useActions, useValues } from "kea";
 import { NodeOverviewLogic } from "./NodeOverviewLogic";
-import { Node } from "../Node/Node";
 import { Table } from "react-bootstrap";
+import { Node } from "../Node/Node";
 
 export function NodeOverview() {
-    const { nodes, autoRefresh } = useValues(NodeOverviewLogic);
+    const { nodes, autoRefresh, updated } = useValues(NodeOverviewLogic);
     const { update } = useActions(NodeOverviewLogic);
 
     useEffect(() => {
-        if (autoRefresh) {
-            const intervalId = setInterval(() => {
+        if (updated && autoRefresh) {
+            let timeoutId = setTimeout(() => {
                 update();
-            }, 500);
-            return () => clearInterval(intervalId);
+            });
+
+            return () => clearInterval(timeoutId);
         }
-    }, [autoRefresh]);
+    }, [updated, autoRefresh]);
 
     return (
         <Table className={"border"} striped responsive>

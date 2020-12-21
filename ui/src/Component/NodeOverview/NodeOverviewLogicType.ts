@@ -5,6 +5,8 @@ interface Values {
     nodes: Record<string, Node>;
 
     autoRefresh: boolean;
+
+    updated: boolean;
 }
 
 interface Actions {
@@ -13,6 +15,7 @@ interface Actions {
     setAutoRefresh: (autoRefresh: boolean) => { autoRefresh: boolean };
 
     update: () => true;
+    updateDone: () => true;
 }
 
 interface Props {
