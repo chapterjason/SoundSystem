@@ -41,7 +41,7 @@ export function ReportComponent() {
                         <Legend/>
                         <Bar dataKey="request" stackId="a" fill="#B0B8B4"/>
                         <Bar dataKey="work" stackId="a" fill="#FC766A"/>
-                        <Bar dataKey="respone" stackId="a" fill="#184A45"/>
+                        <Bar dataKey="response" stackId="a" fill="#184A45"/>
                     </BarChart>
                 </Col>
             </Row>
