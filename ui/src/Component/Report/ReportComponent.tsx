@@ -39,9 +39,9 @@ export function ReportComponent() {
                         <YAxis/>
                         <Tooltip/>
                         <Legend/>
-                        <Bar dataKey="request" stackId="a" fill="#8884d8"/>
-                        <Bar dataKey="work" stackId="a" fill="#82ca9d"/>
-                        <Bar dataKey="respone" stackId="a" fill="#82ca9d"/>
+                        <Bar dataKey="request" stackId="a" fill="#B0B8B4"/>
+                        <Bar dataKey="work" stackId="a" fill="#FC766A"/>
+                        <Bar dataKey="respone" stackId="a" fill="#184A45"/>
                     </BarChart>
                 </Col>
             </Row>
