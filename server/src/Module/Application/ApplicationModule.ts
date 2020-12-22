@@ -16,7 +16,7 @@ import { HealthController } from "./Controller/HealthController";
         NodeService,
     ],
     imports: [
-        //TypeOrmModule.forRoot(require(joinToPackageDirectory("ormconfig.js"))),
+        TypeOrmModule.forRoot(require(joinToPackageDirectory("ormconfig.js"))),
     ],
 })
 export class ApplicationModule {
