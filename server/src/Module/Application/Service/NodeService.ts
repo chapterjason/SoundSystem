@@ -2,6 +2,7 @@ import { Server, Socket } from "net";
 import { Node } from "../../../Node";
 import { Logger } from "@nestjs/common";
 import { ENVIRONMENT } from "../../../Meta";
+import { Reporting } from "../../../Reporting";
 
 const DEFAULT_SERVICE_PORT = 3200;
 const SERVICE_PORT = ENVIRONMENT.has("SERVICE_PORT") ? parseInt(ENVIRONMENT.get("SERVICE_PORT"), 10) : DEFAULT_SERVICE_PORT;
@@ -13,8 +14,12 @@ export class NodeService extends Server {
 
     private readonly logger = new Logger("NodeService");
 
-    public constructor() {
+    private reporting: Reporting;
+
+    public constructor(reporting: Reporting) {
         super();
+
+        this.reporting = reporting;
 
         this.on("connection", this.onConnect.bind(this));
         this.on("listening", this.onListen.bind(this));
@@ -43,7 +48,7 @@ export class NodeService extends Server {
         socket.setEncoding("utf8");
         socket.setNoDelay(true);
 
-        const node = new Node(socket, (node: Node) => {
+        const node = new Node(this.reporting, socket, (node: Node) => {
             this.nodes[node.getId()] = node;
             this.logger.log(`Connected ${node.getHostname()}`);
         }, (node: Node) => {

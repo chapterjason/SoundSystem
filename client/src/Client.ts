@@ -3,7 +3,7 @@ import os from "os";
 import { v4 as uuidv4 } from "uuid";
 import { Configuration } from "./Configuration";
 import { ConfigurationData } from "./ConfigurationData";
-import { Stream } from "./Types";
+import { PacketReport, PacketType, Stream } from "./Types";
 import { Snapclient } from "./Snapclient";
 import { Snapserver } from "./Snapserver";
 import { Services } from "./Services";
@@ -46,7 +46,7 @@ export class Client extends Socket {
         const [command, id, data] = buffer.toString().split(":");
         const encodedData = Buffer.from(data, "base64").toString("ascii");
 
-        console.log({ command, id, data, encodedData });
+        this.report(id, PacketType.REQUEST_RECEIVED, buffer.toString());
 
         try {
             const configuration = await Configuration.load();
@@ -73,9 +73,12 @@ export class Client extends Socket {
 
             console.log("response", { id });
             this.send("response", id);
+            this.report(id, PacketType.RESPONSE_SEND, "");
         } catch (exception) {
             console.log("response", { id, exception });
             this.send("response", id, JSON.stringify(exception));
+            this.report(id, PacketType.FAILED, JSON.stringify(exception));
+
         }
     }
 
@@ -247,6 +250,17 @@ export class Client extends Socket {
         ]);
 
         this.write(responseBuffer);
+    }
+
+    private report(id: string, type: PacketType, data: string) {
+        const reportId = uuidv4();
+        this.send("report", reportId, JSON.stringify({
+            id: reportId,
+            correlationId: id,
+            timestamp: new Date().getDate(),
+            data: data,
+            type: type,
+        } as PacketReport));
     }
 
     private async setAndListen(server: string): Promise<void> {

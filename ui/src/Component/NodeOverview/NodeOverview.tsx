@@ -47,12 +47,12 @@ export function NodeOverview() {
             </Row>
             <Row>
                 <Col>
-                    <strong>Debug infos:</strong>:
+                    <strong>Debug infos:</strong>
                     <Table>
                         <tbody>
                             <tr>
                                 <td>Auto refresh</td>
-                                <td>{autoRefresh}</td>
+                                <td>{autoRefresh ? "true" : "false"}</td>
                             </tr>
                             <tr>
                                 <td>Timeout</td>

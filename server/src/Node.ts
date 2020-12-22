@@ -2,6 +2,8 @@ import { Socket } from "net";
 import { NodeConfiguration } from "./NodeConfiguration";
 import { Logger } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
+import { Reporting } from "./Reporting";
+import { PacketType } from "./Types";
 
 export class Node {
 
@@ -27,7 +29,10 @@ export class Node {
 
     private responses: Record<string, (data: string) => void> = {};
 
-    public constructor(socket: Socket, onConnect: (node: Node) => void, onDisconnect: (node: Node) => void) {
+    private reporting: Reporting;
+
+    public constructor(reporting: Reporting, socket: Socket, onConnect: (node: Node) => void, onDisconnect: (node: Node) => void) {
+        this.reporting = reporting;
         this.onConnect = onConnect;
         this.onDisconnect = onDisconnect;
         this.socket = socket;
@@ -92,6 +97,14 @@ export class Node {
     public request(command: string, buffer: Buffer = Buffer.from("")) {
         const [dataBuffer, id] = this.create(command, buffer);
 
+        this.reporting.report({
+            correlationId: id,
+            timestamp: new Date().getDate(),
+            type: PacketType.REQUEST_SENT,
+            data: dataBuffer.toString(),
+            id: uuidv4(),
+        });
+
         return new Promise<string>((resolve, reject) => {
             const send = this.socket.write(dataBuffer);
 
@@ -104,6 +117,10 @@ export class Node {
                 resolve(data);
             };
         });
+    }
+
+    public getAddress(): string {
+        return this.socket.remoteAddress as string;
     }
 
     private create(command: string, buffer: Buffer): [Buffer, string] {
@@ -129,19 +146,27 @@ export class Node {
         const [command, id, data] = buffer.toString().split(":");
         const encodedData = Buffer.from(data, "base64").toString("ascii");
 
-        if (command !== "configuration") {
-            console.log({ command, id, data, encodedData });
-        }
-
         try {
             if (command === "response") {
                 if (!(id in this.responses)) {
                     throw new Error(`No response found for: ${JSON.stringify({ command, id, data })}`);
                 }
 
+                this.reporting.report({
+                    correlationId: id,
+                    timestamp: new Date().getDate(),
+                    type: PacketType.RESPONSE_RECEIVED,
+                    data: buffer.toString(),
+                    id: uuidv4(),
+                });
+
                 const handler = this.responses[id];
 
                 handler(data);
+            } else if (command === "report") {
+                const report = JSON.parse(data);
+
+                this.reporting.report(report);
             } else if (command === "configuration") {
                 const configuration = JSON.parse(encodedData) as NodeConfiguration;
 
@@ -155,11 +180,7 @@ export class Node {
                 }
             }
         } catch (exception) {
-            console.log({ command, id, data, encodedData, exception });
+            this.logger.error(JSON.stringify({ command, id, data, encodedData, exception }));
         }
-    }
-
-    public getAddress(): string {
-        return this.socket.remoteAddress as string;
     }
 }
