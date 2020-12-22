@@ -1,19 +1,27 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PacketReport } from "../../../../Types";
 import { joinToPackageDirectory } from "../../../../Meta";
 import { existsSync, promises as fs } from "fs";
 
 @Injectable()
 export class ReportingService {
+    private stack: PacketReport[] = [];
+
+    private readonly logger = new Logger("NodeService");
+
+    public constructor() {
+        this.loop()
+            .catch((error) => {
+                this.logger.error(error.message, error.stack);
+            });
+    }
 
     private static getFile() {
         return joinToPackageDirectory("reporting.json");
     }
 
-    public async report(report: PacketReport) {
-        const reports = await this.load();
-        reports.push(report);
-        await this.save(reports);
+    public report(report: PacketReport) {
+        this.stack.push(report);
     }
 
     public async load(): Promise<PacketReport[]> {
@@ -30,5 +38,20 @@ export class ReportingService {
     public async save(reports: PacketReport[]): Promise<void> {
         const file = ReportingService.getFile();
         await fs.writeFile(file, JSON.stringify(reports));
+    }
+
+    private async loop(): Promise<void> {
+        const stack = [...this.stack];
+        this.stack = [];
+
+        const reports = await this.load();
+
+        reports.push(...stack);
+
+        await this.save(reports);
+
+        setTimeout(() => {
+            this.loop();
+        }, 1000);
     }
 }

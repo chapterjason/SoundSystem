@@ -94,7 +94,7 @@ export class Node {
         };
     }
 
-    public request(command: string, buffer: Buffer = Buffer.from("")) {
+    public async request(command: string, buffer: Buffer = Buffer.from("")) {
         const [dataBuffer, id] = this.create(command, buffer);
 
         this.reporting.report({
