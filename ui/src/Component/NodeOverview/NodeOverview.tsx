@@ -6,14 +6,17 @@ import { Table } from "react-bootstrap";
 import { Node } from "../Node/Node";
 
 export function NodeOverview() {
-    const { nodes, autoRefresh, updated } = useValues(NodeOverviewLogic);
+    const { nodes, autoRefresh, updated, requestTime } = useValues(NodeOverviewLogic);
     const { update } = useActions(NodeOverviewLogic);
 
     useEffect(() => {
         if (updated && autoRefresh) {
+            const timeout = requestTime >= 1000 ? 0 : (1000 - requestTime);
+
             let timeoutId = setTimeout(() => {
                 update();
-            }, 1000);
+                console.log(new Date());
+            }, timeout);
 
             return () => clearInterval(timeoutId);
         }

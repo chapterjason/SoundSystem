@@ -7,6 +7,8 @@ interface Values {
     autoRefresh: boolean;
 
     updated: boolean;
+
+    requestTime: number;
 }
 
 interface Actions {
@@ -14,7 +16,10 @@ interface Actions {
 
     setAutoRefresh: (autoRefresh: boolean) => { autoRefresh: boolean };
 
+    setRequestTime: (requestTime: number) => { requestTime: number };
+
     update: () => true;
+
     updateDone: () => true;
 }
 

@@ -7,6 +7,7 @@ export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
     actions: {
         setAutoRefresh: (autoRefresh) => ({ autoRefresh }),
         setNodes: (nodes) => ({ nodes }),
+        setRequestTime: (requestTime: number) => ({ requestTime }),
         update: true,
         updateDone: true,
     },
@@ -21,10 +22,16 @@ export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
             update: () => false,
             updateDone: () => true,
         }],
+        requestTime: [0, {
+            setRequestTime: (_, { requestTime }) => requestTime,
+        }],
     },
     listeners: ({ actions }) => ({
         update: async () => {
+            const requestStartedAt = new Date().getTime();
             const response = await Axios.get<{ nodes: Record<string, Node> }>("/node");
+            const responseReceivedAt = new Date().getTime();
+            actions.setRequestTime(responseReceivedAt - requestStartedAt);
             actions.setNodes(response.data.nodes);
             actions.updateDone();
         },
