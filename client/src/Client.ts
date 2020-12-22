@@ -260,6 +260,7 @@ export class Client extends Socket {
             timestamp: Date.now(),
             data: data,
             type: type,
+            nodeId: this.id,
         } as PacketReport));
     }
 

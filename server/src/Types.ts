@@ -14,6 +14,8 @@ export interface PacketReport {
 
     correlationId: string;
 
+    nodeId: string;
+
     type: PacketType;
 
     timestamp: number; // Date

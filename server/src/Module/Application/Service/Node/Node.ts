@@ -103,6 +103,7 @@ export class Node {
             type: PacketType.REQUEST_SENT,
             data: dataBuffer.toString(),
             id: uuidv4(),
+            nodeId: this.getId(),
         });
 
         return new Promise<string>((resolve, reject) => {
@@ -158,6 +159,7 @@ export class Node {
                     type: PacketType.RESPONSE_RECEIVED,
                     data: buffer.toString(),
                     id: uuidv4(),
+                    nodeId: this.getId(),
                 });
 
                 const handler = this.responses[id];
