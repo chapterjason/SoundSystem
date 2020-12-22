@@ -1,9 +1,9 @@
 import { EnvironmentLoader } from "@mscs/environment";
 import { NestFactory } from "@nestjs/core";
-import { NestExpressApplication } from "@nestjs/platform-express";
 import { ApplicationModule } from "./Module/Application/ApplicationModule";
 import { ENVIRONMENT, joinToPackageDirectory } from "./Meta";
 import { Logger } from "@nestjs/common";
+import { FastifyAdapter, NestFastifyApplication } from "@nestjs/platform-fastify";
 
 const DEFAULT_PORT = 80;
 
@@ -18,11 +18,20 @@ async function bootstrap() {
 }
 
 async function runtime(APP_PORT: number) {
-    const application = await NestFactory.create<NestExpressApplication>(ApplicationModule);
+    const fastify = new FastifyAdapter();
+    const application = await NestFactory.create<NestFastifyApplication>(ApplicationModule, fastify);
 
-    application.useStaticAssets(joinToPackageDirectory("public"));
-    application.setBaseViewsDir(joinToPackageDirectory("templates"));
-    application.setViewEngine("twig");
+    application.useStaticAssets({
+        root: joinToPackageDirectory("public"),
+        prefix: "/public/",
+    });
+
+    application.setViewEngine({
+        engine: {
+            twig: require("twig"),
+        },
+        templates: joinToPackageDirectory("templates"),
+    });
 
     (new Logger("Runtime")).log(`Application listen to: ${ENVIRONMENT.get("APP_IP")}:${APP_PORT}`);
 
