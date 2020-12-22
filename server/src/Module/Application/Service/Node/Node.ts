@@ -3,7 +3,7 @@ import { NodeConfiguration } from "../../../../NodeConfiguration";
 import { Logger } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
 import { ReportingService } from "../Reporting/ReportingService";
-import { PacketType } from "../../../../Types";
+import { PacketReport, PacketType } from "../../../../Types";
 
 export class Node {
 
@@ -162,9 +162,9 @@ export class Node {
 
                 const handler = this.responses[id];
 
-                handler(data);
+                handler(encodedData);
             } else if (command === "report") {
-                const report = JSON.parse(data);
+                const report = JSON.parse(encodedData) as PacketReport;
 
                 this.reporting.report(report);
             } else if (command === "configuration") {
