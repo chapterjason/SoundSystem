@@ -1,8 +1,8 @@
 import { Server, Socket } from "net";
-import { Node } from "../../../Node";
+import { Node } from "./Node";
 import { Logger } from "@nestjs/common";
-import { ENVIRONMENT } from "../../../Meta";
-import { Reporting } from "../../../Reporting";
+import { ENVIRONMENT } from "../../../../Meta";
+import { ReportingService } from "../Reporting/ReportingService";
 
 const DEFAULT_SERVICE_PORT = 3200;
 const SERVICE_PORT = ENVIRONMENT.has("SERVICE_PORT") ? parseInt(ENVIRONMENT.get("SERVICE_PORT"), 10) : DEFAULT_SERVICE_PORT;
@@ -14,9 +14,9 @@ export class NodeService extends Server {
 
     private readonly logger = new Logger("NodeService");
 
-    private reporting: Reporting;
+    private reporting: ReportingService;
 
-    public constructor(reporting: Reporting) {
+    public constructor(reporting: ReportingService) {
         super();
 
         this.reporting = reporting;

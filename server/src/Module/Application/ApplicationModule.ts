@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { HomeController } from "./Controller/HomeController";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { NodeController } from "./Controller/NodeController";
-import { NodeService } from "./Service/NodeService";
+import { NodeService } from "./Service/Node/NodeService";
 import { joinToPackageDirectory } from "../../Meta";
 import { HealthController } from "./Controller/HealthController";
 
@@ -13,6 +13,7 @@ import { HealthController } from "./Controller/HealthController";
         NodeController,
     ],
     providers: [
+        NodeService,
         NodeService,
     ],
     imports: [

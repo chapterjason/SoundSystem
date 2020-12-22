@@ -1,9 +1,9 @@
 import { Socket } from "net";
-import { NodeConfiguration } from "./NodeConfiguration";
+import { NodeConfiguration } from "../../../../NodeConfiguration";
 import { Logger } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
-import { Reporting } from "./Reporting";
-import { PacketType } from "./Types";
+import { ReportingService } from "../Reporting/ReportingService";
+import { PacketType } from "../../../../Types";
 
 export class Node {
 
@@ -29,9 +29,9 @@ export class Node {
 
     private responses: Record<string, (data: string) => void> = {};
 
-    private reporting: Reporting;
+    private reporting: ReportingService;
 
-    public constructor(reporting: Reporting, socket: Socket, onConnect: (node: Node) => void, onDisconnect: (node: Node) => void) {
+    public constructor(reporting: ReportingService, socket: Socket, onConnect: (node: Node) => void, onDisconnect: (node: Node) => void) {
         this.reporting = reporting;
         this.onConnect = onConnect;
         this.onDisconnect = onDisconnect;

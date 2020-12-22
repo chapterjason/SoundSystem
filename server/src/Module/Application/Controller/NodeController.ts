@@ -1,6 +1,6 @@
 import { Body, Controller, Get, NotFoundException, Param, Post, Scope } from "@nestjs/common";
 import { Stream } from "../../../Types";
-import { NodeService } from "../Service/NodeService";
+import { NodeService } from "../Service/Node/NodeService";
 
 @Controller({ scope: Scope.REQUEST })
 export class NodeController {

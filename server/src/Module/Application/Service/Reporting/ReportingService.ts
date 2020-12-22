@@ -1,8 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { PacketReport } from "./Types";
+import { PacketReport } from "../../../../Types";
 
 @Injectable()
-export class Reporting {
+export class ReportingService {
 
     public report(report: PacketReport) {
         console.log(report);
