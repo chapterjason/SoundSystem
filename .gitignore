@@ -10,3 +10,5 @@ scripts.zip
 
 # DS_Store
 .DS_Store
+
+server/reporting.json
