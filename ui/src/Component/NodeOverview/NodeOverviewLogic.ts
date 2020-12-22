@@ -8,6 +8,7 @@ export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
         setAutoRefresh: (autoRefresh) => ({ autoRefresh }),
         setNodes: (nodes) => ({ nodes }),
         setRequestTime: (requestTime: number) => ({ requestTime }),
+        setTimeout: (timeout: number) => ({ timeout }),
         update: true,
         updateDone: true,
     },
@@ -24,6 +25,9 @@ export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
         }],
         requestTime: [0, {
             setRequestTime: (_, { requestTime }) => requestTime,
+        }],
+        timeout: [1000, {
+            setTimeout: (_, { timeout }) => timeout,
         }],
     },
     listeners: ({ actions }) => ({

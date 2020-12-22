@@ -9,6 +9,8 @@ interface Values {
     updated: boolean;
 
     requestTime: number;
+
+    timeout: number;
 }
 
 interface Actions {
@@ -17,6 +19,8 @@ interface Actions {
     setAutoRefresh: (autoRefresh: boolean) => { autoRefresh: boolean };
 
     setRequestTime: (requestTime: number) => { requestTime: number };
+
+    setTimeout: (timeout: number) => { timeout: number };
 
     update: () => true;
 
