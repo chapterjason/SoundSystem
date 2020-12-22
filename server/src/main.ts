@@ -35,9 +35,13 @@ async function runtime(APP_PORT: number) {
         templates: joinToPackageDirectory("templates"),
     });
 
-    (new Logger("Runtime")).log(`Application listen to: ${ENVIRONMENT.get("APP_IP")}:${APP_PORT}`);
+    await application.listen(APP_PORT, '0.0.0.0', (error, address) => {
+        if (error) {
+            throw error;
+        }
 
-    await application.listen(APP_PORT);
+        (new Logger("Runtime")).log(`Application listen to: ${address}/${ENVIRONMENT.get("APP_IP")}:${APP_PORT}`);
+    });
 }
 
 bootstrap()
