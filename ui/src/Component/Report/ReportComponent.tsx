@@ -4,8 +4,7 @@ import { Col, Container, Row } from "react-bootstrap";
 import { useActions, useValues } from "kea";
 import { ReportLogic } from "./ReportLogic";
 import "./report.scss";
-import { HorizontalGridLines, VerticalBarSeries, VerticalGridLines, XAxis, XYPlot, YAxis } from "react-vis";
-import { PacketReport } from "../../Types";
+import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts";
 
 export function ReportComponent() {
     const { reports, autoRefresh, updated, requestTime, timeout } = useValues(ReportLogic);
@@ -27,17 +26,23 @@ export function ReportComponent() {
         <Container>
             <Row>
                 <Col>
-                    <XYPlot
-                        width={300}
+                    <BarChart
+                        width={500}
                         height={300}
-                        getX={(packet: PacketReport & { index: number }) => packet.index}
-                        getY={(packet: PacketReport & { index: number }) => new Date(packet.timestamp)}>
-                        <VerticalGridLines/>
-                        <HorizontalGridLines/>
-                        <XAxis/>
+                        data={reports}
+                        margin={{
+                            top: 20, right: 30, left: 20, bottom: 5,
+                        }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3"/>
+                        <XAxis dataKey="id"/>
                         <YAxis/>
-                        <VerticalBarSeries barWidth={20} data={reports.map((report, index) => report.packets.map(packet => ({ ...packet, index })))}/>
-                    </XYPlot>
+                        <Tooltip/>
+                        <Legend/>
+                        <Bar dataKey="request" stackId="a" fill="#8884d8"/>
+                        <Bar dataKey="work" stackId="b" fill="#82ca9d"/>
+                        <Bar dataKey="respone" stackId="c" fill="#82ca9d"/>
+                    </BarChart>
                 </Col>
             </Row>
             <pre><code>{JSON.stringify(reports, null, "  ")}</code></pre>

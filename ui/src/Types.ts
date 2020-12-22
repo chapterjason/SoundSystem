@@ -43,5 +43,10 @@ export interface PacketReport {
 
 export interface Report {
     id: string;
-    packets: PacketReport[];
+
+    request: number;
+
+    work: number
+
+    response: number;
 }

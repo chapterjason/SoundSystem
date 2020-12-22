@@ -51,20 +51,29 @@ export const ReportLogic = kea<ReportLogicType>({
             (packets: PacketReport[]) => {
                 const reports: Report[] = [];
 
-                for (const packet of packets) {
-                    const report = reports.find(report => report.id === packet.correlationId);
+                const grouped = packets.reduce((previous, next) => {
+                    return {
+                        ...previous,
+                        ...{
+                            [next.correlationId]: [
+                                ...(previous[next.correlationId] ?? []),
+                                next,
+                            ].sort((a, b) => a.timestamp - b.timestamp),
+                        },
+                    };
+                }, {} as Record<string, PacketReport[]>);
 
-                    if (!report) {
-                        reports.push({
-                            id: packet.correlationId,
-                            packets: [packet],
-                        });
+                const keys = Object.keys(grouped);
 
-                        continue;
-                    }
+                for (const key of keys) {
+                    const [requestSent, requestReceived, responseSent, responseReceived] = grouped[key];
 
-                    report.packets.push(packet);
-                    report.packets.sort((a, b) => a.timestamp - b.timestamp);
+                    reports.push({
+                        id: key,
+                        request: requestReceived.timestamp - requestSent.timestamp,
+                        work: responseSent.timestamp - requestReceived.timestamp,
+                        response: responseReceived.timestamp - responseSent.timestamp,
+                    });
                 }
 
                 return reports;
