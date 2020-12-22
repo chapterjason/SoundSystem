@@ -25,7 +25,7 @@ async function runtime(APP_PORT: number) {
 
     application.useStaticAssets({
         root: joinToPackageDirectory("public"),
-        prefix: "/public/",
+        prefix: "/",
     });
 
     application.setViewEngine({
