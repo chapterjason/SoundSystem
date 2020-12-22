@@ -22,7 +22,11 @@ export function ReportComponent() {
 
     return (
         <Container>
-            {JSON.stringify(reports, null, "  ")}
+            <pre>
+                <code>
+                    {JSON.stringify(reports, null, "  ")}
+                </code>
+            </pre>
         </Container>
     );
 }
