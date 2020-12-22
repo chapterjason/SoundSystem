@@ -99,7 +99,7 @@ export class Node {
 
         this.reporting.report({
             correlationId: id,
-            timestamp: new Date().getDate(),
+            timestamp: Date.now(),
             type: PacketType.REQUEST_SENT,
             data: dataBuffer.toString(),
             id: uuidv4(),
@@ -154,7 +154,7 @@ export class Node {
 
                 this.reporting.report({
                     correlationId: id,
-                    timestamp: new Date().getDate(),
+                    timestamp: Date.now(),
                     type: PacketType.RESPONSE_RECEIVED,
                     data: buffer.toString(),
                     id: uuidv4(),
@@ -180,7 +180,7 @@ export class Node {
                 }
             }
         } catch (exception) {
-            this.logger.error(JSON.stringify({ command, id, data, encodedData, exception }));
+            this.logger.error(JSON.stringify({ command, id, data, encodedData, message: exception.message, stack: exception.stack }));
         }
     }
 }

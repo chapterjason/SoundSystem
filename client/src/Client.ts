@@ -257,7 +257,7 @@ export class Client extends Socket {
         this.send("report", reportId, JSON.stringify({
             id: reportId,
             correlationId: id,
-            timestamp: new Date().getDate(),
+            timestamp: Date.now(),
             data: data,
             type: type,
         } as PacketReport));
