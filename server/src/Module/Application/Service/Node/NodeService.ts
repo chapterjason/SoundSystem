@@ -17,7 +17,7 @@ export class NodeService extends Server {
 
     private reporting: ReportingService;
 
-    public constructor(@Inject() reporting: ReportingService) {
+    public constructor(reporting: ReportingService) {
         super();
 
         this.reporting = reporting;

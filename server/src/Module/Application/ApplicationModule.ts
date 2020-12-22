@@ -14,8 +14,8 @@ import { ReportingService } from "./Service/Reporting/ReportingService";
         NodeController,
     ],
     providers: [
-        NodeService,
         ReportingService,
+        NodeService,
     ],
     imports: [
         TypeOrmModule.forRoot(require(joinToPackageDirectory("ormconfig.js"))),

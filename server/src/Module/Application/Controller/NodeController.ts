@@ -1,4 +1,4 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Scope } from "@nestjs/common";
+import { Body, Controller, Get, Inject, NotFoundException, Param, Post, Scope } from "@nestjs/common";
 import { Stream } from "../../../Types";
 import { NodeService } from "../Service/Node/NodeService";
 
