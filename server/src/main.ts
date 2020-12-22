@@ -19,7 +19,9 @@ async function bootstrap() {
 
 async function runtime(APP_PORT: number) {
     const fastify = new FastifyAdapter();
-    const application = await NestFactory.create<NestFastifyApplication>(ApplicationModule, fastify);
+    const application = await NestFactory.create<NestFastifyApplication>(ApplicationModule, fastify, {
+        logger: ["log", "error", "warn", "debug", "verbose"],
+    });
 
     application.useStaticAssets({
         root: joinToPackageDirectory("public"),
