@@ -5,6 +5,7 @@ import { NodeController } from "./Controller/NodeController";
 import { NodeService } from "./Service/Node/NodeService";
 import { joinToPackageDirectory } from "../../Meta";
 import { HealthController } from "./Controller/HealthController";
+import { ReportingService } from "./Service/Reporting/ReportingService";
 
 @Module({
     controllers: [
@@ -14,7 +15,7 @@ import { HealthController } from "./Controller/HealthController";
     ],
     providers: [
         NodeService,
-        NodeService,
+        ReportingService,
     ],
     imports: [
         TypeOrmModule.forRoot(require(joinToPackageDirectory("ormconfig.js"))),

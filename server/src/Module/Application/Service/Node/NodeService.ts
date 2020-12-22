@@ -1,6 +1,6 @@
 import { Server, Socket } from "net";
 import { Node } from "./Node";
-import { Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ENVIRONMENT } from "../../../../Meta";
 import { ReportingService } from "../Reporting/ReportingService";
 
@@ -8,6 +8,7 @@ const DEFAULT_SERVICE_PORT = 3200;
 const SERVICE_PORT = ENVIRONMENT.has("SERVICE_PORT") ? parseInt(ENVIRONMENT.get("SERVICE_PORT"), 10) : DEFAULT_SERVICE_PORT;
 ENVIRONMENT.set("SERVICE_PORT", SERVICE_PORT.toString());
 
+@Injectable()
 export class NodeService extends Server {
 
     private nodes: Record<string, Node> = {};
@@ -16,7 +17,7 @@ export class NodeService extends Server {
 
     private reporting: ReportingService;
 
-    public constructor(reporting: ReportingService) {
+    public constructor(@Inject() reporting: ReportingService) {
         super();
 
         this.reporting = reporting;
