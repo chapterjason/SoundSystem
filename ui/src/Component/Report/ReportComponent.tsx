@@ -5,6 +5,7 @@ import { useActions, useValues } from "kea";
 import { ReportLogic } from "./ReportLogic";
 import "./report.scss";
 import { HorizontalGridLines, VerticalBarSeries, VerticalGridLines, XAxis, XYPlot, YAxis } from "react-vis";
+import { PacketReport } from "../../Types";
 
 export function ReportComponent() {
     const { reports, autoRefresh, updated, requestTime, timeout } = useValues(ReportLogic);
@@ -26,24 +27,16 @@ export function ReportComponent() {
         <Container>
             <Row>
                 <Col>
-                    <XYPlot width={300} height={300} stackBy="y" xType="time">
+                    <XYPlot
+                        width={300}
+                        height={300}
+                        getX={(packet: PacketReport & { index: number }) => packet.index}
+                        getY={(packet: PacketReport & { index: number }) => new Date(packet.timestamp)}>
                         <VerticalGridLines/>
                         <HorizontalGridLines/>
                         <XAxis/>
                         <YAxis/>
-                        {reports.map(report => {
-                            const data = [...report.packets]
-                                .map((packet, index) => {
-                                    return {
-                                        x: new Date(packet.timestamp),
-                                        y: index,
-                                    };
-                                }) as any;
-
-                            return (
-                                <VerticalBarSeries barWidth={20} data={data}/>
-                            );
-                        })}
+                        <VerticalBarSeries barWidth={20} data={reports.map((report, index) => report.packets.map(packet => ({ ...packet, index })))}/>
                     </XYPlot>
                 </Col>
             </Row>
