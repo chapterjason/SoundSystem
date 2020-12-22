@@ -11,7 +11,7 @@ export function NodeOverview() {
 
     useEffect(() => {
         if (updated && autoRefresh) {
-            const actualTimeout = requestTime >= timeout ? 0 : ((timeout - requestTime) + 1);
+            const actualTimeout = requestTime >= timeout ? 0 : (timeout - requestTime);
 
             let timeoutId = setTimeout(() => {
                 update();
@@ -64,12 +64,12 @@ export function NodeOverview() {
                             </tr>
                             <tr>
                                 <td>Timeout time</td>
-                                <td>{requestTime >= timeout ? 0 : ((timeout - requestTime) + 1)}</td>
+                                <td>{requestTime >= timeout ? 0 : (timeout - requestTime)}</td>
                             </tr>
                         </tbody>
                     </Table>
                     <pre>
-                        <code>{JSON.stringify(nodes)}</code>
+                        <code>{JSON.stringify(nodes, null, "  ")}</code>
                     </pre>
                 </Col>
             </Row>
