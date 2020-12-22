@@ -44,11 +44,13 @@ export class ReportingService {
         const stack = [...this.stack];
         this.stack = [];
 
-        const reports = await this.load();
+        if (stack.length > 0) {
+            const reports = await this.load();
 
-        reports.push(...stack);
+            reports.push(...stack);
 
-        await this.save(reports);
+            await this.save(reports);
+        }
 
         setTimeout(() => {
             this.loop();
