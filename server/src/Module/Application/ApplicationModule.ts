@@ -6,12 +6,14 @@ import { NodeService } from "./Service/Node/NodeService";
 import { joinToPackageDirectory } from "../../Meta";
 import { HealthController } from "./Controller/HealthController";
 import { ReportingService } from "./Service/Reporting/ReportingService";
+import { ReportController } from "./Controller/ReportController";
 
 @Module({
     controllers: [
         HomeController,
         HealthController,
         NodeController,
+        ReportController,
     ],
     providers: [
         ReportingService,
