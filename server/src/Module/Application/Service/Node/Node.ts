@@ -180,7 +180,8 @@ export class Node {
                 }
             }
         } catch (exception) {
-            this.logger.error(JSON.stringify({ command, id, data, encodedData, message: exception.message, stack: exception.stack }));
+            this.logger.error(exception.message, exception.stack);
+            this.logger.error(JSON.stringify({ command, id, data }));
         }
     }
 }
