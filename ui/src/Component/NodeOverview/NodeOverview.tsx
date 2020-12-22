@@ -12,10 +12,9 @@ export function NodeOverview() {
     useEffect(() => {
         if (updated && autoRefresh) {
             const timeout = requestTime >= 1000 ? 0 : (1000 - requestTime);
-
+            console.log(timeout);
             let timeoutId = setTimeout(() => {
                 update();
-                console.log(new Date());
             }, timeout);
 
             return () => clearInterval(timeoutId);
