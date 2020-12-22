@@ -27,8 +27,8 @@ export function ReportComponent() {
             <Row>
                 <Col>
                     <BarChart
-                        width={500}
-                        height={300}
+                        width={1200}
+                        height={400}
                         data={reports}
                         margin={{
                             top: 20, right: 30, left: 20, bottom: 5,
@@ -40,8 +40,8 @@ export function ReportComponent() {
                         <Tooltip/>
                         <Legend/>
                         <Bar dataKey="request" stackId="a" fill="#8884d8"/>
-                        <Bar dataKey="work" stackId="b" fill="#82ca9d"/>
-                        <Bar dataKey="respone" stackId="c" fill="#82ca9d"/>
+                        <Bar dataKey="work" stackId="a" fill="#82ca9d"/>
+                        <Bar dataKey="respone" stackId="a" fill="#82ca9d"/>
                     </BarChart>
                 </Col>
             </Row>
