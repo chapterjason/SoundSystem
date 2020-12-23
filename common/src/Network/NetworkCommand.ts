@@ -3,7 +3,7 @@ import { Buffer } from "buffer";
 
 export class NetworkCommand {
 
-    private static commandExpression = /^\000(.+?)\017(.+?)\017(.*?)\004$/m;
+    private static SEPARATOR = String.fromCharCode(248);
 
     private readonly command: string;
 
@@ -18,18 +18,17 @@ export class NetworkCommand {
     }
 
     public static parse(buffer: Buffer): NetworkCommand {
-        const match = this.commandExpression.exec(buffer.toString());
+        const items = buffer.toString().split(NetworkCommand.SEPARATOR);
+        const [id, command, data] = items;
 
-        if (!match) {
-            throw new Error("Invalid data format.");
+        if ((!id && !command) || (items.length !== 3)) {
+            throw new Error("Invalid NetworkCommand data");
         }
-
-        const [id, command, data] = [...match];
 
         return new NetworkCommand(
             Buffer.from(id, "base64").toString("ascii"),
             Buffer.from(command, "base64").toString("ascii"),
-            Buffer.from(data, "base64")
+            Buffer.from(data, "base64"),
         );
     }
 
@@ -39,13 +38,11 @@ export class NetworkCommand {
 
     public toBuffer() {
         return Buffer.from([
-            String.fromCharCode(0),
             Buffer.from(this.id).toString("base64"),
-            String.fromCharCode(23),
+            NetworkCommand.SEPARATOR,
             Buffer.from(this.command).toString("base64"),
-            String.fromCharCode(23),
+            NetworkCommand.SEPARATOR,
             this.data.toString("base64"),
-            String.fromCharCode(4),
         ].join(""));
     }
 
