@@ -3,6 +3,7 @@ import * as React from "react";
 import { NodeComponentLogic } from "../Node/NodeComponentLogic";
 import { useActions } from "kea";
 import { SetModeProps } from "./SetModeProps";
+import { Mode } from "common";
 
 export function SetMode(props: SetModeProps) {
     const logic = NodeComponentLogic(props);
@@ -22,7 +23,7 @@ export function SetMode(props: SetModeProps) {
                     <h6>Modus:</h6>
                     <Row className={"mb-3"}>
                         <Col>
-                            <Button variant={"secondary"} block onClick={() => setMode("idle")}>
+                            <Button variant={"secondary"} block onClick={() => setMode(Mode.IDLE)}>
                                 <span className={"fas fa-fw fa-times"}/>
                                 {" "}
                                 Idle
@@ -31,14 +32,14 @@ export function SetMode(props: SetModeProps) {
                     </Row>
                     <Row className={"mb-3"}>
                         <Col>
-                            <Button variant={"primary"} block onClick={() => setMode("stream")}>
+                            <Button variant={"primary"} block onClick={() => setMode(Mode.STREAM)}>
                                 <span className={"fas fa-fw fa-broadcast-tower"}/>
                                 {" "}
                                 Stream
                             </Button>
                         </Col>
                         <Col>
-                            <Button variant={"primary"} block onClick={() => setMode("single")}>
+                            <Button variant={"primary"} block onClick={() => setMode(Mode.SINGLE)}>
                                 <span className={"far fa-fw fa-dot-circle"}/>
                                 {" "}
                                 Single
@@ -47,7 +48,7 @@ export function SetMode(props: SetModeProps) {
                     </Row>
                     <Row className={"mb-3"}>
                         <Col>
-                            <Button variant={"warning"} block onClick={() => setMode("listen")}>
+                            <Button variant={"warning"} block onClick={() => setMode(Mode.LISTEN)}>
                                 <span className={"fas fa-fw fa-satellite-dish"}/>
                                 {" "}
                                 Listen

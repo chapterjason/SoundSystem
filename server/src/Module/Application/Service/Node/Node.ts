@@ -2,7 +2,7 @@ import { Socket } from "net";
 import { Logger } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
 import { ReportingService } from "../Reporting/ReportingService";
-import { NetworkCommand, NodeData, NodeResponseData, PacketReport, PacketType } from "common";
+import { Mode, NetworkCommand, NodeData, NodeResponseData, PacketReport, PacketType, Stream } from "common";
 
 export class Node {
 
@@ -12,11 +12,11 @@ export class Node {
 
     private configuration: NodeData = {
         hostname: "none",
-        mode: "none",
+        mode: Mode.NONE,
         id: "none",
         volume: 32,
         server: "none",
-        stream: "none",
+        stream: Stream.NONE,
         muted: false,
     };
 

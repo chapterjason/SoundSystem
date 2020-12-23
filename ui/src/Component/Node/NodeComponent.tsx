@@ -8,6 +8,7 @@ import { SetServer } from "../Dialog/SetServer";
 import { Button, Col, Container, Form, InputGroup, Row, Spinner } from "react-bootstrap";
 import classNames from "classnames";
 import { NodeComponentProps } from "./NodeComponentProps";
+import { Mode } from "common";
 
 export function NodeComponent(props: NodeComponentProps) {
     const { id, node } = props;
@@ -31,9 +32,9 @@ export function NodeComponent(props: NodeComponentProps) {
     }
 
     const tableRowClasses = classNames({
-        "table-secondary": mode === "idle",
-        "table-primary": mode === "stream" || mode === "single",
-        "table-warning": mode === "listen",
+        "table-secondary": mode === Mode.IDLE,
+        "table-primary": mode === Mode.STREAM || mode === Mode.SINGLE,
+        "table-warning": mode === Mode.LISTEN,
     });
 
     return (
@@ -63,20 +64,20 @@ export function NodeComponent(props: NodeComponentProps) {
                 </InputGroup>
             </td>
             <td>
-                {mode !== "idle" && (
+                {mode !== Mode.IDLE && (
                     <InputGroup size={"sm"}>
                         <InputGroup.Prepend>
-                            {mode === "listen" && (
+                            {mode === Mode.LISTEN && (
                                 <Button variant={"primary"} disabled={loading} size={"sm"} onClick={showSetServer}>set Server</Button>
                             )}
-                            {(mode === "stream" || mode === "single") && (
+                            {(mode === Mode.STREAM || mode === Mode.SINGLE) && (
                                 <Button variant={"primary"} disabled={loading} size={"sm"} onClick={showSetStream}>set Stream</Button>
                             )}
                         </InputGroup.Prepend>
                         <InputGroup.Append>
                             <InputGroup.Text>
-                                {(mode === "stream" || mode === "single") && stream}
-                                {mode === "listen" && (listenNode?.hostname ?? "<unknown node>")}
+                                {(mode === Mode.STREAM || mode === Mode.SINGLE) && stream}
+                                {mode === Mode.LISTEN && (listenNode?.hostname ?? "<unknown node>")}
                             </InputGroup.Text>
                         </InputGroup.Append>
                     </InputGroup>

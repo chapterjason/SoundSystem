@@ -2,7 +2,7 @@ import { kea } from "kea";
 import { NodeComponentLogicType } from "./NodeComponentLogicType";
 import Axios from "axios";
 import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
-import { NodeData, NodeResponseData } from "common";
+import { Mode, NodeResponseData } from "common";
 
 export const NodeComponentLogic = kea<NodeComponentLogicType>({
     key: props => props.node.id,
@@ -65,11 +65,11 @@ export const NodeComponentLogic = kea<NodeComponentLogicType>({
         setMode: ({ mode }) => {
             actions.hideSetMode();
 
-            if (mode === "stream" || mode === "single") {
+            if (mode === Mode.STREAM || mode === Mode.SINGLE) {
                 actions.showSetStream();
-            } else if (mode === "listen") {
+            } else if (mode === Mode.LISTEN) {
                 actions.showSetServer();
-            } else if (mode === "idle") {
+            } else if (mode === Mode.IDLE) {
                 actions.save();
             }
         },
@@ -122,19 +122,19 @@ export const NodeComponentLogic = kea<NodeComponentLogicType>({
                 targetMode = props.node.mode;
             }
 
-            if (targetMode === "stream") {
+            if (targetMode === Mode.STREAM) {
                 if (targetStream) {
                     await Axios.post("/node/" + props.id + "/stream", { "stream": targetStream });
                 }
-            } else if (targetMode === "single") {
+            } else if (targetMode === Mode.SINGLE) {
                 if (targetStream) {
                     await Axios.post("/node/" + props.id + "/single", { "stream": targetStream });
                 }
-            } else if (targetMode === "listen") {
+            } else if (targetMode === Mode.LISTEN) {
                 if (targetServer) {
                     await Axios.post("/node/" + props.id + "/listen", { "server": targetServer });
                 }
-            } else if (targetMode === "idle") {
+            } else if (targetMode === Mode.IDLE) {
                 await Axios.post("/node/" + props.id + "/idle");
             }
 

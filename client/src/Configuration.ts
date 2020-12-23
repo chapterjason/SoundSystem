@@ -6,8 +6,8 @@ import { Mode, Stream } from "common";
 export class Configuration {
 
     public static empty: ConfigurationData = {
-        stream: "none",
-        mode: "none",
+        stream: Stream.NONE,
+        mode: Mode.NONE,
         server: "",
         volume: 32,
         muted: false,
