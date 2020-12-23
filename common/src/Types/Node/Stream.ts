@@ -1,1 +1,5 @@
-export type Stream = "airplay" | "bluetooth" | "none";
+export enum Stream {
+    NONE = "none",
+    AIRPLAY = "airplay",
+    BLUETOOTH = "bluetooth",
+}

@@ -1,1 +1,7 @@
-export type Mode = "stream" | "listen" | "single" | "idle" | "none";
+export enum Mode {
+    NONE = "none",
+    IDLE = "idle",
+    STREAM = "stream",
+    SINGLE = "single",
+    LISTEN = "listen"
+}
