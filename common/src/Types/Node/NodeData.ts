@@ -1,17 +1,18 @@
-import { Mode, Stream } from "./Types";
+import { Mode } from "./Mode";
+import { Stream } from "./Stream";
 
-export interface NodeConfiguration {
+export interface NodeData {
     id: string;
 
     hostname: string;
 
     mode: Mode;
 
-    volume: number;
-
     stream: Stream;
 
     server: string;
+
+    volume: number;
 
     muted: boolean;
 }

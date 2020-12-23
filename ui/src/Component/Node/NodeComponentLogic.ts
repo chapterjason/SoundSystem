@@ -1,10 +1,10 @@
 import { kea } from "kea";
-import { NodeLogicType } from "./NodeLogicType";
+import { NodeComponentLogicType } from "./NodeComponentLogicType";
 import Axios from "axios";
 import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
-import { Node } from "../../Types";
+import { NodeData, NodeResponseData } from "common";
 
-export const NodeLogic = kea<NodeLogicType>({
+export const NodeComponentLogic = kea<NodeComponentLogicType>({
     key: props => props.node.id,
     actions: {
         setMode: (mode) => ({ mode }),
@@ -147,7 +147,7 @@ export const NodeLogic = kea<NodeLogicType>({
     selectors: ({ props }) => ({
         listenNode: [
             () => [() => NodeOverviewLogic.values.nodes, () => props.node],
-            (nodes: Record<string, Node>, node: Node) => Object.keys(nodes).map(id => {
+            (nodes: Record<string, NodeResponseData>, node: NodeResponseData) => Object.keys(nodes).map(id => {
                 return nodes[id];
             }).find((item) => item.address === node.server) ?? null,
         ],

@@ -1,23 +1,17 @@
-import { Node as SoundNode } from "../../Types";
 import * as React from "react";
 import { useEffect } from "react";
 import { useActions, useValues } from "kea";
-import { NodeLogic } from "./NodeLogic";
-import { SetMode } from "../SetMode";
-import { SetStream } from "../SetStream";
-import { SetServer } from "../SetServer";
+import { NodeComponentLogic } from "./NodeComponentLogic";
+import { SetMode } from "../Dialog/SetMode";
+import { SetStream } from "../Dialog/SetStream";
+import { SetServer } from "../Dialog/SetServer";
 import { Button, Col, Container, Form, InputGroup, Row, Spinner } from "react-bootstrap";
 import classNames from "classnames";
+import { NodeComponentProps } from "./NodeComponentProps";
 
-export interface NodeProps {
-    id: string;
-
-    node: SoundNode;
-}
-
-export function Node(props: NodeProps) {
+export function NodeComponent(props: NodeComponentProps) {
     const { id, node } = props;
-    const logic = NodeLogic(props);
+    const logic = NodeComponentLogic(props);
     const { showSetMode, setSavedVolume, unmute, mute, showSetServer, showSetStream, setVolume } = useActions(logic);
     const { loading, savedVolume, volume, listenNode, showSetMode: setModeVisible, showSetStream: setStreamVisible, showSetServer: setServerVisible } = useValues(logic);
     const { mode, stream, muted, volume: nodeVolume } = node;

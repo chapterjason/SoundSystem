@@ -1,8 +1,8 @@
 import { MakeLogicType } from "kea";
-import { Node } from "../../Types";
+import { NodeResponseData } from "common";
 
 interface Values {
-    nodes: Record<string, Node>;
+    nodes: Record<string, NodeResponseData>;
 
     autoRefresh: boolean;
 
@@ -14,7 +14,7 @@ interface Values {
 }
 
 interface Actions {
-    setNodes: (nodes: Record<string, Node>) => { nodes: Record<string, Node> }
+    setNodes: (nodes: Record<string, NodeResponseData>) => { nodes: Record<string, NodeResponseData> }
 
     setAutoRefresh: (autoRefresh: boolean) => { autoRefresh: boolean };
 

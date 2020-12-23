@@ -7,9 +7,7 @@ git stash
 git pull --rebase
 git stash pop
 
-pushd "$SCRIPT_DIRECTORY/server" || exit
-yarn
-popd || exit
+. "$SCRIPT_DIRECTORY/build_server.sh"
 
 supervisorctl stop server
 supervisorctl clear all

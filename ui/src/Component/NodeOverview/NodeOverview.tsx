@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { useActions, useValues } from "kea";
 import { NodeOverviewLogic } from "./NodeOverviewLogic";
 import { Col, Container, Row, Table } from "react-bootstrap";
-import { Node } from "../Node/Node";
+import { NodeComponent } from "../Node/NodeComponent";
 
 export function NodeOverview() {
     const { nodes, autoRefresh, updated, requestTime, timeout } = useValues(NodeOverviewLogic);
@@ -38,7 +38,7 @@ export function NodeOverview() {
                         <tbody>
                             {Object.keys(nodes).map(id => {
                                 return (
-                                    <Node id={id} node={nodes[id]} key={id}/>
+                                    <NodeComponent id={id} node={nodes[id]} key={id}/>
                                 );
                             })}
                         </tbody>

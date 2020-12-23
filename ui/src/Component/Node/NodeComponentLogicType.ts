@@ -1,5 +1,5 @@
 import { MakeLogicType } from "kea";
-import { Mode, Node, Stream } from "../../Types";
+import { Mode, NodeData, NodeResponseData, Stream } from "common";
 
 interface Values {
     showSetMode: boolean;
@@ -20,7 +20,7 @@ interface Values {
 
     savedVolume: number;
 
-    listenNode: Node | null;
+    listenNode: NodeResponseData | null;
 }
 
 interface Actions {
@@ -62,7 +62,7 @@ interface Actions {
 interface Props {
     id: string;
 
-    node: Node;
+    node: NodeResponseData;
 }
 
-export type NodeLogicType = MakeLogicType<Values, Actions, Props>
+export type NodeComponentLogicType = MakeLogicType<Values, Actions, Props>

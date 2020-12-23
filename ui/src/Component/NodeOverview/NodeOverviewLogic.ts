@@ -1,7 +1,7 @@
 import { kea } from "kea";
 import { NodeOverviewLogicType } from "./NodeOverviewLogicType";
 import Axios from "axios";
-import { Node } from "../../Types";
+import { NodeResponseData } from "common";
 
 export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
     actions: {
@@ -33,7 +33,7 @@ export const NodeOverviewLogic = kea<NodeOverviewLogicType>({
     listeners: ({ actions }) => ({
         update: async () => {
             const requestStartedAt = new Date().getTime();
-            const response = await Axios.get<{ nodes: Record<string, Node> }>("/node");
+            const response = await Axios.get<{ nodes: Record<string, NodeResponseData> }>("/node");
             const responseReceivedAt = new Date().getTime();
             actions.setRequestTime(responseReceivedAt - requestStartedAt);
             actions.setNodes(response.data.nodes);

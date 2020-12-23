@@ -2,16 +2,11 @@
 
 SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-###################################
-###################################
-echo "Prepare server"
-###################################
-###################################
-pushd "$SCRIPT_DIRECTORY/server" || exit
-yarn
-popd || exit
+# shellcheck source=./build_common.sh
+"$SCRIPT_DIRECTORY/build_common.sh"
 
-mkdir -p "$SCRIPT_DIRECTORY/server/public"
+# shellcheck source=./build_server.sh
+"$SCRIPT_DIRECTORY/build_server.sh"
 
 # shellcheck source=./build_scripts.sh
 "$SCRIPT_DIRECTORY/build_scripts.sh"

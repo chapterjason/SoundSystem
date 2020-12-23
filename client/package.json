@@ -21,6 +21,7 @@
   "dependencies": {
     "@mscs/environment": "^0.1.0",
     "@mscs/process": "^0.4.0",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "common": "link:../common"
   }
 }

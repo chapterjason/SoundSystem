@@ -1,13 +1,13 @@
 import path from "path";
 import { ConfigurationData } from "./ConfigurationData";
 import { existsSync, promises as fs } from "fs";
-import { Mode, Stream } from "./Types";
+import { Mode, Stream } from "common";
 
 export class Configuration {
 
     public static empty: ConfigurationData = {
-        stream: "reset",
-        mode: "reset",
+        stream: "none",
+        mode: "none",
         server: "",
         volume: 32,
         muted: false,
@@ -36,22 +36,10 @@ export class Configuration {
         await this.afterSave();
     }
 
-    public static async getMode(): Promise<Mode> {
-        const config = await this.load();
-
-        return config.mode;
-    }
-
     public static async setMode(mode: Mode) {
         const config = await this.load();
         config.mode = mode;
         await this.save(config);
-    }
-
-    public static async getStream(): Promise<Stream> {
-        const config = await this.load();
-
-        return config.stream;
     }
 
     public static async setStream(stream: Stream) {
@@ -70,12 +58,6 @@ export class Configuration {
         const config = await this.load();
         config.volume = volume;
         await this.save(config);
-    }
-
-    public static async getServer(): Promise<string> {
-        const config = await this.load();
-
-        return config.server;
     }
 
     public static async setServer(server: string) {

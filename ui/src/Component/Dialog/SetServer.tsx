@@ -1,20 +1,14 @@
 import { Button, Form, Modal } from "react-bootstrap";
 import * as React from "react";
 import { useEffect, useState } from "react";
-import { Node } from "../Types";
-import { NodeLogic } from "./Node/NodeLogic";
+import { NodeComponentLogic } from "../Node/NodeComponentLogic";
 import { useActions, useValues } from "kea";
-import { NodeOverviewLogic } from "./NodeOverview/NodeOverviewLogic";
-
-export interface SetServerProps {
-    id: string;
-
-    node: Node;
-}
+import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
+import { SetServerProps } from "./SetServerProps";
 
 export function SetServer(props: SetServerProps) {
     const { node: { server, id: nodeId } } = props;
-    const logic = NodeLogic(props);
+    const logic = NodeComponentLogic(props);
     const { setServer, hideSetServer } = useActions(logic);
     const [currentServer, setCurrentServer] = useState(server);
     const { nodes } = useValues(NodeOverviewLogic);

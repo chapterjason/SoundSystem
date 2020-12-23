@@ -1,5 +1,5 @@
 import { MakeLogicType } from "kea";
-import { Node, PacketReport, Report } from "../../Types";
+import { PacketReport, Report } from "common";
 
 interface Values {
     packets: PacketReport[];

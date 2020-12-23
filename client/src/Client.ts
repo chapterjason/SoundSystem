@@ -3,7 +3,6 @@ import os from "os";
 import { v4 as uuidv4 } from "uuid";
 import { Configuration } from "./Configuration";
 import { ConfigurationData } from "./ConfigurationData";
-import { PacketReport, PacketType, Stream } from "./Types";
 import { Snapclient } from "./Snapclient";
 import { Snapserver } from "./Snapserver";
 import { Services } from "./Services";
@@ -13,6 +12,7 @@ import { ENVIRONMENT } from "./meta";
 import * as fs from "fs";
 import { existsSync } from "fs";
 import * as path from "path";
+import { NetworkCommand, PacketReport, PacketType, Stream } from "common";
 
 export class Client extends Socket {
 
@@ -43,8 +43,8 @@ export class Client extends Socket {
     }
 
     public async onData(buffer: Buffer) {
-        const [command, id, data] = buffer.toString().split(":");
-        const encodedData = Buffer.from(data, "base64").toString("ascii");
+        const networkCommand = NetworkCommand.parse(buffer);
+        const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
         this.report(id, PacketType.REQUEST_RECEIVED, buffer.toString());
 
@@ -54,29 +54,26 @@ export class Client extends Socket {
             if (command === "idle") {
                 await this.idle(true);
             } else if (command === "listen") {
-                await this.listen(configuration, encodedData);
+                await this.listen(configuration, data.toString());
             } else if (command === "mute") {
                 await this.setMuted(configuration.muted, true);
             } else if (command === "unmute") {
                 await this.setMuted(configuration.muted, false);
             } else if (command === "single") {
-                await this.single(configuration, encodedData as Stream);
+                await this.single(configuration, data.toString() as Stream);
             } else if (command === "update") {
                 console.log("Update...", (new Date()).toISOString());
                 await update();
             } else if (command === "volume") {
-                const volume = parseInt(encodedData, 10);
-                await this.setVolume(configuration.volume, volume);
+                await this.setVolume(configuration.volume, data.readUInt32BE());
             } else if (command === "stream") {
-                await this.stream(configuration, encodedData as Stream);
+                await this.stream(configuration, data.toString() as Stream);
             }
 
-            console.log("response", { id });
-            this.send("response", id);
-            this.report(id, PacketType.RESPONSE_SEND, "");
+            this.response(id);
+            this.report(id, PacketType.RESPONSE_SEND, buffer.toString());
         } catch (exception) {
-            console.log("response", { id, exception });
-            this.send("response", id, JSON.stringify(exception));
+            this.response(id, Buffer.from(JSON.stringify(exception)));
             this.report(id, PacketType.FAILED, JSON.stringify(exception));
 
         }
@@ -88,12 +85,13 @@ export class Client extends Socket {
         }
 
         const configuration = await Configuration.load();
-
-        this.send("configuration", "-1", JSON.stringify({
+        const networkCommand = NetworkCommand.create("configuration", Buffer.from(JSON.stringify({
             ...configuration,
             hostname: this.hostname,
             id: this.id,
-        }));
+        })));
+
+        this.send(networkCommand);
 
         this.sendConfigurationTimeoutId = setTimeout(async () => {
             await this.sendConfiguration();
@@ -124,7 +122,7 @@ export class Client extends Socket {
             if (configuration.server !== server) {
                 await this.setAndListen(server);
             }
-        } else if (configuration.mode === "idle" || configuration.mode === "reset") {
+        } else if (configuration.mode === "idle" || configuration.mode === "none") {
             await this.setAndListen(server);
         }
 
@@ -159,7 +157,7 @@ export class Client extends Socket {
 
                 await this.setAndStart(stream);
             }
-        } else if (configuration.mode === "idle" || configuration.mode === "reset") {
+        } else if (configuration.mode === "idle" || configuration.mode === "none") {
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
         }
@@ -190,7 +188,7 @@ export class Client extends Socket {
     public async reset() {
         await Configuration.reset();
         await Configuration.setServer("");
-        await Configuration.setStream("reset");
+        await Configuration.setStream("none");
 
         await Snapserver.stop();
         await Snapclient.stop();
@@ -228,7 +226,7 @@ export class Client extends Socket {
             await this.stream(Configuration.empty, stream);
         } else if (mode === "listen") {
             await this.listen(Configuration.empty, server);
-        } else if (mode === "reset") {
+        } else if (mode === "none") {
             await this.idle();
         }
 
@@ -240,28 +238,32 @@ export class Client extends Socket {
         console.log("---- Initialized! ----");
     }
 
-    public send(command: string, id: string = "-1", data: string = ""): void {
-        const responseBuffer = Buffer.concat([
-            Buffer.from(command),
-            Buffer.from(":"),
-            Buffer.from(id),
-            Buffer.from(":"),
-            Buffer.from(Buffer.from(data).toString("base64")),
-        ]);
-
-        this.write(responseBuffer);
+    public send(networkCommand: NetworkCommand): void {
+        this.write(networkCommand.toBuffer());
     }
 
     private report(id: string, type: PacketType, data: string) {
         const reportId = uuidv4();
-        this.send("report", reportId, JSON.stringify({
+        /*
+        "report", reportId, JSON.stringify({
             id: reportId,
             correlationId: id,
             timestamp: Date.now(),
             data: data,
             type: type,
             nodeId: this.id,
-        } as PacketReport));
+        } as PacketReport)
+         */
+        const networkCommand = NetworkCommand.create("report", Buffer.from(JSON.stringify({
+            id: reportId,
+            correlationId: id,
+            timestamp: Date.now(),
+            data: data,
+            type: type,
+            nodeId: this.id,
+        } as PacketReport)));
+
+        this.send(networkCommand);
     }
 
     private async setAndListen(server: string): Promise<void> {
@@ -349,7 +351,7 @@ export class Client extends Socket {
             await Snapserver.stop();
 
             await this.setAndStartSingle(stream);
-        } else if (configuration.mode === "idle" || configuration.mode === "reset") {
+        } else if (configuration.mode === "idle" || configuration.mode === "none") {
             await this.setAndStartSingle(stream);
         }
 
@@ -384,6 +386,11 @@ export class Client extends Socket {
 
     private async enableSingleAirplay(): Promise<void> {
         await Services.startService("airplay-playback");
+    }
+
+    private response(id: string, data: Buffer = Buffer.from("")): void {
+        const networkCommand = new NetworkCommand(id, "response", data);
+        this.send(networkCommand);
     }
 }
 

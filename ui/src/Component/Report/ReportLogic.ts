@@ -1,7 +1,7 @@
 import { kea } from "kea";
 import { ReportLogicType } from "./ReportLogicType";
 import Axios from "axios";
-import { PacketReport, Report } from "../../Types";
+import { PacketReport, Report } from "common";
 
 export const ReportLogic = kea<ReportLogicType>({
     actions: {

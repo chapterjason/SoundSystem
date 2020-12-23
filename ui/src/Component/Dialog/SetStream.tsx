@@ -1,17 +1,11 @@
-import { Node } from "../Types";
 import { Button, Col, Modal, Row } from "react-bootstrap";
 import * as React from "react";
-import { NodeLogic } from "./Node/NodeLogic";
+import { NodeComponentLogic } from "../Node/NodeComponentLogic";
 import { useActions } from "kea";
-
-export interface SetStreamProps {
-    id: string;
-
-    node: Node;
-}
+import { SetStreamProps } from "./SetStreamProps";
 
 export function SetStream(props: SetStreamProps) {
-    const logic = NodeLogic(props);
+    const logic = NodeComponentLogic(props);
     const { setStream, hideSetStream } = useActions(logic);
 
     function handleAbort() {

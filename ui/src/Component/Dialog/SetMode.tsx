@@ -1,17 +1,11 @@
-import { Node } from "../Types";
 import { Button, Col, Modal, Row } from "react-bootstrap";
 import * as React from "react";
-import { NodeLogic } from "./Node/NodeLogic";
+import { NodeComponentLogic } from "../Node/NodeComponentLogic";
 import { useActions } from "kea";
-
-export interface SetModeProps {
-    id: string;
-
-    node: Node;
-}
+import { SetModeProps } from "./SetModeProps";
 
 export function SetMode(props: SetModeProps) {
-    const logic = NodeLogic(props);
+    const logic = NodeComponentLogic(props);
     const { setMode, hideSetMode, party } = useActions(logic);
 
     function handleAbort() {

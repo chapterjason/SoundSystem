@@ -1,4 +1,4 @@
-import { Mode, Stream } from "./Types";
+import { Mode, Stream } from "common";
 
 export interface ConfigurationData {
     mode: Mode;

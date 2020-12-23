@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { PacketReport } from "../../../../Types";
 import { joinToPackageDirectory } from "../../../../Meta";
 import { existsSync, promises as fs } from "fs";
+import { PacketReport } from "common";
 
 @Injectable()
 export class ReportingService {

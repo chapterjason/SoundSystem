@@ -1,9 +1,8 @@
 import { Socket } from "net";
-import { NodeConfiguration } from "../../../../NodeConfiguration";
 import { Logger } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
 import { ReportingService } from "../Reporting/ReportingService";
-import { PacketReport, PacketType } from "../../../../Types";
+import { NetworkCommand, NodeData, NodeResponseData, PacketReport, PacketType } from "common";
 
 export class Node {
 
@@ -11,13 +10,13 @@ export class Node {
 
     private socket: Socket;
 
-    private configuration: NodeConfiguration = {
-        hostname: "unset",
-        mode: "reset",
-        id: "unset",
+    private configuration: NodeData = {
+        hostname: "none",
+        mode: "none",
+        id: "none",
         volume: 32,
-        server: "unset",
-        stream: "reset",
+        server: "none",
+        stream: "none",
         muted: false,
     };
 
@@ -71,23 +70,7 @@ export class Node {
         return this.configuration.id;
     }
 
-    public getVolume() {
-        return this.configuration.volume;
-    }
-
-    public getMode() {
-        return this.configuration.mode;
-    }
-
-    public getStream() {
-        return this.configuration.stream;
-    }
-
-    public getServer() {
-        return this.configuration.server;
-    }
-
-    public toJSON() {
+    public toJSON(): NodeResponseData {
         return {
             ...this.configuration,
             address: this.getAddress(),
@@ -95,19 +78,21 @@ export class Node {
     }
 
     public async request(command: string, buffer: Buffer = Buffer.from("")) {
-        const [dataBuffer, id] = this.create(command, buffer);
+        const networkCommand = NetworkCommand.create(command, buffer);
+        const networkBuffer = networkCommand.toBuffer();
+        const id = networkCommand.getId();
 
         this.reporting.report({
             correlationId: id,
             timestamp: Date.now(),
             type: PacketType.REQUEST_SENT,
-            data: dataBuffer.toString(),
+            data: networkBuffer.toString(),
             id: uuidv4(),
             nodeId: this.getId(),
         });
 
         return new Promise<string>((resolve, reject) => {
-            const send = this.socket.write(dataBuffer);
+            const send = this.socket.write(networkBuffer);
 
             if (!send) {
                 reject("Message not send");
@@ -124,18 +109,6 @@ export class Node {
         return this.socket.remoteAddress as string;
     }
 
-    private create(command: string, buffer: Buffer): [Buffer, string] {
-        const id = uuidv4();
-
-        return [Buffer.concat([
-            Buffer.from(command),
-            Buffer.from(":"),
-            Buffer.from(id),
-            Buffer.from(":"),
-            Buffer.from(buffer.toString("base64")),
-        ]), id];
-    }
-
     private onClose() {
         if (!this.disconnected) {
             this.disconnected = true;
@@ -144,13 +117,13 @@ export class Node {
     }
 
     private onData(buffer: Buffer) {
-        const [command, id, data] = buffer.toString().split(":");
-        const encodedData = Buffer.from(data, "base64").toString("ascii");
+        const networkCommand = NetworkCommand.parse(buffer);
+        const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
         try {
             if (command === "response") {
                 if (!(id in this.responses)) {
-                    throw new Error(`No response found for: ${JSON.stringify({ command, id, data })}`);
+                    throw new Error(`No response found for: ${JSON.stringify({ command, id, data: data.toString("ascii") })}`);
                 }
 
                 this.reporting.report({
@@ -164,13 +137,13 @@ export class Node {
 
                 const handler = this.responses[id];
 
-                handler(encodedData);
+                handler(networkCommand.getDataAsString());
             } else if (command === "report") {
-                const report = JSON.parse(encodedData) as PacketReport;
+                const report = networkCommand.getDataAsJson<PacketReport>();
 
                 this.reporting.report(report);
             } else if (command === "configuration") {
-                const configuration = JSON.parse(encodedData) as NodeConfiguration;
+                const configuration = networkCommand.getDataAsJson<NodeData>();
 
                 const id = this.configuration.id;
 
