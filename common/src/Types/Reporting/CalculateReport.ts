@@ -22,10 +22,8 @@ export function calculateReport(points: ReportingPoint[]) {
     };
 
     function getName(name: string) {
-        const keys = Object.keys(report.actions).sort();
-
         let index = 0;
-        for (const key of keys) {
+        for (const key of report.order) {
             if (key.startsWith(name)) {
                 const keyIndex = parseInt(key.split(".")[1], 10);
                 index = Math.max(keyIndex, index);
