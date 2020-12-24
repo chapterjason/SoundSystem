@@ -30,7 +30,7 @@ export function calculateReport(points: ReportingPoint[]) {
             }
         }
 
-        return `${name}.${index}`;
+        return `${name}.${index + 1}`;
     }
 
     let latestPoint: ReportingPoint | null = null;

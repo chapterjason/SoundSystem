@@ -10,12 +10,12 @@ const colors: {
     [key: string]: string;
 } = {};
 
-let index: number = 0;
+let index: number = 60;
 
 function getColor(key: string) {
     if (!(key in colors)) {
         colors[key] = `#B0B8${(index).toString(16)}`;
-        index += 2;
+        index += 10;
     }
 
     return colors[key];
