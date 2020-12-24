@@ -54,12 +54,12 @@ export class Client extends Socket {
     }
 
     public async onData(buffer: Buffer) {
+        const timestamp = Date.now();
         const networkCommand = NetworkCommand.parse(buffer);
         const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
         this.correlationId = id;
-
-        this.report(ReportingPointType.REQUEST_RECEIVED, buffer.toString());
+        this.report(ReportingPointType.REQUEST_RECEIVED, buffer.toString(), timestamp);
 
         try {
             const configuration = await Configuration.load();
@@ -254,7 +254,7 @@ export class Client extends Socket {
         this.write(networkCommand.toBuffer());
     }
 
-    public report(type: ReportingPointType, data: string) {
+    public report(type: ReportingPointType, data: string, timestamp: number = Date.now()) {
         if (!this.correlationId.length) {
             return;
         }
@@ -264,7 +264,7 @@ export class Client extends Socket {
         const networkCommand = NetworkCommand.create("report", Buffer.from(JSON.stringify({
             id: reportId,
             correlationId: this.correlationId,
-            timestamp: Date.now(),
+            timestamp,
             data: data,
             type: type,
             nodeId: this.id,

@@ -78,13 +78,14 @@ export class Node {
     }
 
     public async request(command: string, buffer: Buffer = Buffer.from("")) {
+        const timestamp = Date.now();
         const networkCommand = NetworkCommand.create(command, buffer);
         const networkBuffer = networkCommand.toBuffer();
         const id = networkCommand.getId();
 
         this.reporting.report({
             correlationId: id,
-            timestamp: Date.now(),
+            timestamp,
             type: ReportingPointType.REQUEST_SENT,
             data: networkBuffer.toString(),
             id: uuidv4(),
