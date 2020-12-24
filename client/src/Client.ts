@@ -83,11 +83,11 @@ export class Client extends Socket {
                 await this.stream(configuration, data.toString() as Stream);
             }
 
-            this.response(id);
             this.report(ReportingPointType.RESPONSE_SENT, buffer.toString());
+            this.response(id);
         } catch (exception) {
-            this.response(id, Buffer.from(JSON.stringify(exception)));
             this.report(ReportingPointType.FAILED, JSON.stringify({ message: exception.message, stack: exception.stack }));
+            this.response(id, Buffer.from(JSON.stringify(exception)));
 
         }
     }
