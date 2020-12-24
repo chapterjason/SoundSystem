@@ -1,18 +1,18 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { joinToPackageDirectory } from "../../../../Meta";
 import { existsSync, promises as fs } from "fs";
-import { PacketReport } from "common";
+import { ReportingPoint } from "common";
 
 @Injectable()
 export class ReportingService {
-    private stack: PacketReport[] = [];
+    private points: ReportingPoint[] = [];
 
     private readonly logger = new Logger("NodeService");
 
     public constructor() {
         this.loop()
             .catch((error) => {
-                this.logger.error(error.message, error.stack);
+                this.logger.error(error.message, error.points);
             });
     }
 
@@ -20,11 +20,11 @@ export class ReportingService {
         return joinToPackageDirectory("reporting.json");
     }
 
-    public report(report: PacketReport) {
-        this.stack.push(report);
+    public report(report: ReportingPoint) {
+        this.points.push(report);
     }
 
-    public async load(): Promise<PacketReport[]> {
+    public async load(): Promise<ReportingPoint[]> {
         const file = ReportingService.getFile();
         if (!existsSync(file)) {
             await fs.writeFile(file, JSON.stringify([]));
@@ -35,14 +35,14 @@ export class ReportingService {
         return JSON.parse(buffer.toString());
     }
 
-    public async save(reports: PacketReport[]): Promise<void> {
+    public async save(points: ReportingPoint[]): Promise<void> {
         const file = ReportingService.getFile();
-        await fs.writeFile(file, JSON.stringify(reports));
+        await fs.writeFile(file, JSON.stringify(points));
     }
 
     private async loop(): Promise<void> {
-        const stack = [...this.stack];
-        this.stack = [];
+        const stack = [...this.points];
+        this.points = [];
 
         if (stack.length > 0) {
             const reports = await this.load();

@@ -1,12 +1,12 @@
 import { kea } from "kea";
-import { ReportLogicType } from "./ReportLogicType";
+import { ReportingLogicType } from "./ReportingLogicType";
 import Axios from "axios";
-import { PacketReport, Report } from "common";
+import { calculateReport, Report, ReportingPoint } from "common";
 
-export const ReportLogic = kea<ReportLogicType>({
+export const ReportingLogic = kea<ReportingLogicType>({
     actions: {
         setAutoRefresh: (autoRefresh) => ({ autoRefresh }),
-        setPackets: (packets) => ({ packets }),
+        setPoints: (points) => ({ points }),
         setRequestTime: (requestTime: number) => ({ requestTime }),
         setTimeout: (timeout: number) => ({ timeout }),
         update: true,
@@ -16,8 +16,8 @@ export const ReportLogic = kea<ReportLogicType>({
         autoRefresh: [false, {
             setAutoRefresh: (_, { autoRefresh }) => autoRefresh,
         }],
-        packets: [[], {
-            setPackets: (_, { packets }) => [...packets],
+        points: [[], {
+            setPoints: (_, { points }) => [...points],
         }],
         updated: [false, {
             update: () => false,
@@ -33,10 +33,10 @@ export const ReportLogic = kea<ReportLogicType>({
     listeners: ({ actions }) => ({
         update: async () => {
             const requestStartedAt = new Date().getTime();
-            const response = await Axios.get<{ reports: PacketReport[] }>("/report");
+            const response = await Axios.get<{ points: ReportingPoint[] }>("/reporting");
             const responseReceivedAt = new Date().getTime();
             actions.setRequestTime(responseReceivedAt - requestStartedAt);
-            actions.setPackets(response.data.reports);
+            actions.setPoints(response.data.points);
             actions.updateDone();
         },
     }),
@@ -47,11 +47,11 @@ export const ReportLogic = kea<ReportLogicType>({
     }),
     selectors: {
         reports: [
-            (selectors) => [selectors.packets],
-            (packets: PacketReport[]) => {
+            (selectors) => [selectors.points],
+            (points: ReportingPoint[]) => {
                 const reports: Report[] = [];
 
-                const grouped = packets.reduce((previous, next) => {
+                const grouped = points.reduce((previous, next) => {
                     return {
                         ...previous,
                         ...{
@@ -61,19 +61,15 @@ export const ReportLogic = kea<ReportLogicType>({
                             ].sort((a, b) => a.timestamp - b.timestamp),
                         },
                     };
-                }, {} as Record<string, PacketReport[]>);
+                }, {} as Record<string, ReportingPoint[]>);
 
                 const keys = Object.keys(grouped);
 
                 for (const key of keys) {
-                    const [requestSent, requestReceived, responseSent, responseReceived] = grouped[key];
+                    const points = grouped[key];
+                    const report = calculateReport(points);
 
-                    reports.push({
-                        id: key,
-                        request: requestReceived.timestamp - requestSent.timestamp,
-                        work: responseSent.timestamp - requestReceived.timestamp,
-                        response: responseReceived.timestamp - responseSent.timestamp,
-                    });
+                    reports.push(report);
                 }
 
                 return reports;

@@ -11,7 +11,7 @@ import { ENVIRONMENT } from "./meta";
 import * as fs from "fs";
 import { existsSync } from "fs";
 import * as path from "path";
-import { Mode, NetworkCommand, PacketReport, PacketType, Stream } from "common";
+import { Mode, NetworkCommand, ReportingPoint, ReportingPointType, Stream } from "common";
 import { BluetoothService } from "./Service/BluetoothService";
 import { AirplayService } from "./Service/AirplayService";
 
@@ -30,6 +30,8 @@ export class Client extends Socket {
     private bluetoothService = new BluetoothService();
 
     private airplayService = new AirplayService();
+
+    private correlationId: string = "";
 
     public constructor(options?: SocketConstructorOpts) {
         super(options);
@@ -55,7 +57,9 @@ export class Client extends Socket {
         const networkCommand = NetworkCommand.parse(buffer);
         const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
-        this.report(id, PacketType.REQUEST_RECEIVED, buffer.toString());
+        this.correlationId = id;
+
+        this.report(ReportingPointType.REQUEST_RECEIVED, buffer.toString());
 
         try {
             const configuration = await Configuration.load();
@@ -80,10 +84,10 @@ export class Client extends Socket {
             }
 
             this.response(id);
-            this.report(id, PacketType.RESPONSE_SEND, buffer.toString());
+            this.report(ReportingPointType.RESPONSE_SENT, buffer.toString());
         } catch (exception) {
             this.response(id, Buffer.from(JSON.stringify(exception)));
-            this.report(id, PacketType.FAILED, JSON.stringify(exception));
+            this.report(ReportingPointType.FAILED, JSON.stringify({ message: exception.message, stack: exception.stack }));
 
         }
     }
@@ -250,17 +254,17 @@ export class Client extends Socket {
         this.write(networkCommand.toBuffer());
     }
 
-    private report(id: string, type: PacketType, data: string) {
+    public report(type: ReportingPointType, data: string) {
         const reportId = uuidv4();
 
         const networkCommand = NetworkCommand.create("report", Buffer.from(JSON.stringify({
             id: reportId,
-            correlationId: id,
+            correlationId: this.correlationId,
             timestamp: Date.now(),
             data: data,
             type: type,
             nodeId: this.id,
-        } as PacketReport)));
+        } as ReportingPoint)));
 
         this.send(networkCommand);
     }

@@ -3,7 +3,10 @@ export interface Report {
 
     request: number;
 
-    work: number
+    order: string[];
 
     response: number;
+
+    [name: string]: number | string | string[];
+
 }

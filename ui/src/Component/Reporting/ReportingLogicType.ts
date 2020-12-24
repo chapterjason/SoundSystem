@@ -1,8 +1,8 @@
 import { MakeLogicType } from "kea";
-import { PacketReport, Report } from "common";
+import { Report, ReportingPoint } from "common";
 
 interface Values {
-    packets: PacketReport[];
+    points: ReportingPoint[];
 
     reports: Report[];
 
@@ -16,7 +16,7 @@ interface Values {
 }
 
 interface Actions {
-    setPackets: (packets: PacketReport[]) => { packets: PacketReport[] }
+    setPoints: (points: ReportingPoint[]) => { points: ReportingPoint[] }
 
     setAutoRefresh: (autoRefresh: boolean) => { autoRefresh: boolean };
 
@@ -33,4 +33,4 @@ interface Props {
 
 }
 
-export type ReportLogicType = MakeLogicType<Values, Actions, Props>
+export type ReportingLogicType = MakeLogicType<Values, Actions, Props>

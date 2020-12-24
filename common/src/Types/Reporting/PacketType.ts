@@ -1,7 +1,0 @@
-export enum PacketType {
-    REQUEST_SENT,
-    REQUEST_RECEIVED,
-    RESPONSE_SEND,
-    RESPONSE_RECEIVED,
-    FAILED
-}

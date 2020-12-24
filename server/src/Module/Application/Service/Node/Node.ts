@@ -2,7 +2,7 @@ import { Socket } from "net";
 import { Logger } from "@nestjs/common";
 import { v4 as uuidv4 } from "uuid";
 import { ReportingService } from "../Reporting/ReportingService";
-import { Mode, NetworkCommand, NodeData, NodeResponseData, PacketReport, PacketType, Stream } from "common";
+import { Mode, NetworkCommand, NodeData, NodeResponseData, ReportingPoint, ReportingPointType, Stream } from "common";
 
 export class Node {
 
@@ -85,7 +85,7 @@ export class Node {
         this.reporting.report({
             correlationId: id,
             timestamp: Date.now(),
-            type: PacketType.REQUEST_SENT,
+            type: ReportingPointType.REQUEST_SENT,
             data: networkBuffer.toString(),
             id: uuidv4(),
             nodeId: this.getId(),
@@ -129,7 +129,7 @@ export class Node {
                 this.reporting.report({
                     correlationId: id,
                     timestamp: Date.now(),
-                    type: PacketType.RESPONSE_RECEIVED,
+                    type: ReportingPointType.RESPONSE_RECEIVED,
                     data: buffer.toString(),
                     id: uuidv4(),
                     nodeId: this.getId(),
@@ -139,7 +139,7 @@ export class Node {
 
                 handler(networkCommand.getDataAsString());
             } else if (command === "report") {
-                const report = networkCommand.getDataAsJson<PacketReport>();
+                const report = networkCommand.getDataAsJson<ReportingPoint>();
 
                 this.reporting.report(report);
             } else if (command === "configuration") {

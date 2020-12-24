@@ -2,14 +2,12 @@ import { Configuration } from "./Configuration";
 import { Client } from "./Client";
 import { EnvironmentLoader, ProcessEnvironment } from "@mscs/environment";
 import path from "path";
-import { ENVIRONMENT } from "./meta";
+import { client, ENVIRONMENT } from "./meta";
 
 async function runtime() {
     const environmentLoader = new EnvironmentLoader(ENVIRONMENT);
 
     await environmentLoader.loadEnvironment(path.join(__dirname, ".env"));
-
-    const client = new Client();
 
     client.connect({
         host: ENVIRONMENT.get("HOST"),

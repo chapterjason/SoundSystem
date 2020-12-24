@@ -2,7 +2,7 @@ import { Controller, Get, Scope } from "@nestjs/common";
 import { ReportingService } from "../Service/Reporting/ReportingService";
 
 @Controller({ scope: Scope.REQUEST })
-export class ReportController {
+export class ReportingController {
 
     private service: ReportingService;
 
@@ -12,10 +12,10 @@ export class ReportController {
 
     @Get("/report")
     public async getReports() {
-        const reports = await this.service.load();
+        const points = await this.service.load();
 
         return {
-            reports,
+            points,
         };
     }
 
