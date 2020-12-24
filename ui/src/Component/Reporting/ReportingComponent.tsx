@@ -15,7 +15,7 @@ let index: number = 60;
 function getColor(key: string) {
     if (!(key in colors)) {
         colors[key] = `#B0B8${(index).toString(16)}`;
-        index += 20;
+        index += 30;
     }
 
     return colors[key];

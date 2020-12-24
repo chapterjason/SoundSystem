@@ -46,7 +46,7 @@ export function calculateReport(points: ReportingPoint[]) {
 
         if (point.type === ReportingPointType.SERVICE_STARTED) {
             if (latestPoint) {
-                const name = getName(point.data);
+                const name = getName(`${point.data}-start`);
 
                 report[name] = point.timestamp - latestPoint?.timestamp;
                 report.order.push(name);
@@ -55,7 +55,7 @@ export function calculateReport(points: ReportingPoint[]) {
 
         if (point.type === ReportingPointType.SERVICE_STOPPED) {
             if (latestPoint) {
-                const name = getName(point.data);
+                const name = getName(`${point.data}-stop`);
 
                 report[name] = point.timestamp - latestPoint?.timestamp;
                 report.order.push(name);
