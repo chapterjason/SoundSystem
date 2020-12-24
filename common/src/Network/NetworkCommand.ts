@@ -22,7 +22,7 @@ export class NetworkCommand {
         const [id, command, data] = items;
 
         if ((!id && !command) || (items.length !== 3)) {
-            throw new Error("Invalid NetworkCommand data");
+            throw new Error(`Invalid NetworkCommand data: "${buffer.toString()}"`);
         }
 
         return new NetworkCommand(
