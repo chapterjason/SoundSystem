@@ -255,6 +255,10 @@ export class Client extends Socket {
     }
 
     public report(type: ReportingPointType, data: string) {
+        if (!this.correlationId.length) {
+            return;
+        }
+
         const reportId = uuidv4();
 
         const networkCommand = NetworkCommand.create("report", Buffer.from(JSON.stringify({
