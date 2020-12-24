@@ -10,7 +10,7 @@ export class ReportingController {
         this.service = service;
     }
 
-    @Get("/report")
+    @Get("/reporting")
     public async getReports() {
         const points = await this.service.load();
 
