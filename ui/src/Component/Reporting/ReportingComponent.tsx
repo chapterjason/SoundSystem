@@ -49,7 +49,7 @@ export function ReportingComponent() {
             <Row>
                 <Col>
                     <BarChart
-                        width={12000}
+                        width={1200}
                         height={400}
                         data={reports}
                         margin={{

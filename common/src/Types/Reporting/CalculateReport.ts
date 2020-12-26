@@ -10,7 +10,7 @@ export function calculateReport(points: ReportingPoint[]) {
     const first = points[0];
     const last = points[points.length - 1];
 
-    const networkCommand = NetworkCommand.parse(Buffer.from(first.data));
+    const networkCommand = NetworkCommand.parse(Buffer.from(first.data, "base64"));
 
     const report: Report = {
         id: networkCommand.getCommand(),
