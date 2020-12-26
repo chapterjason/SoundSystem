@@ -59,7 +59,7 @@ export class Client extends Socket {
         const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
         this.correlationId = id;
-        this.report(ReportingPointType.REQUEST_RECEIVED, buffer.toString(), timestamp);
+        this.report(ReportingPointType.REQUEST_RECEIVED, buffer.toString("base64"), timestamp);
 
         try {
             const configuration = await Configuration.load();
@@ -83,7 +83,7 @@ export class Client extends Socket {
                 await this.stream(configuration, data.toString() as Stream);
             }
 
-            this.report(ReportingPointType.RESPONSE_SENT, buffer.toString());
+            this.report(ReportingPointType.RESPONSE_SENT, buffer.toString("base64"));
             this.response(id);
         } catch (exception) {
             this.report(ReportingPointType.FAILED, JSON.stringify({ message: exception.message, stack: exception.stack }));
