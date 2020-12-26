@@ -1,61 +1,66 @@
 import { v4 as uuidv4 } from "uuid";
 import { Buffer } from "buffer";
+import { Base64 } from "../Utils/Base64";
 
 export class NetworkCommand {
 
-    private static SEPARATOR = String.fromCharCode(248);
+    private static SEPARATOR = String.fromCharCode(64);
 
     private readonly command: string;
 
-    private readonly data: Buffer;
+    private readonly data: string;
 
     private readonly id: string;
 
-    public constructor(id: string, command: string, data: Buffer = Buffer.from("")) {
+    public constructor(id: string, command: string, data: string = "") {
         this.id = id;
         this.command = command;
         this.data = data;
     }
 
-    public static parse(buffer: Buffer): NetworkCommand {
-        const items = buffer.toString().split(NetworkCommand.SEPARATOR);
+    public static fromBuffer(buffer: Buffer): NetworkCommand {
+        return this.fromString(buffer.toString());
+    }
+
+    public static fromString(text: string): NetworkCommand {
+        const items = Buffer.from(text, "base64").toString("ascii").split(NetworkCommand.SEPARATOR);
         const [id, command, data] = items;
 
         if ((!id && !command) || (items.length !== 3)) {
-            throw new Error(`Invalid NetworkCommand data: "${buffer.toString()}"`);
+            throw new Error(`Invalid NetworkCommand data: "${text}"`);
         }
 
         return new NetworkCommand(
-            Buffer.from(id, "base64").toString("ascii"),
-            Buffer.from(command, "base64").toString("ascii"),
-            Buffer.from(data, "base64"),
+            Base64.decode(id),
+            Base64.decode(command),
+            Base64.decode(data),
         );
     }
 
-    public static create(command: string, data: Buffer = Buffer.from("")): NetworkCommand {
-        return new NetworkCommand(uuidv4(), command, data);
+    public static create(command: string, data: unknown = ""): NetworkCommand {
+        const text: string = typeof data !== "string" ? JSON.stringify(data) : data;
+
+        return new NetworkCommand(uuidv4(), command, text);
     }
 
     public toBuffer() {
-        return Buffer.from([
-            Buffer.from(this.id).toString("base64"),
-            NetworkCommand.SEPARATOR,
-            Buffer.from(this.command).toString("base64"),
-            NetworkCommand.SEPARATOR,
-            this.data.toString("base64"),
-        ].join(""));
+        return Buffer.from(this.toString());
     }
 
-    public getData(): Buffer {
+    public toString(): string {
+        return Base64.encode([
+            Base64.encode(this.id),
+            Base64.encode(this.command),
+            Base64.encode(this.data),
+        ].join(NetworkCommand.SEPARATOR));
+    }
+
+    public getData(): string {
         return this.data;
     }
 
-    public getDataAsString(): string {
-        return this.data.toString("ascii");
-    }
-
-    public getDataAsJson<Type>(): Type {
-        return JSON.parse(this.data.toString("ascii"));
+    public getDataAs<Type>(): Type {
+        return JSON.parse(this.data);
     }
 
     public getCommand(): string {

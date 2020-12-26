@@ -87,7 +87,7 @@ export class Node {
             correlationId: id,
             timestamp,
             type: ReportingPointType.REQUEST_SENT,
-            data: networkBuffer.toString(),
+            data: networkCommand.toString(),
             id: uuidv4(),
             nodeId: this.getId(),
         });
@@ -118,33 +118,33 @@ export class Node {
     }
 
     private onData(buffer: Buffer) {
-        const networkCommand = NetworkCommand.parse(buffer);
+        const networkCommand = NetworkCommand.fromBuffer(buffer);
         const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
         try {
             if (command === "response") {
                 if (!(id in this.responses)) {
-                    throw new Error(`No response found for: ${JSON.stringify({ command, id, data: data.toString("ascii") })}`);
+                    throw new Error(`No response found for: ${JSON.stringify({ command, id, data })}`);
                 }
 
                 this.reporting.report({
                     correlationId: id,
                     timestamp: Date.now(),
                     type: ReportingPointType.RESPONSE_RECEIVED,
-                    data: buffer.toString(),
+                    data,
                     id: uuidv4(),
                     nodeId: this.getId(),
                 });
 
                 const handler = this.responses[id];
 
-                handler(networkCommand.getDataAsString());
+                handler(data);
             } else if (command === "report") {
-                const report = networkCommand.getDataAsJson<ReportingPoint>();
+                const report = networkCommand.getDataAs<ReportingPoint>();
 
                 this.reporting.report(report);
             } else if (command === "configuration") {
-                const configuration = networkCommand.getDataAsJson<NodeData>();
+                const configuration = networkCommand.getDataAs<NodeData>();
 
                 const id = this.configuration.id;
 

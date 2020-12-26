@@ -55,11 +55,11 @@ export class Client extends Socket {
 
     public async onData(buffer: Buffer) {
         const timestamp = Date.now();
-        const networkCommand = NetworkCommand.parse(buffer);
+        const networkCommand = NetworkCommand.fromBuffer(buffer);
         const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
         this.correlationId = id;
-        this.report(ReportingPointType.REQUEST_RECEIVED, Buffer.from(buffer.toString(), "base64").toString("ascii"), timestamp);
+        this.report(ReportingPointType.REQUEST_RECEIVED, buffer.toString(), timestamp);
 
         try {
             const configuration = await Configuration.load();
@@ -67,27 +67,27 @@ export class Client extends Socket {
             if (command === "idle") {
                 await this.idle(configuration);
             } else if (command === "listen") {
-                await this.listen(configuration, data.toString());
+                await this.listen(configuration, data);
             } else if (command === "mute") {
                 await this.setMuted(configuration.muted, true);
             } else if (command === "unmute") {
                 await this.setMuted(configuration.muted, false);
             } else if (command === "single") {
-                await this.single(configuration, data.toString() as Stream);
+                await this.single(configuration, data as Stream);
             } else if (command === "update") {
                 console.log("Update...", (new Date()).toISOString());
                 await update();
             } else if (command === "volume") {
-                await this.setVolume(configuration.volume, data.readUInt32BE());
+                await this.setVolume(configuration.volume, networkCommand.getDataAs<number>());
             } else if (command === "stream") {
-                await this.stream(configuration, data.toString() as Stream);
+                await this.stream(configuration, data as Stream);
             }
 
-            this.report(ReportingPointType.RESPONSE_SENT, Buffer.from(buffer.toString(), "base64").toString("ascii"));
+            this.report(ReportingPointType.RESPONSE_SENT, buffer.toString());
             this.response(id);
         } catch (exception) {
             this.report(ReportingPointType.FAILED, JSON.stringify({ message: exception.message, stack: exception.stack }));
-            this.response(id, Buffer.from(JSON.stringify(exception)));
+            this.response(id, JSON.stringify(exception));
 
         }
     }
@@ -98,11 +98,11 @@ export class Client extends Socket {
         }
 
         const configuration = await Configuration.load();
-        const networkCommand = NetworkCommand.create("configuration", Buffer.from(JSON.stringify({
+        const networkCommand = NetworkCommand.create("configuration", JSON.stringify({
             ...configuration,
             hostname: this.hostname,
             id: this.id,
-        })));
+        }));
 
         this.send(networkCommand);
 
@@ -261,14 +261,14 @@ export class Client extends Socket {
 
         const reportId = uuidv4();
 
-        const networkCommand = NetworkCommand.create("report", Buffer.from(JSON.stringify({
+        const networkCommand = NetworkCommand.create("report", JSON.stringify({
             id: reportId,
             correlationId: this.correlationId,
             timestamp,
-            data: data,
-            type: type,
+            data,
+            type,
             nodeId: this.id,
-        } as ReportingPoint)));
+        } as ReportingPoint));
 
         this.send(networkCommand);
     }
@@ -368,7 +368,7 @@ export class Client extends Socket {
         await Configuration.setStream(stream);
     }
 
-    private response(id: string, data: Buffer = Buffer.from("")): void {
+    private response(id: string, data: string = ""): void {
         const networkCommand = new NetworkCommand(id, "response", data);
         this.send(networkCommand);
     }

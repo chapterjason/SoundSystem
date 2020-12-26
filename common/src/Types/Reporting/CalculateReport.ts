@@ -2,7 +2,6 @@ import { ReportingPoint } from "./ReportingPoint";
 import { Report } from "./Report";
 import { ReportingPointType } from "./ReportingPointType";
 import { NetworkCommand } from "../../Network/NetworkCommand";
-import { Buffer } from "buffer";
 
 export function calculateReport(points: ReportingPoint[]) {
     points.sort((a, b) => a.timestamp - b.timestamp);
@@ -10,7 +9,7 @@ export function calculateReport(points: ReportingPoint[]) {
     const first = points[0];
     const last = points[points.length - 1];
 
-    const networkCommand = NetworkCommand.parse(Buffer.from(first.data));
+    const networkCommand = NetworkCommand.fromString(first.data);
 
     const report: Report = {
         id: networkCommand.getCommand(),
