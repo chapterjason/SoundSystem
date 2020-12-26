@@ -4,7 +4,8 @@ import { Col, Container, Row } from "react-bootstrap";
 import { useActions, useValues } from "kea";
 import { ReportingLogic } from "./ReportingLogic";
 import "./report.scss";
-import { Bar, BarChart, CartesianGrid, Legend, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Tooltip, XAxis, YAxis } from "recharts";
+import { Report } from "common";
 
 const colors: {
     [key: string]: string;
@@ -22,8 +23,8 @@ function getColor(key: string) {
 }
 
 export function ReportingComponent() {
-    const { reports, autoRefresh, updated, requestTime, timeout } = useValues(ReportingLogic);
-    const { update } = useActions(ReportingLogic);
+    const { reports, autoRefresh, updated, requestTime, timeout, selectedReport, selectedReportIndex } = useValues(ReportingLogic);
+    const { update, selectReport } = useActions(ReportingLogic);
 
     useEffect(() => {
         if (updated && autoRefresh) {
@@ -37,18 +38,22 @@ export function ReportingComponent() {
         }
     }, [updated, autoRefresh]);
 
-    const orders = reports.map(report => report.order);
+    const points = reports.map(report => report.points);
+
+    function handleSelectReport(data: Report, index: number) {
+        selectReport(index);
+    }
 
     return (
         <Container>
             <Row>
                 <Col>
                     <BarChart
-                        width={1200}
+                        width={12000}
                         height={400}
                         data={reports}
                         margin={{
-                            top: 20, right: 30, left: 20, bottom: 5,
+                            top: 5, right: 30, left: 20, bottom: 5,
                         }}
                     >
                         <CartesianGrid strokeDasharray="3 3"/>
@@ -56,15 +61,36 @@ export function ReportingComponent() {
                         <YAxis/>
                         <Tooltip/>
                         <Legend/>
-                        <Bar dataKey="request" stackId="a" fill="#B0B8B4"/>
-                        {orders.map((items: string[]) => {
-                            return items.map(item => {
-                                return (
-                                    <Bar dataKey={item} stackId="a" fill={getColor(item)}/>
-                                );
-                            });
+                        <Bar dataKey="time" fill="#8884d8" onClick={handleSelectReport}>
+                            {
+                                reports.map((report, index) => (
+                                    <Cell cursor="pointer" fill={index === selectedReportIndex ? "#82ca9d" : "#8884d8"} key={`cell-${index}`}/>
+                                ))
+                            }
+                        </Bar>
+                    </BarChart>
+                </Col>
+            </Row>
+            <Row>
+                <Col>
+                    <BarChart
+                        width={1200}
+                        height={400}
+                        data={selectedReport ? selectedReport.points : []}
+                        margin={{
+                            top: 20, right: 30, left: 20, bottom: 5,
+                        }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3"/>
+                        <XAxis dataKey="name"/>
+                        <YAxis/>
+                        <Tooltip/>
+                        <Legend/>
+                        {selectedReport && Object.keys(selectedReport.points).map((key) => {
+                            return (
+                                <Bar dataKey={key} stackId="a" fill={getColor(key)}/>
+                            );
                         })}
-                        <Bar dataKey="response" stackId="a" fill="#184A45"/>
                     </BarChart>
                 </Col>
             </Row>

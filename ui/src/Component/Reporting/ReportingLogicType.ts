@@ -6,6 +6,10 @@ interface Values {
 
     reports: Report[];
 
+    selectedReportIndex: number;
+
+    selectedReport: Report;
+
     autoRefresh: boolean;
 
     updated: boolean;
@@ -23,6 +27,8 @@ interface Actions {
     setRequestTime: (requestTime: number) => { requestTime: number };
 
     setTimeout: (timeout: number) => { timeout: number };
+
+    selectReport: (index: number) => { index: number };
 
     update: () => true;
 

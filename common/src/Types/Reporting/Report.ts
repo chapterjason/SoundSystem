@@ -1,12 +1,12 @@
 export interface Report {
     id: string;
 
-    request: number;
+    time: number;
 
-    order: string[];
+    timestamp: Date;
 
-    response: number;
-
-    [name: string]: number | string | string[];
-
+    points: {
+        name: string;
+        time: number;
+    }[];
 }

@@ -9,6 +9,7 @@ export const ReportingLogic = kea<ReportingLogicType>({
         setPoints: (points) => ({ points }),
         setRequestTime: (requestTime: number) => ({ requestTime }),
         setTimeout: (timeout: number) => ({ timeout }),
+        selectReport: (index: number) => ({ index }),
         update: true,
         updateDone: true,
     },
@@ -18,6 +19,9 @@ export const ReportingLogic = kea<ReportingLogicType>({
         }],
         points: [[], {
             setPoints: (_, { points }) => [...points],
+        }],
+        selectedReportIndex: [-1, {
+            selectReport: (_, { index }) => index,
         }],
         updated: [false, {
             update: () => false,
@@ -74,6 +78,10 @@ export const ReportingLogic = kea<ReportingLogicType>({
 
                 return reports;
             },
+        ],
+        selectedReport: [
+            (selectors) => [selectors.reports, selectors.selectedReportIndex],
+            (reports: Report[], index: number) => reports[index],
         ],
     },
 });
