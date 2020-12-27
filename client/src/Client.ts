@@ -14,9 +14,7 @@ export class Client extends Socket {
     public constructor(options?: SocketConstructorOpts) {
         super(options);
 
-        this.setKeepAlive(true);
         this.setEncoding("utf8");
-        this.setNoDelay(true);
 
         this.on("data", this.onData.bind(this));
     }

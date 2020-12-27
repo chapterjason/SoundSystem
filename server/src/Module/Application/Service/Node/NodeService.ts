@@ -1,6 +1,6 @@
 import { Server, Socket } from "net";
 import { Node } from "./Node";
-import { Inject, Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { ENVIRONMENT } from "../../../../Meta";
 import { ReportingService } from "../Reporting/ReportingService";
 
@@ -45,9 +45,7 @@ export class NodeService extends Server {
      * @private
      */
     private onConnect(socket: Socket): void {
-        socket.setKeepAlive(true);
         socket.setEncoding("utf8");
-        socket.setNoDelay(true);
 
         const node = new Node(this.reporting, socket, (node: Node) => {
             this.nodes[node.getId()] = node;
