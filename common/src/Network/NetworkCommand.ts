@@ -23,7 +23,7 @@ export class NetworkCommand {
     }
 
     public static fromString(text: string): NetworkCommand {
-        const items = Buffer.from(text, "base64").toString("ascii").split(NetworkCommand.SEPARATOR);
+        const items = Base64.decode(text).split(NetworkCommand.SEPARATOR);
         const [id, command, data] = items;
 
         if ((!id && !command) || (items.length !== 3)) {
