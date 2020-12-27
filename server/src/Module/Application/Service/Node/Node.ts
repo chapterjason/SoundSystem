@@ -77,9 +77,9 @@ export class Node {
         };
     }
 
-    public async request(command: string, buffer: Buffer = Buffer.from("")) {
+    public async request(command: string, text: unknown = "") {
         const timestamp = Date.now();
-        const networkCommand = NetworkCommand.create(command, buffer);
+        const networkCommand = NetworkCommand.create(command, text);
         const networkBuffer = networkCommand.toBuffer();
         const id = networkCommand.getId();
 

@@ -71,7 +71,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            await node.request("stream", Buffer.from(update.stream));
+            await node.request("stream", update.stream);
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -88,7 +88,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            await node.request("single", Buffer.from(update.stream));
+            await node.request("single", update.stream);
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -105,7 +105,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            await node.request("listen", Buffer.from(update.server));
+            await node.request("listen", update.server);
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
@@ -122,7 +122,7 @@ export class NodeController {
         if (id in nodes) {
             const node = nodes[id];
 
-            await node.request("volume", Buffer.from(update.volume.toString()));
+            await node.request("volume", update.volume);
         } else {
             throw new NotFoundException(`Node ${id} not found.`);
         }
