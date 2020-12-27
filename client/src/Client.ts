@@ -37,7 +37,7 @@ export class Client extends Socket {
             id: ID,
         }));
 
-        this.send(networkCommand);
+        await this.send(networkCommand);
 
         this.sendConfigurationTimeoutId = setTimeout(async () => {
             await this.sendConfiguration();
@@ -71,13 +71,23 @@ export class Client extends Socket {
         setImmediate(this.loop.bind(this));
     }
 
-    public send(networkCommand: NetworkCommand): void {
-        this.write(networkCommand.toBuffer());
+    public async send(networkCommand: NetworkCommand): Promise<void> {
+        return new Promise((resolve, reject) => {
+            this.write(networkCommand.toBuffer(), (error) => {
+                if (error) {
+                    console.log("send error", error);
+                    reject(error);
+                    return;
+                }
+
+                resolve();
+            });
+        });
     }
 
-    public response(id: string, data: string = ""): void {
+    public async response(id: string, data: string = ""): Promise<void> {
         const networkCommand = new NetworkCommand(id, "response", data);
-        this.send(networkCommand);
+        await this.send(networkCommand);
     }
 
     private async loop() {

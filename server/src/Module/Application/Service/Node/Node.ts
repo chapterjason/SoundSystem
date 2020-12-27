@@ -92,16 +92,17 @@ export class Node {
         });
 
         return new Promise<string>((resolve, reject) => {
-            const send = this.socket.write(networkCommand.toBuffer());
+            this.socket.write(networkCommand.toBuffer(), (error) => {
+                if (error) {
+                    console.log("send error", error);
+                    reject(error);
+                    return;
+                }
 
-            if (!send) {
-                reject("Message not send");
-                return;
-            }
-
-            this.responses[id] = (data: string) => {
-                resolve(data);
-            };
+                this.responses[id] = (data: string) => {
+                    resolve(data);
+                };
+            });
         });
     }
 
