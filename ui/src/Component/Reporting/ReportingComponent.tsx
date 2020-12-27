@@ -16,7 +16,7 @@ let index: number = 60;
 function getColor(key: string) {
     if (!(key in colors)) {
         colors[key] = `#B0B8${(index).toString(16)}`;
-        index += 40;
+        index += 60;
     }
 
     return colors[key];
@@ -61,10 +61,10 @@ export function ReportingComponent() {
                         <YAxis/>
                         <Tooltip/>
                         <Legend/>
-                        <Bar dataKey="time" fill="#8884d8" onClick={handleSelectReport}>
+                        <Bar dataKey="time" fill={getColor("time")} onClick={handleSelectReport}>
                             {
                                 reports.map((report, index) => (
-                                    <Cell cursor="pointer" fill={index === selectedReportIndex ? "#82ca9d" : "#8884d8"} key={`cell-${index}`}/>
+                                    <Cell cursor="pointer" fill={index === selectedReportIndex ? getColor("selected") : getColor("time")} key={`cell-${index}`}/>
                                 ))
                             }
                         </Bar>
@@ -86,11 +86,7 @@ export function ReportingComponent() {
                         <YAxis/>
                         <Tooltip/>
                         <Legend/>
-                        {selectedReport && Object.keys(selectedReport.points).map((key) => {
-                            return (
-                                <Bar dataKey={"time"} fill={getColor(key)}/>
-                            );
-                        })}
+                        <Bar dataKey={"time"} fill={getColor("time")}/>
                     </BarChart>
                 </Col>
             </Row>
