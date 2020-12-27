@@ -88,7 +88,7 @@ export function ReportingComponent() {
                         <Legend/>
                         {selectedReport && Object.keys(selectedReport.points).map((key) => {
                             return (
-                                <Bar dataKey={key} stackId="a" fill={getColor(key)}/>
+                                <Bar dataKey={"time"} fill={getColor(key)}/>
                             );
                         })}
                     </BarChart>
