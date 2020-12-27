@@ -1,38 +1,44 @@
 import { mustRun } from "../Utils/MustRun";
-import { client } from "../meta";
-import { ReportingPointType } from "common";
+import { EventEmitter } from "events";
 
-export class SystemService {
+export class SystemService extends EventEmitter {
 
-    private readonly service: string;
+    private readonly serviceName: string;
 
-    public constructor(service: string) {
-        this.service = service;
+    public constructor(serviceName: string) {
+        super();
+        this.serviceName = serviceName;
+    }
+
+    public getServiceName() {
+        return this.serviceName;
     }
 
     public async start() {
-        client.report(ReportingPointType.SERVICE_START, this.service);
-        console.log(`[Service][${this.service}][Start]: ${this.service}`);
+        this.emit("beforeStart", this.serviceName);
 
-        return mustRun(["sudo", "systemctl", "start", this.service])
+        console.log(`[Service][${this.serviceName}][Start]: ${this.serviceName}`);
+
+        return mustRun(["sudo", "systemctl", "start", this.serviceName])
             .then((process) => {
-                client.report(ReportingPointType.SERVICE_STARTED, this.service);
+                this.emit("afterStart", this.serviceName);
 
                 return process;
             });
     }
 
     public async stop() {
-        client.report(ReportingPointType.SERVICE_STOP, this.service);
-        console.log(`[Service][${this.service}][Stop]: ${this.service}`);
+        this.emit("beforeStop", this.serviceName);
+
+        console.log(`[Service][${this.serviceName}][Stop]: ${this.serviceName}`);
 
         return Promise.race([
-            mustRun(["sudo", "systemctl", "stop", this.service]),
+            mustRun(["sudo", "systemctl", "stop", this.serviceName]),
             new Promise((resolve) => {
                 setTimeout(resolve, 5000);
             }),
         ]).then((process) => {
-            client.report(ReportingPointType.SERVICE_STOPPED, this.service);
+            this.emit("afterStop", this.serviceName);
 
             return process;
         });

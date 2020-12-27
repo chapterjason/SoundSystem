@@ -53,7 +53,7 @@ export function calculateReport(points: ReportingPoint[]) {
             }
         }
 
-        if (point.type === ReportingPointType.FAILED) {
+        if (point.type === ReportingPointType.ERROR) {
             if (latestPoint) {
                 const name = getName("error");
                 report.points.push({

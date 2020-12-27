@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import { SystemService } from "../System/SystemService";
+import { ContextualCommandHandler } from "../ContextualCommandHandler";
 
 export class SnapclientService extends SystemService {
 

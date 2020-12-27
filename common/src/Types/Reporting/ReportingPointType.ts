@@ -3,7 +3,7 @@ export enum ReportingPointType {
     REQUEST_RECEIVED,
     RESPONSE_SENT,
     RESPONSE_RECEIVED,
-    FAILED,
+    ERROR,
     SERVICE_START,
     SERVICE_STARTED,
     SERVICE_STOP,
