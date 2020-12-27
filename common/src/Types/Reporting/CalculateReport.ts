@@ -12,7 +12,7 @@ export function calculateReport(points: ReportingPoint[]) {
     const networkCommand = NetworkCommand.fromString(first.data);
 
     const report: Report = {
-        id: networkCommand.getCommand(),
+        id: `${networkCommand.getCommand()} - ${networkCommand.getData()}`,
         time: last.timestamp - first.timestamp,
         timestamp: new Date(last.timestamp),
         points: [],
