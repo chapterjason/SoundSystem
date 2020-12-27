@@ -26,6 +26,7 @@ export class NetworkCommandHandler {
 
         handler.on("afterExecute", () => {
             this.report(ReportingPointType.RESPONSE_SENT, this.networkCommand.toString());
+            CLIENT.response(this.networkCommand.getId(), this.networkCommand.toString());
         });
 
         // beforeStart, afterStart
