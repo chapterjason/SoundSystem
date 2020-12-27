@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 export class Base64 {
 
     public static encode(encodedText: string): string {
