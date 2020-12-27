@@ -240,7 +240,7 @@ export class ContextualCommandHandler extends EventEmitter {
             await this.alsaService.setVolume(volume, device);
             await Configuration.setVolume(volume);
         }
-        console.log("--> [Single]", volume);
+        console.log("--> [Volume]", volume);
     }
 
     public async single(configuration: ConfigurationData, stream: Stream): Promise<void> {
