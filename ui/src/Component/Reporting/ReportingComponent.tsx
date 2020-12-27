@@ -16,14 +16,14 @@ let index: number = 60;
 function getColor(key: string) {
     if (!(key in colors)) {
         colors[key] = `#B0B8${(index).toString(16)}`;
-        index += 60;
+        index += 80;
     }
 
     return colors[key];
 }
 
 export function ReportingComponent() {
-    const { reports, autoRefresh, updated, requestTime, timeout, selectedReport, selectedReportIndex } = useValues(ReportingLogic);
+    const { reports, points, autoRefresh, updated, requestTime, timeout, selectedReport, selectedReportIndex } = useValues(ReportingLogic);
     const { update, selectReport } = useActions(ReportingLogic);
 
     useEffect(() => {
@@ -37,8 +37,6 @@ export function ReportingComponent() {
             return () => clearInterval(timeoutId);
         }
     }, [updated, autoRefresh]);
-
-    const points = reports.map(report => report.points);
 
     function handleSelectReport(data: Report, index: number) {
         selectReport(index);
@@ -90,7 +88,10 @@ export function ReportingComponent() {
                     </BarChart>
                 </Col>
             </Row>
+            <h3>Reports:</h3>
             <pre><code>{JSON.stringify(reports, null, "  ")}</code></pre>
+            <h3>Points:</h3>
+            <pre><code>{JSON.stringify(points, null, "  ")}</code></pre>
         </Container>
     );
 }
