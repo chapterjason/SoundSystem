@@ -80,7 +80,6 @@ export class Node {
     public async request(command: string, text: unknown = "") {
         const timestamp = Date.now();
         const networkCommand = NetworkCommand.create(command, text);
-        const networkBuffer = networkCommand.toBuffer();
         const id = networkCommand.getId();
 
         this.reporting.report({
@@ -93,7 +92,7 @@ export class Node {
         });
 
         return new Promise<string>((resolve, reject) => {
-            const send = this.socket.write(networkBuffer);
+            const send = this.socket.write(networkCommand.toBuffer());
 
             if (!send) {
                 reject("Message not send");

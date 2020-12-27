@@ -32,7 +32,7 @@ export class ContextualCommandHandler extends EventEmitter {
         this.alsaService = new AlsaService();
     }
 
-    public bindEvents(handlers: { [event: string]: (service: string) => void }) {
+    public bindEvents(handlers: { [event: string]: (service: string, time: number) => void }) {
         const services = [
             this.snapclientService,
             this.snapserverService,
@@ -53,7 +53,7 @@ export class ContextualCommandHandler extends EventEmitter {
     }
 
     public async execute(command: string, data: string) {
-        this.emit("beforeExecute");
+        this.emit("beforeExecute", Date.now());
 
         const configuration = await Configuration.load();
 
@@ -77,9 +77,9 @@ export class ContextualCommandHandler extends EventEmitter {
                 await this.stream(configuration, data as Stream);
             }
         } catch (error) {
-            this.emit("error", error);
+            this.emit("error", error, Date.now());
         } finally {
-            this.emit("afterExecute");
+            this.emit("afterExecute", Date.now());
         }
     }
 
@@ -198,25 +198,6 @@ export class ContextualCommandHandler extends EventEmitter {
         await this.snapserverService.setStream(`airplay:///shairport-sync?name=Airplay&devicename=${HOSTNAME}`);
     }
 
-    protected async setAndListen(server: string): Promise<void> {
-        await this.snapclientService.stop();
-        await this.snapclientService.setServer(server);
-        await this.snapclientService.start();
-        await Configuration.setServer(server);
-    }
-
-    protected async setAndStart(stream: Stream): Promise<void> {
-        // Set config for corresponding stream
-        if (stream === Stream.AIRPLAY) {
-            await this.startStreamAirplayAirplay();
-        } else if (stream === Stream.BLUETOOTH) {
-            await this.startStreamBluetooth();
-        }
-        await Configuration.setStream(stream);
-
-        await this.snapserverService.start();
-    }
-
     public async setMuted(previousMuted: boolean, muted: boolean): Promise<void> {
         console.log("--> [Muted]", muted);
         if (previousMuted !== muted) {
@@ -276,6 +257,25 @@ export class ContextualCommandHandler extends EventEmitter {
         await Configuration.setMode(Mode.SINGLE);
 
         console.log("--> [Single]", stream);
+    }
+
+    protected async setAndListen(server: string): Promise<void> {
+        await this.snapclientService.stop();
+        await this.snapclientService.setServer(server);
+        await this.snapclientService.start();
+        await Configuration.setServer(server);
+    }
+
+    protected async setAndStart(stream: Stream): Promise<void> {
+        // Set config for corresponding stream
+        if (stream === Stream.AIRPLAY) {
+            await this.startStreamAirplayAirplay();
+        } else if (stream === Stream.BLUETOOTH) {
+            await this.startStreamBluetooth();
+        }
+        await Configuration.setStream(stream);
+
+        await this.snapserverService.start();
     }
 
     protected async stopSingleBluetooth(): Promise<void> {

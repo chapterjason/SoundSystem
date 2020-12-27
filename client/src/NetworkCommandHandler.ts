@@ -16,40 +16,40 @@ export class NetworkCommandHandler {
         const handler = new ContextualCommandHandler();
 
         // error, beforeExecute, afterExecute
-        handler.on("error", (error) => {
-            this.report(ReportingPointType.ERROR, serializeError(error));
+        handler.on("error", (error, time) => {
+            this.report(ReportingPointType.ERROR, serializeError(error), time);
         });
 
-        handler.on("beforeExecute", () => {
-            this.report(ReportingPointType.REQUEST_RECEIVED, this.networkCommand.toString());
+        handler.on("beforeExecute", (time) => {
+            this.report(ReportingPointType.REQUEST_RECEIVED, this.networkCommand.toString(), time);
         });
 
-        handler.on("afterExecute", () => {
-            this.report(ReportingPointType.RESPONSE_SENT, this.networkCommand.toString());
+        handler.on("afterExecute", (time) => {
+            this.report(ReportingPointType.RESPONSE_SENT, this.networkCommand.toString(), time);
             CLIENT.response(this.networkCommand.getId(), this.networkCommand.toString());
         });
 
         // beforeStart, afterStart
         // beforeStop, afterStop
         handler.bindEvents({
-            beforeStart: (service: string) => {
-                this.report(ReportingPointType.SERVICE_START, service);
+            beforeStart: (service: string, time: number) => {
+                this.report(ReportingPointType.SERVICE_START, service, time);
             },
-            afterStart: (service: string) => {
-                this.report(ReportingPointType.SERVICE_STARTED, service);
+            afterStart: (service: string, time: number) => {
+                this.report(ReportingPointType.SERVICE_STARTED, service, time);
             },
-            beforeStop: (service: string) => {
-                this.report(ReportingPointType.SERVICE_STOP, service);
+            beforeStop: (service: string, time: number) => {
+                this.report(ReportingPointType.SERVICE_STOP, service, time);
             },
-            afterStop: (service: string) => {
-                this.report(ReportingPointType.SERVICE_STOPPED, service);
+            afterStop: (service: string, time: number) => {
+                this.report(ReportingPointType.SERVICE_STOPPED, service, time);
             },
         });
 
         const command = this.networkCommand.getCommand();
         const data = this.networkCommand.getData();
 
-        await handler.execute(command, data)
+        await handler.execute(command, data);
     }
 
     public report(type: ReportingPointType, data: string, timestamp: number = Date.now()) {
