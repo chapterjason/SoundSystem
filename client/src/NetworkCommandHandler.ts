@@ -53,6 +53,8 @@ export class NetworkCommandHandler {
     }
 
     public report(type: ReportingPointType, data: string, timestamp: number = Date.now()) {
+        console.log("report", ReportingPointType[type], this.networkCommand.getId());
+
         const networkCommand = NetworkCommand.create("report", JSON.stringify({
             id: uuidv4(),
             correlationId: this.networkCommand.getId(),
