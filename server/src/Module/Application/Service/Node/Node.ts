@@ -121,6 +121,8 @@ export class Node {
         const networkCommand = NetworkCommand.fromBuffer(buffer);
         const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
+        console.log("onData", command);
+
         try {
             if (command === "response") {
                 if (!(id in this.responses)) {
