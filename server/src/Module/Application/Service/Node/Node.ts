@@ -117,6 +117,7 @@ export class Node {
     }
 
     private onData(buffer: Buffer) {
+        const timestamp = Date.now();
         const networkCommand = NetworkCommand.fromBuffer(buffer);
         const [id, command, data] = [networkCommand.getId(), networkCommand.getCommand(), networkCommand.getData()];
 
@@ -128,7 +129,7 @@ export class Node {
 
                 this.reporting.report({
                     correlationId: id,
-                    timestamp: Date.now(),
+                    timestamp,
                     type: ReportingPointType.RESPONSE_RECEIVED,
                     data,
                     id: uuidv4(),
