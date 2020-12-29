@@ -31,6 +31,7 @@ export class SoundServer extends Server<SoundNodeData> {
 
     public serializeSocket(socket: BidirectionalSocket<SoundNodeData>): SoundNodeResponseData {
         const data = socket.getUserData();
+
         if (!data) {
             throw new InternalServerErrorException(`Can not serialize unknown node.`);
         }

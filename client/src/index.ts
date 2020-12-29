@@ -17,11 +17,11 @@ async function runtime() {
 
     CLIENT.on("connect", async () => {
         Configuration.afterSave = async (config) => {
-            const command = Command.create("configuration", JSON.stringify({
+            const command = Command.create("configuration", {
                 ...config,
                 hostname: HOSTNAME,
                 id: ID,
-            }));
+            });
 
             await CLIENT.request(command.toPacket());
         };

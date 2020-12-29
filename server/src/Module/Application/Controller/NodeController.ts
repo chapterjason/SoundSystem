@@ -118,6 +118,7 @@ export class NodeController {
 
         for (const socket of sockets) {
             const data = this.service.serializeSocket(socket);
+
             nodes[data.id] = data;
         }
 

@@ -33,7 +33,7 @@ export class Configuration {
 
     public static async save(config: ConfigurationData) {
         await fs.writeFile(this.file, JSON.stringify(config, null, "  "));
-        await this.afterSave(config);
+        await this.afterSave({ ...config });
     }
 
     public static async setMode(mode: Mode) {
