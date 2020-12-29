@@ -11,6 +11,7 @@ async function runtime() {
     await environmentLoader.loadEnvironment(path.join(__dirname, ".env"));
 
     CLIENT.connect({
+        family: 4,
         host: ENVIRONMENT.get("HOST"),
         port: parseInt(ENVIRONMENT.get("SERVICE_PORT"), 10),
     });
