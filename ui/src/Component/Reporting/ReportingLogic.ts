@@ -1,7 +1,7 @@
 import { kea } from "kea";
 import { ReportingLogicType } from "./ReportingLogicType";
 import Axios from "axios";
-import { calculateReport, Report, ReportingPoint } from "@soundsystem/common";
+import { calculateReports, Report, ReportingPoint } from "@soundsystem/common";
 
 export const ReportingLogic = kea<ReportingLogicType>({
     actions: {
@@ -53,30 +53,7 @@ export const ReportingLogic = kea<ReportingLogicType>({
         reports: [
             (selectors) => [selectors.points],
             (points: ReportingPoint[]) => {
-                const reports: Report[] = [];
-
-                const grouped = points.reduce((previous, next) => {
-                    return {
-                        ...previous,
-                        ...{
-                            [next.correlationId]: [
-                                ...(previous[next.correlationId] ?? []),
-                                next,
-                            ].sort((a, b) => a.timestamp - b.timestamp),
-                        },
-                    };
-                }, {} as Record<string, ReportingPoint[]>);
-
-                const keys = Object.keys(grouped);
-
-                for (const key of keys) {
-                    const points = grouped[key];
-                    const report = calculateReport(points);
-
-                    reports.push(report);
-                }
-
-                return reports;
+                return calculateReports(points);
             },
         ],
         selectedReport: [
