@@ -10,10 +10,10 @@ export class CommandQueue {
 
     protected controllers: CommandControllerInterface[] = [];
 
+    protected id: NodeJS.Timeout | null = null;
+
     public constructor(target: EventEmitter) {
         target.on("request", this.handleRequest.bind(this));
-
-        setImmediate(this.commandQueueLoop.bind(this));
     }
 
     public register(controller: CommandControllerInterface) {
@@ -27,6 +27,8 @@ export class CommandQueue {
             socket,
             command,
         });
+
+        this.requeue();
     }
 
     private getController(command: string) {
@@ -53,10 +55,18 @@ export class CommandQueue {
             const response = command.createResponse(result);
 
             socket.response(response);
+        }
 
-            setImmediate(this.commandQueueLoop.bind(this));
-        } else {
-            setImmediate(this.commandQueueLoop.bind(this));
+        this.requeue();
+    }
+
+    private requeue(){
+        if(this.items.length > 0) {
+            if(this.id){
+                clearTimeout(this.id);
+            }
+
+            this.id = setTimeout(this.commandQueueLoop.bind(this), 1);
         }
     }
 

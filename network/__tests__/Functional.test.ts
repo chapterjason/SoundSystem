@@ -2,7 +2,7 @@ import { Server } from "../src/Server/Server";
 import { Client } from "../src/Client/Client";
 import { CommandController } from "../src/Command/CommandController";
 import { BidirectionalSocket } from "../src/Common/BidirectionalSocket";
-import { Command, Packet } from "common";
+import { Command, Packet } from "@soundsystem/common";
 import { CommandQueue } from "../src/Command/CommandQueue";
 
 export class FooCommandController extends CommandController {
