@@ -145,9 +145,11 @@ export class NodeController {
         await streamer.request(streamPacket);
         await streamer.request(unmutePacket);
 
-        const filteredSockets = sockets.filter(socket => socket.getUserData()?.id !== streamer.getUserData()?.id);
+        for await (const socket of sockets) {
+            if (socket === streamer) {
+                continue;
+            }
 
-        for await (const socket of filteredSockets) {
             await socket.request(listenPacket);
             await socket.request(unmutePacket);
         }
