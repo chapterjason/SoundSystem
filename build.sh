@@ -22,9 +22,8 @@ mkdir -p "$SCRIPT_DIRECTORY/server/public"
 # shellcheck source=./build_scripts.sh
 "$SCRIPT_DIRECTORY/build_scripts.sh"
 
-# shellcheck source=./build_ui.sh
-"$SCRIPT_DIRECTORY/build_ui.sh"
-
 # shellcheck source=./build_client.sh
 "$SCRIPT_DIRECTORY/build_client.sh"
 
+# shellcheck source=./build_ui.sh
+"$SCRIPT_DIRECTORY/build_ui.sh"

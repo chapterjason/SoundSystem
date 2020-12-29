@@ -29,18 +29,18 @@ module.exports = new Promise(async function (resolve) {
         "synchronize": false,
         "logging": false,
         "entities": [
-            "src/Module/Application/Entity/**/*.ts",
+            path.join(__dirname, "src/Module/Application/Entity/**/*.ts"),
         ],
         "migrations": [
-            "src/Module/Application/Migration/**/*.ts",
+            path.join(__dirname, "src/Module/Application/Migration/**/*.ts"),
         ],
         "subscribers": [
-            "src/Module/Application/Subscriber/**/*.ts",
+            path.join(__dirname, "src/Module/Application/Subscriber/**/*.ts"),
         ],
         "cli": {
-            "entitiesDir": "src/Module/Application/Entity",
-            "migrationsDir": "src/Module/Application/Migration",
-            "subscribersDir": "src/Module/Application/Subscriber",
+            "entitiesDir": path.join(__dirname, "src/Module/Application/Entity"),
+            "migrationsDir": path.join(__dirname, "src/Module/Application/Migration"),
+            "subscribersDir": path.join(__dirname, "src/Module/Application/Subscriber"),
         },
     });
 });
