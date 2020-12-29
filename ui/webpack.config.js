@@ -18,7 +18,7 @@ module.exports = {
                         [
                             "@babel/preset-env",
                             {
-                                useBuiltIns: "entry",
+                                useBuiltIns: "usage",
                                 corejs: 3,
                             },
                         ],
@@ -26,6 +26,7 @@ module.exports = {
                         "@babel/preset-typescript",
                     ],
                     plugins: [
+                        "@babel/plugin-transform-runtime",
                         "@babel/plugin-syntax-dynamic-import",
                         "@babel/plugin-proposal-class-properties"
                     ]

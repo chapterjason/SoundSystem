@@ -22,6 +22,7 @@
     "@types/react-redux": "^7.1.11",
     "babel-loader": "^8.2.2",
     "clean-webpack-plugin": "^3.0.0",
+    "core-js": "^3.8.1",
     "css-loader": "^5.0.1",
     "file-loader": "^6.2.0",
     "mini-css-extract-plugin": "^1.3.2",
@@ -33,16 +34,16 @@
     "webpack-cli": "^4.2.0"
   },
   "dependencies": {
-    "classnames": "^2.2.6",
     "@fortawesome/fontawesome-free": "^5.15.1",
-    "reselect": "^4.0.0",
+    "axios": "^0.21.0",
+    "bootstrap": "^4.5.3",
+    "classnames": "^2.2.6",
+    "kea": "^2.2.2",
     "react": "^17.0.1",
     "react-bootstrap": "^1.4.0",
     "react-dom": "^17.0.1",
     "react-redux": "^7.2.2",
     "redux": "^4.0.5",
-    "kea": "^2.2.2",
-    "bootstrap": "^4.5.3",
-    "axios": "^0.21.0"
+    "reselect": "^4.0.0"
   }
 }
