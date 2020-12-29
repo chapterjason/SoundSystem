@@ -1,3 +1,5 @@
+import { ReportingPoint } from "./ReportingPoint";
+
 export interface Report {
     id: string;
 
@@ -5,8 +7,5 @@ export interface Report {
 
     timestamp: Date;
 
-    points: {
-        name: string;
-        time: number;
-    }[];
+    points: ReportingPoint[];
 }

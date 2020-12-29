@@ -1,5 +1,3 @@
-import { ReportingPointType } from "./ReportingPointType";
-
 export interface ReportingPoint {
     id: string;
 
@@ -7,9 +5,9 @@ export interface ReportingPoint {
 
     nodeId: string;
 
-    type: ReportingPointType;
+    type: string;
 
-    timestamp: number; // Date
+    time: number;
 
-    data: string;
+    timestamp: number;
 }

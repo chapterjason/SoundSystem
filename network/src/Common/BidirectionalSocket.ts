@@ -86,6 +86,8 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
 
         this.responseHandlers.delete(id);
 
+        this.emit("response", this, packet);
+
         responseHandler(packet);
     }
 

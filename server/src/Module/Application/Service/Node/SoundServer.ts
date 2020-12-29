@@ -2,7 +2,9 @@ import { Injectable, InternalServerErrorException, Logger, NotFoundException } f
 import { ENVIRONMENT } from "../../../../Meta";
 import { BidirectionalSocket, CommandQueue, Server } from "@soundsystem/network";
 import { SoundServerController } from "./Controller/SoundServerController";
-import { SoundNodeData, SoundNodeResponseData } from "@soundsystem/common";
+import { Command, SoundNodeData, SoundNodeResponseData } from "@soundsystem/common";
+import { ReportingController } from "./Controller/ReportingController";
+import { ReportingService } from "../Reporting/ReportingService";
 
 const DEFAULT_SERVICE_PORT = 3200;
 const SERVICE_PORT = ENVIRONMENT.has("SERVICE_PORT") ? parseInt(ENVIRONMENT.get("SERVICE_PORT"), 10) : DEFAULT_SERVICE_PORT;
@@ -15,10 +17,15 @@ export class SoundServer extends Server<SoundNodeData> {
 
     private readonly logger = new Logger("SoundServer");
 
-    public constructor() {
+    private reporting: ReportingService;
+
+    public constructor(reporting: ReportingService) {
         super();
 
+        this.reporting = reporting;
+
         this.queue.register(new SoundServerController());
+        this.queue.register(new ReportingController(reporting));
 
         this.on("connect", this.handleClientConnect.bind(this));
 
@@ -62,6 +69,12 @@ export class SoundServer extends Server<SoundNodeData> {
 
     private handleClientConnect(socket: BidirectionalSocket<SoundNodeData>): void {
         this.logger.log(`Connected unknown`);
+
+        socket.on("response", (socket, packet) => {
+            const command = Command.fromPacket(packet);
+
+            console.log("response");
+        });
 
         socket.on("close", this.handleClientDisconnect.bind(this));
     }
