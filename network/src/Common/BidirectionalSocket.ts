@@ -6,9 +6,9 @@ import { Packet } from "@soundsystem/common";
 export class BidirectionalSocket<UserDataType extends object = {}> extends EventEmitter {
     protected socket: Socket;
 
-    protected responseHandlers: Map<string, ResponseHandler> = new Map<string, ResponseHandler>();
+    protected handlers: Map<string, ResponseHandler> = new Map<string, ResponseHandler>();
 
-    protected packetQueue: Packet[] = [];
+    protected packets: Packet[] = [];
 
     private userData: UserDataType | null = null;
 
@@ -50,9 +50,9 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
 
         return new Promise((resolve, reject) => {
             setImmediate(() => {
-                this.packetQueue.push(requestPacket);
+                this.packets.push(requestPacket);
 
-                this.responseHandlers.set(id, (data: Error | Packet) => {
+                this.handlers.set(id, (data: Error | Packet) => {
                     if (data instanceof Packet) {
                         resolve(data);
                         return;
@@ -66,14 +66,14 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
     }
 
     public response(responsePacket: Packet): void {
-        setImmediate(() => this.packetQueue.push(responsePacket));
+        setImmediate(() => this.packets.push(responsePacket));
     }
 
     protected handleData(buffer: Buffer) {
         const packet = Packet.fromBuffer(buffer);
         const id = packet.getId();
 
-        if (this.responseHandlers.has(id)) {
+        if (this.handlers.has(id)) {
             this.handleResponsePacket(packet);
         } else {
             this.handleRequestPacket(packet);
@@ -82,9 +82,9 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
 
     protected handleResponsePacket(packet: Packet): void {
         const id = packet.getId();
-        const responseHandler = this.responseHandlers.get(id) as ResponseHandler;
+        const responseHandler = this.handlers.get(id) as ResponseHandler;
 
-        this.responseHandlers.delete(id);
+        this.handlers.delete(id);
 
         this.emit("response", this, packet);
 
@@ -96,7 +96,7 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
     }
 
     private packetQueueLoop(): void {
-        const packet = this.packetQueue.shift();
+        const packet = this.packets.shift();
 
         if (packet) {
             const buffer = packet.toBuffer();
