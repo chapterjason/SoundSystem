@@ -12,6 +12,8 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
 
     private userData: UserDataType | null = null;
 
+    private id: NodeJS.Immediate | null = null;
+
     public constructor(socket: Socket) {
         super();
         this.socket = socket;
@@ -26,7 +28,7 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
         this.socket.on("close", () => this.emit("close", this));
         this.socket.on("connect", () => this.emit("connect"));
 
-        setImmediate(this.packetQueueLoop.bind(this));
+        setImmediate(this.handleOutgoingPacket.bind(this));
     }
 
     public disconnect() {
@@ -49,24 +51,25 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
         const id = requestPacket.getId();
 
         return new Promise((resolve, reject) => {
-            setImmediate(() => {
-                this.packets.push(requestPacket);
+            this.packets.push(requestPacket);
 
-                this.handlers.set(id, (data: Error | Packet) => {
-                    if (data instanceof Packet) {
-                        resolve(data);
-                        return;
+            this.handlers.set(id, (data: Error | Packet) => {
+                if (data instanceof Packet) {
+                    resolve(data);
+                    return;
 
-                    }
+                }
 
-                    reject(data);
-                });
+                reject(data);
             });
+
+            this.requeue();
         });
     }
 
     public response(responsePacket: Packet): void {
-        setImmediate(() => this.packets.push(responsePacket));
+        this.packets.push(responsePacket);
+        this.requeue();
     }
 
     protected handleData(buffer: Buffer) {
@@ -95,7 +98,15 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
         this.emit("request", this, packet);
     }
 
-    private packetQueueLoop(): void {
+    private requeue() {
+        if (this.id) {
+            clearImmediate(this.id);
+        }
+
+        this.id = setImmediate(this.handleOutgoingPacket.bind(this));
+    }
+
+    private handleOutgoingPacket(): void {
         const packet = this.packets.shift();
 
         if (packet) {
@@ -105,10 +116,8 @@ export class BidirectionalSocket<UserDataType extends object = {}> extends Event
                     this.emit("error", error);
                 }
 
-                setImmediate(this.packetQueueLoop.bind(this));
+                this.requeue();
             });
-        } else {
-            setImmediate(this.packetQueueLoop.bind(this));
         }
     }
 }

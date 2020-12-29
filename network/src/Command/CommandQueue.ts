@@ -10,7 +10,7 @@ export class CommandQueue {
 
     protected controllers: CommandControllerInterface[] = [];
 
-    protected id: NodeJS.Timeout | null = null;
+    protected id: NodeJS.Immediate | null = null;
 
     public constructor(target: EventEmitter) {
         target.on("request", this.handleRequest.bind(this));
@@ -63,10 +63,10 @@ export class CommandQueue {
     private requeue(){
         if(this.items.length > 0) {
             if(this.id){
-                clearTimeout(this.id);
+                clearImmediate(this.id);
             }
 
-            this.id = setTimeout(this.commandQueueLoop.bind(this), 1);
+            this.id = setImmediate(this.commandQueueLoop.bind(this));
         }
     }
 

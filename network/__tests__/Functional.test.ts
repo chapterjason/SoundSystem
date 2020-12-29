@@ -1,42 +1,15 @@
 import { Server } from "../src/Server/Server";
 import { Client } from "../src/Client/Client";
-import { CommandController } from "../src/Command/CommandController";
 import { BidirectionalSocket } from "../src/Common/BidirectionalSocket";
 import { Command, Packet } from "@soundsystem/common";
 import { CommandQueue } from "../src/Command/CommandQueue";
-
-export class FooCommandController extends CommandController {
-
-    constructor() {
-        super();
-
-        this.set("calculate", this.calculate);
-    }
-
-    public async calculate(data: [number, number], command: Command, socket: BidirectionalSocket): Promise<number> {
-        const [a, b] = data;
-
-        return a + b;
-    }
-
-}
-
-export class BarCommandController extends CommandController {
-
-    public constructor() {
-        super();
-        this.set("name", this.getName);
-    }
-
-    public async getName(data: string, command: Command): Promise<string> {
-        return "FooBar";
-    }
-
-}
+import { FooCommandController } from "./FooCommandController";
+import { BarCommandController } from "./BarCommandController";
 
 describe("Functional", () => {
-
     test("client request to server", done => {
+        expect.assertions(10000);
+
         // Arrange
         const server = new Server();
         const client = new Client();
@@ -48,14 +21,17 @@ describe("Functional", () => {
 
         server.listen({ port: 3200 });
 
-        client.on("connect", async () => {
-            // Act
-            const command = Command.create("calculate", [1, 4]);
-            const actual = await client.request(command.toPacket());
+        const command = Command.create("calculate", [1, 4]);
 
-            // Assert
-            expect(actual).toBeInstanceOf(Packet);
-            expect(actual.getAs<number>()).toBe(5);
+        client.on("connect", async () => {
+
+            for (let i = 0; i < 10000; i++) {
+                // Act
+                const actual = await client.request(command.toPacket());
+
+                // Assert
+                expect(actual.getAs<number>()).toBe(5);
+            }
 
             client.disconnect();
             await server.stop();
@@ -69,6 +45,8 @@ describe("Functional", () => {
     });
 
     test("server request to client", (done) => {
+        expect.assertions(10000);
+
         // Arrange
         const server = new Server();
         const client = new Client();
@@ -80,14 +58,16 @@ describe("Functional", () => {
 
         server.listen({ port: 3200 });
 
-        server.on("connect", async (socket: BidirectionalSocket) => {
-            // Act
-            const command = Command.create("name");
-            const actual = await socket.request(command.toPacket());
+        const command = Command.create("name");
 
-            // Assert
-            expect(actual).toBeInstanceOf(Packet);
-            expect(actual.getAs<string>()).toBe("FooBar");
+        server.on("connect", async (socket: BidirectionalSocket) => {
+            for (let i = 0; i < 10000; i++) {
+                // Act
+                const actual = await socket.request(command.toPacket());
+
+                // Assert
+                expect(actual.getAs<string>()).toBe("FooBar");
+            }
 
             client.disconnect();
             await server.stop();
