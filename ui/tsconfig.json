@@ -1,6 +1,7 @@
 {
   "extends": "@tsconfig/recommended/tsconfig.json",
   "compilerOptions": {
+    "target": "ES6",
     "outDir": "./dist",
     "declarationMap": false,
     "sourceMap": true,
@@ -11,6 +12,9 @@
   },
   "include": [
     "./src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
   ],
   "references": [
     {

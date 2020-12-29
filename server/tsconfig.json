@@ -2,9 +2,9 @@
   "extends": "@tsconfig/node14/tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "declarationMap": true,
+    "declarationMap": false,
     "sourceMap": true,
-    "declaration": true,
+    "declaration": false,
     "rootDir": "./src",
     "moduleResolution": "node",
     "experimentalDecorators": true,
@@ -15,6 +15,9 @@
     "typeCheck": false,
     "files": false
   },
+  "exclude": [
+    "node_modules"
+  ],
   "include": [
     "./src/**/*"
   ],
