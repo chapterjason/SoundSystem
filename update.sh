@@ -6,9 +6,3 @@ git add -A
 git stash
 git pull --rebase
 git stash pop
-
-. "$SCRIPT_DIRECTORY/build.sh"
-
-supervisorctl stop server
-supervisorctl start server
-
