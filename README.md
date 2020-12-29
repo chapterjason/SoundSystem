@@ -52,16 +52,12 @@ Build with `./build.sh`
 
 Install the supervisor service with `./services.sh`
 
-### Update
+### Update server
 
 ```
-git add -A
-git stash
-git pull --rebase
-git stash pop
+./update.sh
 ./build.sh
-supervisorctl stop server
-supervisorctl start server
+./restart.sh
 ```
 
 ## Add client
@@ -73,7 +69,7 @@ unzip -o scripts.zip
 ./scripts/install.sh
 ```
 
-### Reconfigure
+### Reconfigure client
 
 ```
 ./scripts/configure.sh
@@ -81,7 +77,7 @@ unzip -o scripts.zip
 ./scripts/client/client_update.sh
 ```
 
-### Update
+### Update client
 
 ```
 ./scripts/client/client_update.sh
@@ -90,12 +86,14 @@ unzip -o scripts.zip
 # Todo
 
 - [ ] Tests
+    - [x] Common
+    - [x] Network
     - [ ] Server
     - [ ] Client
     - [ ] UI
 - [x] Client single mode
 - [x] Mute
-- [ ] Homebridge plugin
+- [ ] ~~Homebridge plugin~~
 - [ ] GitHub build pipeline
 - [ ] Decouple the scripts more the location (hardcoded paths in services)
 - [ ] Decouple the server more in a separate user
