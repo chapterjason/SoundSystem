@@ -8,7 +8,6 @@ echo "Build ui"
 ###################################
 ###################################
 pushd "$SCRIPT_DIRECTORY/ui" || exit
-yarn
 yarn run build:prod
 popd || exit
 

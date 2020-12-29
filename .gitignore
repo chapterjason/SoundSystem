@@ -6,6 +6,7 @@ node_modules/
 
 # Outputs
 dist/
+tsconfig.tsbuildinfo
 scripts.zip
 
 # DS_Store

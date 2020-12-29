@@ -1,5 +1,5 @@
 import { MakeLogicType } from "kea";
-import { Report, ReportingPoint } from "common";
+import { Report, ReportingPoint } from "@soundsystem/common";
 
 interface Values {
     points: ReportingPoint[];

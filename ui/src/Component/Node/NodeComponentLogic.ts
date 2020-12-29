@@ -2,7 +2,7 @@ import { kea } from "kea";
 import { NodeComponentLogicType } from "./NodeComponentLogicType";
 import Axios from "axios";
 import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
-import { Mode, NodeResponseData } from "common";
+import { Mode, SoundNodeResponseData } from "@soundsystem/common";
 
 export const NodeComponentLogic = kea<NodeComponentLogicType>({
     key: props => props.node.id,
@@ -147,7 +147,7 @@ export const NodeComponentLogic = kea<NodeComponentLogicType>({
     selectors: ({ props }) => ({
         listenNode: [
             () => [() => NodeOverviewLogic.values.nodes, () => props.node],
-            (nodes: Record<string, NodeResponseData>, node: NodeResponseData) => Object.keys(nodes).map(id => {
+            (nodes: Record<string, SoundNodeResponseData>, node: SoundNodeResponseData) => Object.keys(nodes).map(id => {
                 return nodes[id];
             }).find((item) => item.address === node.server) ?? null,
         ],

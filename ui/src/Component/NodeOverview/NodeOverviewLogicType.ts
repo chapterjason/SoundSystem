@@ -1,8 +1,8 @@
 import { MakeLogicType } from "kea";
-import { NodeResponseData } from "common";
+import { SoundNodeResponseData } from "@soundsystem/common";
 
 interface Values {
-    nodes: Record<string, NodeResponseData>;
+    nodes: Record<string, SoundNodeResponseData>;
 
     autoRefresh: boolean;
 
@@ -14,7 +14,7 @@ interface Values {
 }
 
 interface Actions {
-    setNodes: (nodes: Record<string, NodeResponseData>) => { nodes: Record<string, NodeResponseData> }
+    setNodes: (nodes: Record<string, SoundNodeResponseData>) => { nodes: Record<string, SoundNodeResponseData> }
 
     setAutoRefresh: (autoRefresh: boolean) => { autoRefresh: boolean };
 

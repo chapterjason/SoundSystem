@@ -1,8 +1,9 @@
 import { Configuration } from "./Configuration";
-import { Client } from "./Client";
-import { EnvironmentLoader, ProcessEnvironment } from "@mscs/environment";
+import { EnvironmentLoader } from "@mscs/environment";
 import path from "path";
-import { CLIENT, ENVIRONMENT } from "./meta";
+import { ENVIRONMENT, HOSTNAME, ID } from "./meta";
+import { Command } from "@soundsystem/common";
+import { CLIENT } from "./Singleton/Client";
 
 async function runtime() {
     const environmentLoader = new EnvironmentLoader(ENVIRONMENT);
@@ -15,8 +16,14 @@ async function runtime() {
     });
 
     CLIENT.on("connect", async () => {
-        Configuration.afterSave = async () => {
-            await CLIENT.sendConfiguration();
+        Configuration.afterSave = async (config) => {
+            const command = Command.create("configuration", JSON.stringify({
+                ...config,
+                hostname: HOSTNAME,
+                id: ID,
+            }));
+
+            await CLIENT.request(command.toPacket());
         };
 
         await CLIENT.init();
@@ -28,7 +35,7 @@ async function runtime() {
     });
 
     CLIENT.on("close", () => {
-        console.error("Remote connection closed.");
+        console.error("Connection closed.");
         process.exit(1);
     });
 }

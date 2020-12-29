@@ -1,7 +1,7 @@
 import { kea } from "kea";
 import { ReportingLogicType } from "./ReportingLogicType";
 import Axios from "axios";
-import { calculateReport, Report, ReportingPoint } from "common";
+import { calculateReport, Report, ReportingPoint } from "@soundsystem/common";
 
 export const ReportingLogic = kea<ReportingLogicType>({
     actions: {

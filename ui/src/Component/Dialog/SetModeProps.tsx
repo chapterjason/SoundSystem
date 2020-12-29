@@ -1,7 +1,7 @@
-import { NodeResponseData } from "common";
+import { SoundNodeResponseData } from "@soundsystem/common";
 
 export interface SetModeProps {
     id: string;
 
-    node: NodeResponseData;
+    node: SoundNodeResponseData;
 }

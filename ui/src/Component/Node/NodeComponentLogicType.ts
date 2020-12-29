@@ -1,5 +1,5 @@
 import { MakeLogicType } from "kea";
-import { Mode, NodeData, NodeResponseData, Stream } from "common";
+import { Mode, SoundNodeResponseData, Stream } from "@soundsystem/common";
 
 interface Values {
     showSetMode: boolean;
@@ -20,7 +20,7 @@ interface Values {
 
     savedVolume: number;
 
-    listenNode: NodeResponseData | null;
+    listenNode: SoundNodeResponseData | null;
 }
 
 interface Actions {
@@ -62,7 +62,7 @@ interface Actions {
 interface Props {
     id: string;
 
-    node: NodeResponseData;
+    node: SoundNodeResponseData;
 }
 
 export type NodeComponentLogicType = MakeLogicType<Values, Actions, Props>

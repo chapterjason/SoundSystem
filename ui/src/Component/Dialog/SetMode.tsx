@@ -3,7 +3,7 @@ import * as React from "react";
 import { NodeComponentLogic } from "../Node/NodeComponentLogic";
 import { useActions } from "kea";
 import { SetModeProps } from "./SetModeProps";
-import { Mode } from "common";
+import { Mode } from "@soundsystem/common";
 
 export function SetMode(props: SetModeProps) {
     const logic = NodeComponentLogic(props);

@@ -2,11 +2,22 @@
 
 SCRIPT_DIRECTORY="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# shellcheck source=./build_common.sh
-"$SCRIPT_DIRECTORY/build_common.sh"
+###################################
+###################################
+echo "Install dependencies"
+###################################
+###################################
+yarn
 
-# shellcheck source=./build_server.sh
-"$SCRIPT_DIRECTORY/build_server.sh"
+###################################
+###################################
+echo "Prepare server"
+###################################
+###################################
+mkdir -p "$SCRIPT_DIRECTORY/server/public"
+
+# shellcheck source=./build_shared.sh
+"$SCRIPT_DIRECTORY/build_shared.sh"
 
 # shellcheck source=./build_scripts.sh
 "$SCRIPT_DIRECTORY/build_scripts.sh"

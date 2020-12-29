@@ -1,7 +1,7 @@
 import path from "path";
 import { ConfigurationData } from "./ConfigurationData";
 import { existsSync, promises as fs } from "fs";
-import { Mode, Stream } from "common";
+import { Mode, Stream } from "@soundsystem/common";
 
 export class Configuration {
 
@@ -15,7 +15,7 @@ export class Configuration {
 
     private static file: string = path.join(__dirname, "client.json");
 
-    public static afterSave: () => Promise<void> = async () => {
+    public static afterSave: (config: ConfigurationData) => Promise<void> = async () => {
     };
 
     public static async reset(): Promise<void> {
@@ -33,7 +33,7 @@ export class Configuration {
 
     public static async save(config: ConfigurationData) {
         await fs.writeFile(this.file, JSON.stringify(config, null, "  "));
-        await this.afterSave();
+        await this.afterSave(config);
     }
 
     public static async setMode(mode: Mode) {

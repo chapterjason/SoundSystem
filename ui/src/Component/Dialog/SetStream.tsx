@@ -3,7 +3,7 @@ import * as React from "react";
 import { NodeComponentLogic } from "../Node/NodeComponentLogic";
 import { useActions } from "kea";
 import { SetStreamProps } from "./SetStreamProps";
-import { Stream } from "common";
+import { Stream } from "@soundsystem/common";
 
 export function SetStream(props: SetStreamProps) {
     const logic = NodeComponentLogic(props);

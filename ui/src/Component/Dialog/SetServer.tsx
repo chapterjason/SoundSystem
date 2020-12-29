@@ -5,7 +5,7 @@ import { NodeComponentLogic } from "../Node/NodeComponentLogic";
 import { useActions, useValues } from "kea";
 import { NodeOverviewLogic } from "../NodeOverview/NodeOverviewLogic";
 import { SetServerProps } from "./SetServerProps";
-import { Mode } from "common";
+import { Mode } from "@soundsystem/common";
 
 export function SetServer(props: SetServerProps) {
     const { node: { server, id: nodeId } } = props;

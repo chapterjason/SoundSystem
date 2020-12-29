@@ -7,6 +7,8 @@ git stash
 git pull --rebase
 git stash pop
 
+yarn
+
 . "$SCRIPT_DIRECTORY/build_ui.sh"
 
 supervisorctl stop server

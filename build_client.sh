@@ -8,10 +8,9 @@ echo "Build client"
 ###################################
 ###################################
 pushd "$SCRIPT_DIRECTORY/client" || exit
-yarn
 yarn run build:prod
 popd || exit
 
 mkdir -p "$SCRIPT_DIRECTORY/server/public/client"
-mv "$SCRIPT_DIRECTORY/client/dist"/* "$SCRIPT_DIRECTORY/server/public/client"
+mv "$SCRIPT_DIRECTORY/client/dist/client.js" "$SCRIPT_DIRECTORY/server/public/client"
 

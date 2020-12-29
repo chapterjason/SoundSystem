@@ -1,11 +1,13 @@
 {
-  "name": "common",
+  "name": "@soundsystem/common",
   "version": "1.0.0",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "tsc"
+    "build": "tsc --build",
+    "test": "jest --detectOpenHandles --forceExit --runInBand"
   },
   "devDependencies": {
     "@tsconfig/recommended": "^1.0.1",

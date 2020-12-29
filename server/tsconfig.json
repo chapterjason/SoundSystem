@@ -2,10 +2,23 @@
   "extends": "@tsconfig/node14/tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist",
+    "declarationMap": true,
+    "sourceMap": true,
+    "declaration": true,
+    "rootDir": "./src",
+    "moduleResolution": "node",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
   "include": [
     "./src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../common"
+    },
+    {
+      "path": "../network"
+    }
   ]
 }

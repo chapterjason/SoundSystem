@@ -2,7 +2,7 @@ import * as React from "react";
 import { FunctionComponent } from "react";
 import { Provider } from "react-redux";
 import { getContext } from "kea";
-import ReactDOM = require("react-dom");
+import * as ReactDOM from "react-dom";
 
 export class ComponentService {
 

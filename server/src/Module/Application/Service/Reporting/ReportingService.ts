@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { joinToPackageDirectory } from "../../../../Meta";
 import { existsSync, promises as fs } from "fs";
-import { ReportingPoint, ReportingPointType } from "common";
+import { ReportingPoint, ReportingPointType } from "@soundsystem/common";
 
 @Injectable()
 export class ReportingService {

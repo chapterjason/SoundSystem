@@ -5,7 +5,7 @@ import { useActions, useValues } from "kea";
 import { ReportingLogic } from "./ReportingLogic";
 import "./report.scss";
 import { Bar, BarChart, CartesianGrid, Cell, Legend, Tooltip, XAxis, YAxis } from "recharts";
-import { Report } from "common";
+import { Report } from "@soundsystem/common";
 
 const colors: {
     [key: string]: string;

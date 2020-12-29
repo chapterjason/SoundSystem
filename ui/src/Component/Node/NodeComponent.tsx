@@ -8,7 +8,7 @@ import { SetServer } from "../Dialog/SetServer";
 import { Button, Col, Container, Form, InputGroup, Row, Spinner } from "react-bootstrap";
 import classNames from "classnames";
 import { NodeComponentProps } from "./NodeComponentProps";
-import { Mode } from "common";
+import { Mode } from "@soundsystem/common";
 
 export function NodeComponent(props: NodeComponentProps) {
     const { id, node } = props;

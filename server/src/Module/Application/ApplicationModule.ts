@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { HomeController } from "./Controller/HomeController";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { NodeController } from "./Controller/NodeController";
-import { NodeService } from "./Service/Node/NodeService";
+import { SoundServer } from "./Service/Node/SoundServer";
 import { joinToPackageDirectory } from "../../Meta";
 import { HealthController } from "./Controller/HealthController";
 import { ReportingService } from "./Service/Reporting/ReportingService";
@@ -17,7 +17,7 @@ import { ReportingController } from "./Controller/ReportingController";
     ],
     providers: [
         ReportingService,
-        NodeService,
+        SoundServer,
     ],
     imports: [
         TypeOrmModule.forRoot(require(joinToPackageDirectory("ormconfig.js"))),

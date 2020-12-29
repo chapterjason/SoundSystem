@@ -1,4 +1,4 @@
-import { Mode, Stream } from "common";
+import { Mode, Stream } from "@soundsystem/common";
 
 export interface ConfigurationData {
     mode: Mode;

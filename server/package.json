@@ -34,6 +34,7 @@
     "twig": "^1.15.4",
     "typeorm": "^0.2.29",
     "uuid": "^8.3.2",
-    "common": "link:../common"
+    "@soundsystem/common": "1.0.0",
+    "@soundsystem/network": "1.0.0"
   }
 }

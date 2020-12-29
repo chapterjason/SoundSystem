@@ -1,13 +1,13 @@
-import { Body, Controller, Get, Inject, NotFoundException, Param, Post, Scope } from "@nestjs/common";
-import { NodeService } from "../Service/Node/NodeService";
-import { Stream } from "common";
+import { Body, Controller, Get, Param, Post, Scope } from "@nestjs/common";
+import { Command, SoundNodeResponseData, Stream } from "@soundsystem/common";
+import { SoundServer } from "../Service/Node/SoundServer";
 
 @Controller({ scope: Scope.REQUEST })
 export class NodeController {
 
-    private service: NodeService;
+    private service: SoundServer;
 
-    public constructor(service: NodeService) {
+    public constructor(service: SoundServer) {
         this.service = service;
     }
 
@@ -15,15 +15,11 @@ export class NodeController {
     public async idle(@Param("id") id: string) {
         console.log("NodeController", "idle", id);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("idle");
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("idle");
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
@@ -32,15 +28,11 @@ export class NodeController {
     public async mute(@Param("id") id: string) {
         console.log("NodeController", "mute", id);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("mute");
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("mute");
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
@@ -49,15 +41,11 @@ export class NodeController {
     public async unmute(@Param("id") id: string) {
         console.log("NodeController", "unmute", id);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("unmute");
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("unmute");
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
@@ -66,15 +54,11 @@ export class NodeController {
     public async stream(@Param("id") id: string, @Body() update: { stream: Stream }) {
         console.log("NodeController", "stream", id, update);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("stream", update.stream);
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("stream", update.stream);
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
@@ -83,15 +67,11 @@ export class NodeController {
     public async single(@Param("id") id: string, @Body() update: { stream: Stream }) {
         console.log("NodeController", "single", id, update);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("single", update.stream);
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("single", update.stream);
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
@@ -100,15 +80,11 @@ export class NodeController {
     public async listen(@Param("id") id: string, @Body() update: { server: string }) {
         console.log("NodeController", "listen", id, update);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("listen", update.server);
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("listen", update.server);
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
@@ -117,102 +93,93 @@ export class NodeController {
     public async volume(@Param("id") id: string, @Body() update: { volume: number }) {
         console.log("NodeController", "volume", id, update);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("volume", update.volume);
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("volume", update.volume);
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
 
     @Get("/node/:id")
     public getNode(@Param("id") id: string) {
-        const nodes = this.service.getNodes();
-
-        if (!(id in nodes)) {
-            throw new NotFoundException(`Not with id ${id} not found`);
-        }
+        const socket = this.service.getSocket(id);
 
         return {
-            node: nodes[id].toJSON(),
+            node: this.service.serializeSocket(socket),
         };
     }
 
     @Get("/node")
     public getNodes() {
-        const nodes = this.service.getNodes();
-        const ids = Object.keys(nodes);
-        const jsonNodes: Record<string, object> = {};
+        const sockets = this.service.getSockets();
+        const nodes: Record<string, SoundNodeResponseData> = {};
 
-        for (const id of ids) {
-            jsonNodes[id] = nodes[id].toJSON();
+        for (const socket of sockets) {
+            const data = this.service.serializeSocket(socket);
+            nodes[data.id] = data;
         }
 
         return {
-            nodes: jsonNodes,
+            nodes,
         };
     }
 
     @Post("/node/:id/party")
     public async party(@Param("id") id: string, @Body() data: { stream: Stream }) {
-        const nodeRecords = this.service.getNodes();
+        const sockets = this.service.getSockets();
 
-        if (id in nodeRecords) {
-            const streamer = nodeRecords[id];
+        const streamer = this.service.getSocket(id);
 
-            await streamer.request("stream", Buffer.from(data.stream));
-            await streamer.request("unmute");
+        const unmuteCommand = Command.create("unmute");
+        const unmutePacket = unmuteCommand.toPacket();
 
-            const nodes = Object.values(nodeRecords).filter(node => node.getId() !== streamer.getId());
+        const streamCommand = Command.create("stream", data.stream);
+        const streamPacket = streamCommand.toPacket();
 
-            for await (const node of nodes) {
-                await node.request("listen", Buffer.from(streamer.getAddress()));
-                await node.request("unmute");
-            }
+        const listenCommand = Command.create("listen", streamer.getSocket().remoteAddress);
+        const listenPacket = listenCommand.toPacket();
 
-            return {
-                "success": true,
-                streamer: streamer.getId(),
-                listeners: nodes.map(node => node.getId()),
-            };
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
+        await streamer.request(streamPacket);
+        await streamer.request(unmutePacket);
+
+        const filteredSockets = sockets.filter(socket => socket.getUserData()?.id !== streamer.getUserData()?.id);
+
+        for await (const socket of filteredSockets) {
+            await socket.request(listenPacket);
+            await socket.request(unmutePacket);
         }
+
+        return {
+            "success": true,
+        };
     }
 
     @Get("/nodes/update")
     public async nodeUpdate() {
         console.log("NodeController", "nodeUpdate");
-        const nodes = this.service.getNodes();
-        const ids = Object.keys(nodes);
+        const sockets = this.service.getSockets();
 
-        for await (const id of ids) {
-            const node = nodes[id];
+        const command = Command.create("update");
+        const packet = command.toPacket();
 
-            await node.request("update");
+        for await (const socket of sockets) {
+            await socket.request(packet);
         }
 
-        return { "success": true, nodes: ids };
+        return { "success": true };
     }
 
     @Get("/node/:id/update")
     public async update(@Param("id") id: string) {
         console.log("NodeController", "update", id);
 
-        const nodes = this.service.getNodes();
+        const socket = this.service.getSocket(id);
+        const command = Command.create("update");
+        const packet = command.toPacket();
 
-        if (id in nodes) {
-            const node = nodes[id];
-
-            await node.request("update");
-        } else {
-            throw new NotFoundException(`Node ${id} not found.`);
-        }
+        await socket.request(packet);
 
         return { "success": true };
     }
