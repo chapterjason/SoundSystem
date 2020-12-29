@@ -80,7 +80,7 @@ export function ReportingComponent() {
                         }}
                     >
                         <CartesianGrid strokeDasharray="3 3"/>
-                        <XAxis dataKey="name"/>
+                        <XAxis dataKey="type"/>
                         <YAxis/>
                         <Tooltip/>
                         <Legend/>
