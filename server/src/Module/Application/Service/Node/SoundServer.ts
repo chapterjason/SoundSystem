@@ -71,7 +71,7 @@ export class SoundServer extends Server<SoundNodeData> {
         this.logger.log(`Connected unknown`);
 
         socket.on("response", (socket, packet) => {
-            const command = Command.fromPacket(packet);
+            // const command = Command.fromPacket(packet);
 
             console.log("response");
         });
