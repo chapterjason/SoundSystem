@@ -5,18 +5,14 @@ import { NodeController } from "./Controller/NodeController";
 import { SoundServer } from "./Service/Node/SoundServer";
 import { joinToPackageDirectory } from "../../Meta";
 import { HealthController } from "./Controller/HealthController";
-import { ReportingService } from "./Service/Reporting/ReportingService";
-import { ReportingController } from "./Controller/ReportingController";
 
 @Module({
     controllers: [
         HomeController,
         HealthController,
         NodeController,
-        ReportingController,
     ],
     providers: [
-        ReportingService,
         SoundServer,
     ],
     imports: [

@@ -1,9 +1,8 @@
-import { BidirectionalSocket, CommandController } from "@soundsystem/network";
+import { CommandController } from "@soundsystem/network";
 import { SoundService } from "../Service/SoundService";
 import { Configuration } from "../Configuration";
-import { Command, DataType, Stream } from "@soundsystem/common";
+import { Stream } from "@soundsystem/common";
 import { update } from "../Utils/Update";
-import { REPORTING } from "../Singleton/Reporting";
 
 export class SoundController extends CommandController {
 
@@ -22,16 +21,6 @@ export class SoundController extends CommandController {
         this.set("unmute", this.unmute.bind(this));
         this.set("volume", this.volume.bind(this));
         this.set("update", this.update.bind(this));
-    }
-
-    public async execute(socket: BidirectionalSocket, command: Command): Promise<DataType> {
-        const id = command.getId();
-        const timestamp = command.getTimestamp();
-        const time = Date.now() - timestamp;
-
-        await REPORTING.report(id, "request", time);
-
-        return await super.execute(socket, command);
     }
 
     private async idle() {
