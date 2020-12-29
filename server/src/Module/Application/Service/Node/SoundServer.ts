@@ -22,7 +22,7 @@ export class SoundServer extends Server<SoundNodeData> {
 
         this.on("connect", this.handleClientConnect.bind(this));
 
-        this.listen({ port: SERVICE_PORT });
+        this.listen({ port: SERVICE_PORT, host: "0.0.0.0" });
     }
 
     public getSockets() {
