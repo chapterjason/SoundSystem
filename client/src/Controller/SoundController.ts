@@ -14,7 +14,7 @@ export class SoundController extends CommandController {
         this.service = new SoundService();
 
         this.set("idle", this.idle.bind(this));
-        this.set("listen", this.mute.bind(this));
+        this.set("listen", this.listen.bind(this));
         this.set("single", this.single.bind(this));
         this.set("stream", this.stream.bind(this));
         this.set("mute", this.mute.bind(this));
