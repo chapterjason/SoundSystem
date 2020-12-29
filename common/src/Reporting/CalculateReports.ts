@@ -7,7 +7,7 @@ export function calculateReports(points: ReportingPoint[]): Report[] {
         return {
             ...previous,
             [current.correlationId]: [
-                ...previous[current.correlationId],
+                ...(previous[current.correlationId] ?? []),
                 current,
             ],
         };
