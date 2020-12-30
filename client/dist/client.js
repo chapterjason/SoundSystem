@@ -854,7 +854,1054 @@ module.exports=function(t){var e={};function s(r){if(e[r])return e[r].exports;va
 
 /***/ }),
 
-/***/ 9334:
+/***/ 7546:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "Xb": () => /* binding */ Hub,
+  "vc": () => /* binding */ getActiveDomain,
+  "Gd": () => /* binding */ getCurrentHub,
+  "vi": () => /* binding */ getHubFromCarrier,
+  "cu": () => /* binding */ getMainCarrier,
+  "pj": () => /* binding */ makeMain,
+  "j0": () => /* binding */ setHubOnCarrier
+});
+
+// UNUSED EXPORTS: API_VERSION
+
+// EXTERNAL MODULE: ../node_modules/tslib/tslib.es6.js
+var tslib_es6 = __webpack_require__(9312);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/misc.js
+var misc = __webpack_require__(7451);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/time.js
+var time = __webpack_require__(4180);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/logger.js
+var logger = __webpack_require__(6922);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/node.js
+var node = __webpack_require__(5728);
+// EXTERNAL MODULE: ../node_modules/@sentry/hub/esm/scope.js
+var esm_scope = __webpack_require__(36);
+// EXTERNAL MODULE: ../node_modules/@sentry/types/esm/session.js
+var session = __webpack_require__(8834);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/object.js + 2 modules
+var object = __webpack_require__(806);
+;// CONCATENATED MODULE: ../node_modules/@sentry/hub/esm/session.js
+
+
+/**
+ * @inheritdoc
+ */
+var Session = /** @class */ (function () {
+    function Session(context) {
+        this.errors = 0;
+        this.sid = (0,misc/* uuid4 */.DM)();
+        this.timestamp = Date.now();
+        this.started = Date.now();
+        this.duration = 0;
+        this.status = session/* SessionStatus.Ok */.$.Ok;
+        if (context) {
+            this.update(context);
+        }
+    }
+    /** JSDoc */
+    // eslint-disable-next-line complexity
+    Session.prototype.update = function (context) {
+        if (context === void 0) { context = {}; }
+        if (context.user) {
+            if (context.user.ip_address) {
+                this.ipAddress = context.user.ip_address;
+            }
+            if (!context.did) {
+                this.did = context.user.id || context.user.email || context.user.username;
+            }
+        }
+        this.timestamp = context.timestamp || Date.now();
+        if (context.sid) {
+            // Good enough uuid validation. — Kamil
+            this.sid = context.sid.length === 32 ? context.sid : (0,misc/* uuid4 */.DM)();
+        }
+        if (context.did) {
+            this.did = "" + context.did;
+        }
+        if (typeof context.started === 'number') {
+            this.started = context.started;
+        }
+        if (typeof context.duration === 'number') {
+            this.duration = context.duration;
+        }
+        else {
+            this.duration = this.timestamp - this.started;
+        }
+        if (context.release) {
+            this.release = context.release;
+        }
+        if (context.environment) {
+            this.environment = context.environment;
+        }
+        if (context.ipAddress) {
+            this.ipAddress = context.ipAddress;
+        }
+        if (context.userAgent) {
+            this.userAgent = context.userAgent;
+        }
+        if (typeof context.errors === 'number') {
+            this.errors = context.errors;
+        }
+        if (context.status) {
+            this.status = context.status;
+        }
+    };
+    /** JSDoc */
+    Session.prototype.close = function (status) {
+        if (status) {
+            this.update({ status: status });
+        }
+        else if (this.status === session/* SessionStatus.Ok */.$.Ok) {
+            this.update({ status: session/* SessionStatus.Exited */.$.Exited });
+        }
+        else {
+            this.update();
+        }
+    };
+    /** JSDoc */
+    Session.prototype.toJSON = function () {
+        return (0,object/* dropUndefinedKeys */.Jr)({
+            sid: "" + this.sid,
+            init: true,
+            started: new Date(this.started).toISOString(),
+            timestamp: new Date(this.timestamp).toISOString(),
+            status: this.status,
+            errors: this.errors,
+            did: typeof this.did === 'number' || typeof this.did === 'string' ? "" + this.did : undefined,
+            duration: this.duration,
+            attrs: (0,object/* dropUndefinedKeys */.Jr)({
+                release: this.release,
+                environment: this.environment,
+                ip_address: this.ipAddress,
+                user_agent: this.userAgent,
+            }),
+        });
+    };
+    return Session;
+}());
+
+//# sourceMappingURL=session.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/hub/esm/hub.js
+
+
+
+
+/**
+ * API compatibility version of this hub.
+ *
+ * WARNING: This number should only be increased when the global interface
+ * changes and new methods are introduced.
+ *
+ * @hidden
+ */
+var API_VERSION = 3;
+/**
+ * Default maximum number of breadcrumbs added to an event. Can be overwritten
+ * with {@link Options.maxBreadcrumbs}.
+ */
+var DEFAULT_BREADCRUMBS = 100;
+/**
+ * Absolute maximum number of breadcrumbs added to an event. The
+ * `maxBreadcrumbs` option cannot be higher than this value.
+ */
+var MAX_BREADCRUMBS = 100;
+/**
+ * @inheritDoc
+ */
+var Hub = /** @class */ (function () {
+    /**
+     * Creates a new instance of the hub, will push one {@link Layer} into the
+     * internal stack on creation.
+     *
+     * @param client bound to the hub.
+     * @param scope bound to the hub.
+     * @param version number, higher number means higher priority.
+     */
+    function Hub(client, scope, _version) {
+        if (scope === void 0) { scope = new esm_scope/* Scope */.s(); }
+        if (_version === void 0) { _version = API_VERSION; }
+        this._version = _version;
+        /** Is a {@link Layer}[] containing the client and scope */
+        this._stack = [{}];
+        this.getStackTop().scope = scope;
+        this.bindClient(client);
+    }
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.isOlderThan = function (version) {
+        return this._version < version;
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.bindClient = function (client) {
+        var top = this.getStackTop();
+        top.client = client;
+        if (client && client.setupIntegrations) {
+            client.setupIntegrations();
+        }
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.pushScope = function () {
+        // We want to clone the content of prev scope
+        var scope = esm_scope/* Scope.clone */.s.clone(this.getScope());
+        this.getStack().push({
+            client: this.getClient(),
+            scope: scope,
+        });
+        return scope;
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.popScope = function () {
+        if (this.getStack().length <= 1)
+            return false;
+        return !!this.getStack().pop();
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.withScope = function (callback) {
+        var scope = this.pushScope();
+        try {
+            callback(scope);
+        }
+        finally {
+            this.popScope();
+        }
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.getClient = function () {
+        return this.getStackTop().client;
+    };
+    /** Returns the scope of the top stack. */
+    Hub.prototype.getScope = function () {
+        return this.getStackTop().scope;
+    };
+    /** Returns the scope stack for domains or the process. */
+    Hub.prototype.getStack = function () {
+        return this._stack;
+    };
+    /** Returns the topmost scope layer in the order domain > local > process. */
+    Hub.prototype.getStackTop = function () {
+        return this._stack[this._stack.length - 1];
+    };
+    /**
+     * @inheritDoc
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+    Hub.prototype.captureException = function (exception, hint) {
+        var eventId = (this._lastEventId = (0,misc/* uuid4 */.DM)());
+        var finalHint = hint;
+        // If there's no explicit hint provided, mimick the same thing that would happen
+        // in the minimal itself to create a consistent behavior.
+        // We don't do this in the client, as it's the lowest level API, and doing this,
+        // would prevent user from having full control over direct calls.
+        if (!hint) {
+            var syntheticException = void 0;
+            try {
+                throw new Error('Sentry syntheticException');
+            }
+            catch (exception) {
+                syntheticException = exception;
+            }
+            finalHint = {
+                originalException: exception,
+                syntheticException: syntheticException,
+            };
+        }
+        this._invokeClient('captureException', exception, (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, finalHint), { event_id: eventId }));
+        return eventId;
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.captureMessage = function (message, level, hint) {
+        var eventId = (this._lastEventId = (0,misc/* uuid4 */.DM)());
+        var finalHint = hint;
+        // If there's no explicit hint provided, mimick the same thing that would happen
+        // in the minimal itself to create a consistent behavior.
+        // We don't do this in the client, as it's the lowest level API, and doing this,
+        // would prevent user from having full control over direct calls.
+        if (!hint) {
+            var syntheticException = void 0;
+            try {
+                throw new Error(message);
+            }
+            catch (exception) {
+                syntheticException = exception;
+            }
+            finalHint = {
+                originalException: message,
+                syntheticException: syntheticException,
+            };
+        }
+        this._invokeClient('captureMessage', message, level, (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, finalHint), { event_id: eventId }));
+        return eventId;
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.captureEvent = function (event, hint) {
+        var eventId = (this._lastEventId = (0,misc/* uuid4 */.DM)());
+        this._invokeClient('captureEvent', event, (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, hint), { event_id: eventId }));
+        return eventId;
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.lastEventId = function () {
+        return this._lastEventId;
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.addBreadcrumb = function (breadcrumb, hint) {
+        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
+        if (!scope || !client)
+            return;
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        var _b = (client.getOptions && client.getOptions()) || {}, _c = _b.beforeBreadcrumb, beforeBreadcrumb = _c === void 0 ? null : _c, _d = _b.maxBreadcrumbs, maxBreadcrumbs = _d === void 0 ? DEFAULT_BREADCRUMBS : _d;
+        if (maxBreadcrumbs <= 0)
+            return;
+        var timestamp = (0,time/* dateTimestampInSeconds */.yW)();
+        var mergedBreadcrumb = (0,tslib_es6/* __assign */.pi)({ timestamp: timestamp }, breadcrumb);
+        var finalBreadcrumb = beforeBreadcrumb
+            ? (0,misc/* consoleSandbox */.Cf)(function () { return beforeBreadcrumb(mergedBreadcrumb, hint); })
+            : mergedBreadcrumb;
+        if (finalBreadcrumb === null)
+            return;
+        scope.addBreadcrumb(finalBreadcrumb, Math.min(maxBreadcrumbs, MAX_BREADCRUMBS));
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.setUser = function (user) {
+        var scope = this.getScope();
+        if (scope)
+            scope.setUser(user);
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.setTags = function (tags) {
+        var scope = this.getScope();
+        if (scope)
+            scope.setTags(tags);
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.setExtras = function (extras) {
+        var scope = this.getScope();
+        if (scope)
+            scope.setExtras(extras);
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.setTag = function (key, value) {
+        var scope = this.getScope();
+        if (scope)
+            scope.setTag(key, value);
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.setExtra = function (key, extra) {
+        var scope = this.getScope();
+        if (scope)
+            scope.setExtra(key, extra);
+    };
+    /**
+     * @inheritDoc
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Hub.prototype.setContext = function (name, context) {
+        var scope = this.getScope();
+        if (scope)
+            scope.setContext(name, context);
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.configureScope = function (callback) {
+        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
+        if (scope && client) {
+            callback(scope);
+        }
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.run = function (callback) {
+        var oldHub = makeMain(this);
+        try {
+            callback(this);
+        }
+        finally {
+            makeMain(oldHub);
+        }
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.getIntegration = function (integration) {
+        var client = this.getClient();
+        if (!client)
+            return null;
+        try {
+            return client.getIntegration(integration);
+        }
+        catch (_oO) {
+            logger/* logger.warn */.k.warn("Cannot retrieve integration " + integration.id + " from the current Hub");
+            return null;
+        }
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.startSpan = function (context) {
+        return this._callExtensionMethod('startSpan', context);
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.startTransaction = function (context, customSamplingContext) {
+        return this._callExtensionMethod('startTransaction', context, customSamplingContext);
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.traceHeaders = function () {
+        return this._callExtensionMethod('traceHeaders');
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.startSession = function (context) {
+        // End existing session if there's one
+        this.endSession();
+        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
+        var _b = (client && client.getOptions()) || {}, release = _b.release, environment = _b.environment;
+        var session = new Session((0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({ release: release,
+            environment: environment }, (scope && { user: scope.getUser() })), context));
+        if (scope) {
+            scope.setSession(session);
+        }
+        return session;
+    };
+    /**
+     * @inheritDoc
+     */
+    Hub.prototype.endSession = function () {
+        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
+        if (!scope)
+            return;
+        var session = scope.getSession && scope.getSession();
+        if (session) {
+            session.close();
+            if (client && client.captureSession) {
+                client.captureSession(session);
+            }
+            scope.setSession();
+        }
+    };
+    /**
+     * Internal helper function to call a method on the top client if it exists.
+     *
+     * @param method The method to call on the client.
+     * @param args Arguments to pass to the client function.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Hub.prototype._invokeClient = function (method) {
+        var _a;
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        var _b = this.getStackTop(), scope = _b.scope, client = _b.client;
+        if (client && client[method]) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+            (_a = client)[method].apply(_a, (0,tslib_es6/* __spread */.fl)(args, [scope]));
+        }
+    };
+    /**
+     * Calls global extension method and binding current instance to the function call
+     */
+    // @ts-ignore Function lacks ending return statement and return type does not include 'undefined'. ts(2366)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Hub.prototype._callExtensionMethod = function (method) {
+        var args = [];
+        for (var _i = 1; _i < arguments.length; _i++) {
+            args[_i - 1] = arguments[_i];
+        }
+        var carrier = getMainCarrier();
+        var sentry = carrier.__SENTRY__;
+        if (sentry && sentry.extensions && typeof sentry.extensions[method] === 'function') {
+            return sentry.extensions[method].apply(this, args);
+        }
+        logger/* logger.warn */.k.warn("Extension method " + method + " couldn't be found, doing nothing.");
+    };
+    return Hub;
+}());
+
+/** Returns the global shim registry. */
+function getMainCarrier() {
+    var carrier = (0,misc/* getGlobalObject */.Rf)();
+    carrier.__SENTRY__ = carrier.__SENTRY__ || {
+        extensions: {},
+        hub: undefined,
+    };
+    return carrier;
+}
+/**
+ * Replaces the current main hub with the passed one on the global object
+ *
+ * @returns The old replaced hub
+ */
+function makeMain(hub) {
+    var registry = getMainCarrier();
+    var oldHub = getHubFromCarrier(registry);
+    setHubOnCarrier(registry, hub);
+    return oldHub;
+}
+/**
+ * Returns the default hub instance.
+ *
+ * If a hub is already registered in the global carrier but this module
+ * contains a more recent version, it replaces the registered version.
+ * Otherwise, the currently registered hub will be returned.
+ */
+function getCurrentHub() {
+    // Get main carrier (global for every environment)
+    var registry = getMainCarrier();
+    // If there's no hub, or its an old API, assign a new one
+    if (!hasHubOnCarrier(registry) || getHubFromCarrier(registry).isOlderThan(API_VERSION)) {
+        setHubOnCarrier(registry, new Hub());
+    }
+    // Prefer domains over global if they are there (applicable only to Node environment)
+    if ((0,node/* isNodeEnv */.KV)()) {
+        return getHubFromActiveDomain(registry);
+    }
+    // Return hub that lives on a global object
+    return getHubFromCarrier(registry);
+}
+/**
+ * Returns the active domain, if one exists
+ *
+ * @returns The domain, or undefined if there is no active domain
+ */
+function getActiveDomain() {
+    var sentry = getMainCarrier().__SENTRY__;
+    return sentry && sentry.extensions && sentry.extensions.domain && sentry.extensions.domain.active;
+}
+/**
+ * Try to read the hub from an active domain, and fallback to the registry if one doesn't exist
+ * @returns discovered hub
+ */
+function getHubFromActiveDomain(registry) {
+    try {
+        var activeDomain = getActiveDomain();
+        // If there's no active domain, just return global hub
+        if (!activeDomain) {
+            return getHubFromCarrier(registry);
+        }
+        // If there's no hub on current domain, or it's an old API, assign a new one
+        if (!hasHubOnCarrier(activeDomain) || getHubFromCarrier(activeDomain).isOlderThan(API_VERSION)) {
+            var registryHubTopStack = getHubFromCarrier(registry).getStackTop();
+            setHubOnCarrier(activeDomain, new Hub(registryHubTopStack.client, esm_scope/* Scope.clone */.s.clone(registryHubTopStack.scope)));
+        }
+        // Return hub that lives on a domain
+        return getHubFromCarrier(activeDomain);
+    }
+    catch (_Oo) {
+        // Return hub that lives on a global object
+        return getHubFromCarrier(registry);
+    }
+}
+/**
+ * This will tell whether a carrier has a hub on it or not
+ * @param carrier object
+ */
+function hasHubOnCarrier(carrier) {
+    return !!(carrier && carrier.__SENTRY__ && carrier.__SENTRY__.hub);
+}
+/**
+ * This will create a new {@link Hub} and add to the passed object on
+ * __SENTRY__.hub.
+ * @param carrier object
+ * @hidden
+ */
+function getHubFromCarrier(carrier) {
+    if (carrier && carrier.__SENTRY__ && carrier.__SENTRY__.hub)
+        return carrier.__SENTRY__.hub;
+    carrier.__SENTRY__ = carrier.__SENTRY__ || {};
+    carrier.__SENTRY__.hub = new Hub();
+    return carrier.__SENTRY__.hub;
+}
+/**
+ * This will set passed {@link Hub} on the passed object's __SENTRY__.hub attribute
+ * @param carrier object
+ * @param hub Hub
+ */
+function setHubOnCarrier(carrier, hub) {
+    if (!carrier)
+        return false;
+    carrier.__SENTRY__ = carrier.__SENTRY__ || {};
+    carrier.__SENTRY__.hub = hub;
+    return true;
+}
+//# sourceMappingURL=hub.js.map
+
+/***/ }),
+
+/***/ 36:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "s": () => /* binding */ Scope,
+/* harmony export */   "c": () => /* binding */ addGlobalEventProcessor
+/* harmony export */ });
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9312);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6885);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(4180);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(8894);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(7451);
+
+
+/**
+ * Holds additional event information. {@link Scope.applyToEvent} will be
+ * called by the client before an event will be sent.
+ */
+var Scope = /** @class */ (function () {
+    function Scope() {
+        /** Flag if notifiying is happening. */
+        this._notifyingListeners = false;
+        /** Callback for client to receive scope changes. */
+        this._scopeListeners = [];
+        /** Callback list that will be called after {@link applyToEvent}. */
+        this._eventProcessors = [];
+        /** Array of breadcrumbs. */
+        this._breadcrumbs = [];
+        /** User */
+        this._user = {};
+        /** Tags */
+        this._tags = {};
+        /** Extra */
+        this._extra = {};
+        /** Contexts */
+        this._contexts = {};
+    }
+    /**
+     * Inherit values from the parent scope.
+     * @param scope to clone.
+     */
+    Scope.clone = function (scope) {
+        var newScope = new Scope();
+        if (scope) {
+            newScope._breadcrumbs = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__spread */ .fl)(scope._breadcrumbs);
+            newScope._tags = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, scope._tags);
+            newScope._extra = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, scope._extra);
+            newScope._contexts = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, scope._contexts);
+            newScope._user = scope._user;
+            newScope._level = scope._level;
+            newScope._span = scope._span;
+            newScope._session = scope._session;
+            newScope._transactionName = scope._transactionName;
+            newScope._fingerprint = scope._fingerprint;
+            newScope._eventProcessors = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__spread */ .fl)(scope._eventProcessors);
+        }
+        return newScope;
+    };
+    /**
+     * Add internal on change listener. Used for sub SDKs that need to store the scope.
+     * @hidden
+     */
+    Scope.prototype.addScopeListener = function (callback) {
+        this._scopeListeners.push(callback);
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.addEventProcessor = function (callback) {
+        this._eventProcessors.push(callback);
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setUser = function (user) {
+        this._user = user || {};
+        if (this._session) {
+            this._session.update({ user: user });
+        }
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.getUser = function () {
+        return this._user;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setTags = function (tags) {
+        this._tags = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._tags), tags);
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setTag = function (key, value) {
+        var _a;
+        this._tags = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._tags), (_a = {}, _a[key] = value, _a));
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setExtras = function (extras) {
+        this._extra = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._extra), extras);
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setExtra = function (key, extra) {
+        var _a;
+        this._extra = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._extra), (_a = {}, _a[key] = extra, _a));
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setFingerprint = function (fingerprint) {
+        this._fingerprint = fingerprint;
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setLevel = function (level) {
+        this._level = level;
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setTransactionName = function (name) {
+        this._transactionName = name;
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * Can be removed in major version.
+     * @deprecated in favor of {@link this.setTransactionName}
+     */
+    Scope.prototype.setTransaction = function (name) {
+        return this.setTransactionName(name);
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setContext = function (key, context) {
+        var _a;
+        if (context === null) {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete this._contexts[key];
+        }
+        else {
+            this._contexts = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._contexts), (_a = {}, _a[key] = context, _a));
+        }
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setSpan = function (span) {
+        this._span = span;
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.getSpan = function () {
+        return this._span;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.getTransaction = function () {
+        var _a, _b, _c, _d;
+        // often, this span will be a transaction, but it's not guaranteed to be
+        var span = this.getSpan();
+        // try it the new way first
+        if ((_a = span) === null || _a === void 0 ? void 0 : _a.transaction) {
+            return (_b = span) === null || _b === void 0 ? void 0 : _b.transaction;
+        }
+        // fallback to the old way (known bug: this only finds transactions with sampled = true)
+        if ((_d = (_c = span) === null || _c === void 0 ? void 0 : _c.spanRecorder) === null || _d === void 0 ? void 0 : _d.spans[0]) {
+            return span.spanRecorder.spans[0];
+        }
+        // neither way found a transaction
+        return undefined;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.setSession = function (session) {
+        if (!session) {
+            delete this._session;
+        }
+        else {
+            this._session = session;
+        }
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.getSession = function () {
+        return this._session;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.update = function (captureContext) {
+        if (!captureContext) {
+            return this;
+        }
+        if (typeof captureContext === 'function') {
+            var updatedScope = captureContext(this);
+            return updatedScope instanceof Scope ? updatedScope : this;
+        }
+        if (captureContext instanceof Scope) {
+            this._tags = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._tags), captureContext._tags);
+            this._extra = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._extra), captureContext._extra);
+            this._contexts = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._contexts), captureContext._contexts);
+            if (captureContext._user && Object.keys(captureContext._user).length) {
+                this._user = captureContext._user;
+            }
+            if (captureContext._level) {
+                this._level = captureContext._level;
+            }
+            if (captureContext._fingerprint) {
+                this._fingerprint = captureContext._fingerprint;
+            }
+        }
+        else if ((0,_sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .isPlainObject */ .PO)(captureContext)) {
+            // eslint-disable-next-line no-param-reassign
+            captureContext = captureContext;
+            this._tags = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._tags), captureContext.tags);
+            this._extra = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._extra), captureContext.extra);
+            this._contexts = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._contexts), captureContext.contexts);
+            if (captureContext.user) {
+                this._user = captureContext.user;
+            }
+            if (captureContext.level) {
+                this._level = captureContext.level;
+            }
+            if (captureContext.fingerprint) {
+                this._fingerprint = captureContext.fingerprint;
+            }
+        }
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.clear = function () {
+        this._breadcrumbs = [];
+        this._tags = {};
+        this._extra = {};
+        this._user = {};
+        this._contexts = {};
+        this._level = undefined;
+        this._transactionName = undefined;
+        this._fingerprint = undefined;
+        this._span = undefined;
+        this._session = undefined;
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.addBreadcrumb = function (breadcrumb, maxBreadcrumbs) {
+        var mergedBreadcrumb = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({ timestamp: (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_2__/* .dateTimestampInSeconds */ .yW)() }, breadcrumb);
+        this._breadcrumbs =
+            maxBreadcrumbs !== undefined && maxBreadcrumbs >= 0
+                ? (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__spread */ .fl)(this._breadcrumbs, [mergedBreadcrumb]).slice(-maxBreadcrumbs)
+                : (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__spread */ .fl)(this._breadcrumbs, [mergedBreadcrumb]);
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Scope.prototype.clearBreadcrumbs = function () {
+        this._breadcrumbs = [];
+        this._notifyScopeListeners();
+        return this;
+    };
+    /**
+     * Applies the current context and fingerprint to the event.
+     * Note that breadcrumbs will be added by the client.
+     * Also if the event has already breadcrumbs on it, we do not merge them.
+     * @param event Event
+     * @param hint May contain additional informartion about the original exception.
+     * @hidden
+     */
+    Scope.prototype.applyToEvent = function (event, hint) {
+        var _a;
+        if (this._extra && Object.keys(this._extra).length) {
+            event.extra = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._extra), event.extra);
+        }
+        if (this._tags && Object.keys(this._tags).length) {
+            event.tags = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._tags), event.tags);
+        }
+        if (this._user && Object.keys(this._user).length) {
+            event.user = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._user), event.user);
+        }
+        if (this._contexts && Object.keys(this._contexts).length) {
+            event.contexts = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, this._contexts), event.contexts);
+        }
+        if (this._level) {
+            event.level = this._level;
+        }
+        if (this._transactionName) {
+            event.transaction = this._transactionName;
+        }
+        // We want to set the trace context for normal events only if there isn't already
+        // a trace context on the event. There is a product feature in place where we link
+        // errors with transaction and it relys on that.
+        if (this._span) {
+            event.contexts = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({ trace: this._span.getTraceContext() }, event.contexts);
+            var transactionName = (_a = this._span.transaction) === null || _a === void 0 ? void 0 : _a.name;
+            if (transactionName) {
+                event.tags = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({ transaction: transactionName }, event.tags);
+            }
+        }
+        this._applyFingerprint(event);
+        event.breadcrumbs = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__spread */ .fl)((event.breadcrumbs || []), this._breadcrumbs);
+        event.breadcrumbs = event.breadcrumbs.length > 0 ? event.breadcrumbs : undefined;
+        return this._notifyEventProcessors((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__spread */ .fl)(getGlobalEventProcessors(), this._eventProcessors), event, hint);
+    };
+    /**
+     * This will be called after {@link applyToEvent} is finished.
+     */
+    Scope.prototype._notifyEventProcessors = function (processors, event, hint, index) {
+        var _this = this;
+        if (index === void 0) { index = 0; }
+        return new _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .SyncPromise */ .c(function (resolve, reject) {
+            var processor = processors[index];
+            if (event === null || typeof processor !== 'function') {
+                resolve(event);
+            }
+            else {
+                var result = processor((0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, event), hint);
+                if ((0,_sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .isThenable */ .J8)(result)) {
+                    result
+                        .then(function (final) { return _this._notifyEventProcessors(processors, final, hint, index + 1).then(resolve); })
+                        .then(null, reject);
+                }
+                else {
+                    _this._notifyEventProcessors(processors, result, hint, index + 1)
+                        .then(resolve)
+                        .then(null, reject);
+                }
+            }
+        });
+    };
+    /**
+     * This will be called on every set call.
+     */
+    Scope.prototype._notifyScopeListeners = function () {
+        var _this = this;
+        // We need this check for this._notifyingListeners to be able to work on scope during updates
+        // If this check is not here we'll produce endless recursion when something is done with the scope
+        // during the callback.
+        if (!this._notifyingListeners) {
+            this._notifyingListeners = true;
+            this._scopeListeners.forEach(function (callback) {
+                callback(_this);
+            });
+            this._notifyingListeners = false;
+        }
+    };
+    /**
+     * Applies fingerprint from the scope to the event if there's one,
+     * uses message if there's one instead or get rid of empty fingerprint
+     */
+    Scope.prototype._applyFingerprint = function (event) {
+        // Make sure it's an array first and we actually have something in place
+        event.fingerprint = event.fingerprint
+            ? Array.isArray(event.fingerprint)
+                ? event.fingerprint
+                : [event.fingerprint]
+            : [];
+        // If we have something on the scope, then merge it with event
+        if (this._fingerprint) {
+            event.fingerprint = event.fingerprint.concat(this._fingerprint);
+        }
+        // If we have no data at all, remove empty array default
+        if (event.fingerprint && !event.fingerprint.length) {
+            delete event.fingerprint;
+        }
+    };
+    return Scope;
+}());
+
+/**
+ * Retruns the global event processors.
+ */
+function getGlobalEventProcessors() {
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access  */
+    var global = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_4__/* .getGlobalObject */ .Rf)();
+    global.__SENTRY__ = global.__SENTRY__ || {};
+    global.__SENTRY__.globalEventProcessors = global.__SENTRY__.globalEventProcessors || [];
+    return global.__SENTRY__.globalEventProcessors;
+    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
+}
+/**
+ * Add a EventProcessor to be kept globally.
+ * @param callback EventProcessor to add
+ */
+function addGlobalEventProcessor(callback) {
+    getGlobalEventProcessors().push(callback);
+}
+//# sourceMappingURL=scope.js.map
+
+/***/ }),
+
+/***/ 9514:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -880,7 +1927,7 @@ __webpack_require__.d(__webpack_exports__, {
 // EXTERNAL MODULE: ../node_modules/tslib/tslib.es6.js
 var tslib_es6 = __webpack_require__(9312);
 // EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/logger.js
-var esm_logger = __webpack_require__(6922);
+var logger = __webpack_require__(6922);
 // EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/misc.js
 var misc = __webpack_require__(7451);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/integrations/esm/angular.js
@@ -904,11 +1951,11 @@ var Angular = /** @class */ (function () {
          * @inheritDoc
          */
         this.name = Angular.id;
-        esm_logger/* logger.log */.k.log('You are still using the Angular integration, consider moving to @sentry/angular');
+        logger/* logger.log */.k.log('You are still using the Angular integration, consider moving to @sentry/angular');
         // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
         this._angular = options.angular || (0,misc/* getGlobalObject */.Rf)().angular;
         if (!this._angular) {
-            esm_logger/* logger.error */.k.error('AngularIntegration is missing an Angular instance');
+            logger/* logger.error */.k.error('AngularIntegration is missing an Angular instance');
             return;
         }
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -981,8 +2028,8 @@ var Angular = /** @class */ (function () {
 //# sourceMappingURL=angular.js.map
 // EXTERNAL MODULE: ../node_modules/@sentry/types/esm/severity.js
 var severity = __webpack_require__(5120);
-// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/object.js + 3 modules
-var object = __webpack_require__(5319);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/object.js + 2 modules
+var object = __webpack_require__(806);
 // EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/string.js
 var string = __webpack_require__(5268);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/integrations/esm/captureconsole.js
@@ -1307,7 +2354,7 @@ var Ember = /** @class */ (function () {
     Ember.prototype.setupOnce = function (_, getCurrentHub) {
         var _this = this;
         if (!this._Ember) {
-            esm_logger/* logger.error */.k.error('EmberIntegration is missing an Ember instance');
+            logger/* logger.error */.k.error('EmberIntegration is missing an Ember instance');
             return;
         }
         /* eslint-disable @typescript-eslint/no-unsafe-member-access */
@@ -1428,7 +2475,7 @@ var ExtraErrorData = /** @class */ (function () {
             }
         }
         catch (oO) {
-            esm_logger/* logger.error */.k.error('Unable to extract extra data from the Error object:', oO);
+            logger/* logger.error */.k.error('Unable to extract extra data from the Error object:', oO);
         }
         return result;
     };
@@ -1475,7 +2522,7 @@ var Offline = /** @class */ (function () {
         if ('addEventListener' in this.global) {
             this.global.addEventListener('online', function () {
                 _this._sendEvents().catch(function () {
-                    esm_logger/* logger.warn */.k.warn('could not send cached events');
+                    logger/* logger.warn */.k.warn('could not send cached events');
                 });
             });
         }
@@ -1486,7 +2533,7 @@ var Offline = /** @class */ (function () {
                     _this._cacheEvent(event)
                         .then(function (_event) { return _this._enforceMaxEvents(); })
                         .catch(function (_error) {
-                        esm_logger/* logger.warn */.k.warn('could not cache event while offline');
+                        logger/* logger.warn */.k.warn('could not cache event while offline');
                     });
                     // return null on success or failure, because being offline will still result in an error
                     return null;
@@ -1497,7 +2544,7 @@ var Offline = /** @class */ (function () {
         // if online now, send any events stored in a previous offline session
         if ('navigator' in this.global && 'onLine' in this.global.navigator && this.global.navigator.onLine) {
             this._sendEvents().catch(function () {
-                esm_logger/* logger.warn */.k.warn('could not send cached events');
+                logger/* logger.warn */.k.warn('could not send cached events');
             });
         }
     };
@@ -1536,7 +2583,7 @@ var Offline = /** @class */ (function () {
                             .map(function (event) { return event.cacheKey; }));
                     })
                         .catch(function (_error) {
-                        esm_logger/* logger.warn */.k.warn('could not enforce max events');
+                        logger/* logger.warn */.k.warn('could not enforce max events');
                     })];
             });
         });
@@ -1574,11 +2621,11 @@ var Offline = /** @class */ (function () {
                         if (_this.hub) {
                             _this.hub.captureEvent(event);
                             _this._purgeEvent(cacheKey).catch(function (_error) {
-                                esm_logger/* logger.warn */.k.warn('could not purge event from cache');
+                                logger/* logger.warn */.k.warn('could not purge event from cache');
                             });
                         }
                         else {
-                            esm_logger/* logger.warn */.k.warn('no hub found - could not send cached event');
+                            logger/* logger.warn */.k.warn('no hub found - could not send cached event');
                         }
                     })];
             });
@@ -1592,175 +2639,8 @@ var Offline = /** @class */ (function () {
 }());
 
 //# sourceMappingURL=offline.js.map
-;// CONCATENATED MODULE: ../node_modules/@sentry/utils/esm/supports.js
-
-
-/**
- * Tells whether current environment supports ErrorEvent objects
- * {@link supportsErrorEvent}.
- *
- * @returns Answer to the given question.
- */
-function supportsErrorEvent() {
-    try {
-        new ErrorEvent('');
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-}
-/**
- * Tells whether current environment supports DOMError objects
- * {@link supportsDOMError}.
- *
- * @returns Answer to the given question.
- */
-function supportsDOMError() {
-    try {
-        // Chrome: VM89:1 Uncaught TypeError: Failed to construct 'DOMError':
-        // 1 argument required, but only 0 present.
-        // @ts-ignore It really needs 1 argument, not 0.
-        new DOMError('');
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-}
-/**
- * Tells whether current environment supports DOMException objects
- * {@link supportsDOMException}.
- *
- * @returns Answer to the given question.
- */
-function supportsDOMException() {
-    try {
-        new DOMException('');
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-}
-/**
- * Tells whether current environment supports Fetch API
- * {@link supportsFetch}.
- *
- * @returns Answer to the given question.
- */
-function supportsFetch() {
-    if (!('fetch' in getGlobalObject())) {
-        return false;
-    }
-    try {
-        new Headers();
-        new Request('');
-        new Response();
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-}
-/**
- * isNativeFetch checks if the given function is a native implementation of fetch()
- */
-// eslint-disable-next-line @typescript-eslint/ban-types
-function isNativeFetch(func) {
-    return func && /^function fetch\(\)\s+\{\s+\[native code\]\s+\}$/.test(func.toString());
-}
-/**
- * Tells whether current environment supports Fetch API natively
- * {@link supportsNativeFetch}.
- *
- * @returns true if `window.fetch` is natively implemented, false otherwise
- */
-function supportsNativeFetch() {
-    if (!supportsFetch()) {
-        return false;
-    }
-    var global = getGlobalObject();
-    // Fast path to avoid DOM I/O
-    // eslint-disable-next-line @typescript-eslint/unbound-method
-    if (isNativeFetch(global.fetch)) {
-        return true;
-    }
-    // window.fetch is implemented, but is polyfilled or already wrapped (e.g: by a chrome extension)
-    // so create a "pure" iframe to see if that has native fetch
-    var result = false;
-    var doc = global.document;
-    // eslint-disable-next-line deprecation/deprecation
-    if (doc && typeof doc.createElement === "function") {
-        try {
-            var sandbox = doc.createElement('iframe');
-            sandbox.hidden = true;
-            doc.head.appendChild(sandbox);
-            if (sandbox.contentWindow && sandbox.contentWindow.fetch) {
-                // eslint-disable-next-line @typescript-eslint/unbound-method
-                result = isNativeFetch(sandbox.contentWindow.fetch);
-            }
-            doc.head.removeChild(sandbox);
-        }
-        catch (err) {
-            logger.warn('Could not create sandbox iframe for pure fetch check, bailing to window.fetch: ', err);
-        }
-    }
-    return result;
-}
-/**
- * Tells whether current environment supports ReportingObserver API
- * {@link supportsReportingObserver}.
- *
- * @returns Answer to the given question.
- */
-function supportsReportingObserver() {
-    return 'ReportingObserver' in (0,misc/* getGlobalObject */.Rf)();
-}
-/**
- * Tells whether current environment supports Referrer Policy API
- * {@link supportsReferrerPolicy}.
- *
- * @returns Answer to the given question.
- */
-function supportsReferrerPolicy() {
-    // Despite all stars in the sky saying that Edge supports old draft syntax, aka 'never', 'always', 'origin' and 'default
-    // https://caniuse.com/#feat=referrer-policy
-    // It doesn't. And it throw exception instead of ignoring this parameter...
-    // REF: https://github.com/getsentry/raven-js/issues/1233
-    if (!supportsFetch()) {
-        return false;
-    }
-    try {
-        new Request('_', {
-            referrerPolicy: 'origin',
-        });
-        return true;
-    }
-    catch (e) {
-        return false;
-    }
-}
-/**
- * Tells whether current environment supports History API
- * {@link supportsHistory}.
- *
- * @returns Answer to the given question.
- */
-function supportsHistory() {
-    // NOTE: in Chrome App environment, touching history.pushState, *even inside
-    //       a try/catch block*, will cause Chrome to output an error to console.error
-    // borrowed from: https://github.com/angular/angular.js/pull/13945/files
-    var global = getGlobalObject();
-    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    var chrome = global.chrome;
-    var isChromePackagedApp = chrome && chrome.app && chrome.app.runtime;
-    /* eslint-enable @typescript-eslint/no-unsafe-member-access */
-    var hasHistoryApi = 'history' in global && !!global.history.pushState && !!global.history.replaceState;
-    return !isChromePackagedApp && hasHistoryApi;
-}
-//# sourceMappingURL=supports.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/supports.js
+var supports = __webpack_require__(3589);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/integrations/esm/reportingobserver.js
 
 
@@ -1793,7 +2673,7 @@ var ReportingObserver = /** @class */ (function () {
      * @inheritDoc
      */
     ReportingObserver.prototype.setupOnce = function (_, getCurrentHub) {
-        if (!supportsReportingObserver()) {
+        if (!(0,supports/* supportsReportingObserver */.zb)()) {
             return;
         }
         this._getCurrentHub = getCurrentHub;
@@ -2191,7 +3071,7 @@ var Vue = /** @class */ (function () {
                 // eg. mount => ['beforeMount', 'mounted']
                 var internalHooks = HOOKS[operation];
                 if (!internalHooks) {
-                    esm_logger/* logger.warn */.k.warn("Unknown hook: " + operation);
+                    logger/* logger.warn */.k.warn("Unknown hook: " + operation);
                     return;
                 }
                 internalHooks.forEach(function (internalHook) {
@@ -2211,7 +3091,7 @@ var Vue = /** @class */ (function () {
                 });
             });
         };
-        esm_logger/* logger.log */.k.log('You are still using the Vue.js integration, consider moving to @sentry/vue');
+        logger/* logger.log */.k.log('You are still using the Vue.js integration, consider moving to @sentry/vue');
         this._options = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({ 
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             Vue: (0,misc/* getGlobalObject */.Rf)().Vue, attachProps: true, logErrors: false, tracing: false }, options), { tracingOptions: (0,tslib_es6/* __assign */.pi)({ hooks: ['mount', 'update'], timeout: 2000, trackComponents: false }, options.tracingOptions) });
@@ -2221,7 +3101,7 @@ var Vue = /** @class */ (function () {
      */
     Vue.prototype.setupOnce = function (_, getCurrentHub) {
         if (!this._options.Vue) {
-            esm_logger/* logger.error */.k.error('Vue integration is missing a Vue instance');
+            logger/* logger.error */.k.error('Vue integration is missing a Vue instance');
             return;
         }
         this._attachErrorHandler(getCurrentHub);
@@ -2294,7 +3174,7 @@ var Vue = /** @class */ (function () {
                     applyTracingHooks(this, getCurrentHub);
                 }
                 else {
-                    esm_logger/* logger.error */.k.error('Vue integration has tracing enabled, but Tracing integration is not configured');
+                    logger/* logger.error */.k.error('Vue integration has tracing enabled, but Tracing integration is not configured');
                 }
             },
         });
@@ -2314,7 +3194,7 @@ var Vue = /** @class */ (function () {
                     }
                 }
                 catch (_oO) {
-                    esm_logger/* logger.warn */.k.warn('Unable to extract metadata from Vue component.');
+                    logger/* logger.warn */.k.warn('Unable to extract metadata from Vue component.');
                 }
             }
             if (info) {
@@ -2376,7 +3256,7 @@ function getActiveTransaction(hub) {
 
 /***/ }),
 
-/***/ 8201:
+/***/ 3259:
 /***/ ((module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -2386,18 +3266,18 @@ __webpack_require__.r(__webpack_exports__);
 // EXPORTS
 __webpack_require__.d(__webpack_exports__, {
   "Handlers": () => /* reexport */ handlers_namespaceObject,
-  "Hub": () => /* reexport */ Hub,
+  "Hub": () => /* reexport */ esm_hub/* Hub */.Xb,
   "Integrations": () => /* binding */ INTEGRATIONS,
   "NodeBackend": () => /* reexport */ NodeBackend,
   "NodeClient": () => /* reexport */ NodeClient,
   "SDK_NAME": () => /* reexport */ SDK_NAME,
   "SDK_VERSION": () => /* reexport */ SDK_VERSION,
-  "Scope": () => /* reexport */ Scope,
+  "Scope": () => /* reexport */ esm_scope/* Scope */.s,
   "Severity": () => /* reexport */ severity/* Severity */.z,
   "Status": () => /* reexport */ Status,
   "Transports": () => /* reexport */ transports_namespaceObject,
   "addBreadcrumb": () => /* reexport */ addBreadcrumb,
-  "addGlobalEventProcessor": () => /* reexport */ addGlobalEventProcessor,
+  "addGlobalEventProcessor": () => /* reexport */ esm_scope/* addGlobalEventProcessor */.c,
   "captureEvent": () => /* reexport */ captureEvent,
   "captureException": () => /* reexport */ captureException,
   "captureMessage": () => /* reexport */ captureMessage,
@@ -2405,11 +3285,11 @@ __webpack_require__.d(__webpack_exports__, {
   "configureScope": () => /* reexport */ configureScope,
   "defaultIntegrations": () => /* reexport */ defaultIntegrations,
   "flush": () => /* reexport */ flush,
-  "getCurrentHub": () => /* reexport */ hub_getCurrentHub,
-  "getHubFromCarrier": () => /* reexport */ getHubFromCarrier,
+  "getCurrentHub": () => /* reexport */ esm_hub/* getCurrentHub */.Gd,
+  "getHubFromCarrier": () => /* reexport */ esm_hub/* getHubFromCarrier */.vi,
   "init": () => /* reexport */ init,
   "lastEventId": () => /* reexport */ lastEventId,
-  "makeMain": () => /* reexport */ makeMain,
+  "makeMain": () => /* reexport */ esm_hub/* makeMain */.pj,
   "setContext": () => /* reexport */ setContext,
   "setExtra": () => /* reexport */ setExtra,
   "setExtras": () => /* reexport */ setExtras,
@@ -2508,1230 +3388,8 @@ var Status;
 //# sourceMappingURL=status.js.map
 // EXTERNAL MODULE: ../node_modules/@sentry/types/esm/severity.js
 var severity = __webpack_require__(5120);
-// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/is.js
-var is = __webpack_require__(6885);
-// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/time.js
-var time = __webpack_require__(4180);
-;// CONCATENATED MODULE: ../node_modules/@sentry/utils/esm/syncpromise.js
-/* eslint-disable @typescript-eslint/explicit-function-return-type */
-/* eslint-disable @typescript-eslint/typedef */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-/** SyncPromise internal states */
-var States;
-(function (States) {
-    /** Pending */
-    States["PENDING"] = "PENDING";
-    /** Resolved / OK */
-    States["RESOLVED"] = "RESOLVED";
-    /** Rejected / Error */
-    States["REJECTED"] = "REJECTED";
-})(States || (States = {}));
-/**
- * Thenable class that behaves like a Promise and follows it's interface
- * but is not async internally
- */
-var SyncPromise = /** @class */ (function () {
-    function SyncPromise(executor) {
-        var _this = this;
-        this._state = States.PENDING;
-        this._handlers = [];
-        /** JSDoc */
-        this._resolve = function (value) {
-            _this._setResult(States.RESOLVED, value);
-        };
-        /** JSDoc */
-        this._reject = function (reason) {
-            _this._setResult(States.REJECTED, reason);
-        };
-        /** JSDoc */
-        this._setResult = function (state, value) {
-            if (_this._state !== States.PENDING) {
-                return;
-            }
-            if ((0,is/* isThenable */.J8)(value)) {
-                value.then(_this._resolve, _this._reject);
-                return;
-            }
-            _this._state = state;
-            _this._value = value;
-            _this._executeHandlers();
-        };
-        // TODO: FIXME
-        /** JSDoc */
-        this._attachHandler = function (handler) {
-            _this._handlers = _this._handlers.concat(handler);
-            _this._executeHandlers();
-        };
-        /** JSDoc */
-        this._executeHandlers = function () {
-            if (_this._state === States.PENDING) {
-                return;
-            }
-            var cachedHandlers = _this._handlers.slice();
-            _this._handlers = [];
-            cachedHandlers.forEach(function (handler) {
-                if (handler.done) {
-                    return;
-                }
-                if (_this._state === States.RESOLVED) {
-                    if (handler.onfulfilled) {
-                        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-                        handler.onfulfilled(_this._value);
-                    }
-                }
-                if (_this._state === States.REJECTED) {
-                    if (handler.onrejected) {
-                        handler.onrejected(_this._value);
-                    }
-                }
-                handler.done = true;
-            });
-        };
-        try {
-            executor(this._resolve, this._reject);
-        }
-        catch (e) {
-            this._reject(e);
-        }
-    }
-    /** JSDoc */
-    SyncPromise.resolve = function (value) {
-        return new SyncPromise(function (resolve) {
-            resolve(value);
-        });
-    };
-    /** JSDoc */
-    SyncPromise.reject = function (reason) {
-        return new SyncPromise(function (_, reject) {
-            reject(reason);
-        });
-    };
-    /** JSDoc */
-    SyncPromise.all = function (collection) {
-        return new SyncPromise(function (resolve, reject) {
-            if (!Array.isArray(collection)) {
-                reject(new TypeError("Promise.all requires an array as input."));
-                return;
-            }
-            if (collection.length === 0) {
-                resolve([]);
-                return;
-            }
-            var counter = collection.length;
-            var resolvedCollection = [];
-            collection.forEach(function (item, index) {
-                SyncPromise.resolve(item)
-                    .then(function (value) {
-                    resolvedCollection[index] = value;
-                    counter -= 1;
-                    if (counter !== 0) {
-                        return;
-                    }
-                    resolve(resolvedCollection);
-                })
-                    .then(null, reject);
-            });
-        });
-    };
-    /** JSDoc */
-    SyncPromise.prototype.then = function (onfulfilled, onrejected) {
-        var _this = this;
-        return new SyncPromise(function (resolve, reject) {
-            _this._attachHandler({
-                done: false,
-                onfulfilled: function (result) {
-                    if (!onfulfilled) {
-                        // TODO: ¯\_(ツ)_/¯
-                        // TODO: FIXME
-                        resolve(result);
-                        return;
-                    }
-                    try {
-                        resolve(onfulfilled(result));
-                        return;
-                    }
-                    catch (e) {
-                        reject(e);
-                        return;
-                    }
-                },
-                onrejected: function (reason) {
-                    if (!onrejected) {
-                        reject(reason);
-                        return;
-                    }
-                    try {
-                        resolve(onrejected(reason));
-                        return;
-                    }
-                    catch (e) {
-                        reject(e);
-                        return;
-                    }
-                },
-            });
-        });
-    };
-    /** JSDoc */
-    SyncPromise.prototype.catch = function (onrejected) {
-        return this.then(function (val) { return val; }, onrejected);
-    };
-    /** JSDoc */
-    SyncPromise.prototype.finally = function (onfinally) {
-        var _this = this;
-        return new SyncPromise(function (resolve, reject) {
-            var val;
-            var isRejected;
-            return _this.then(function (value) {
-                isRejected = false;
-                val = value;
-                if (onfinally) {
-                    onfinally();
-                }
-            }, function (reason) {
-                isRejected = true;
-                val = reason;
-                if (onfinally) {
-                    onfinally();
-                }
-            }).then(function () {
-                if (isRejected) {
-                    reject(val);
-                    return;
-                }
-                resolve(val);
-            });
-        });
-    };
-    /** JSDoc */
-    SyncPromise.prototype.toString = function () {
-        return '[object SyncPromise]';
-    };
-    return SyncPromise;
-}());
-
-//# sourceMappingURL=syncpromise.js.map
-// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/misc.js
-var misc = __webpack_require__(7451);
-;// CONCATENATED MODULE: ../node_modules/@sentry/hub/esm/scope.js
-
-
-/**
- * Holds additional event information. {@link Scope.applyToEvent} will be
- * called by the client before an event will be sent.
- */
-var Scope = /** @class */ (function () {
-    function Scope() {
-        /** Flag if notifiying is happening. */
-        this._notifyingListeners = false;
-        /** Callback for client to receive scope changes. */
-        this._scopeListeners = [];
-        /** Callback list that will be called after {@link applyToEvent}. */
-        this._eventProcessors = [];
-        /** Array of breadcrumbs. */
-        this._breadcrumbs = [];
-        /** User */
-        this._user = {};
-        /** Tags */
-        this._tags = {};
-        /** Extra */
-        this._extra = {};
-        /** Contexts */
-        this._contexts = {};
-    }
-    /**
-     * Inherit values from the parent scope.
-     * @param scope to clone.
-     */
-    Scope.clone = function (scope) {
-        var newScope = new Scope();
-        if (scope) {
-            newScope._breadcrumbs = (0,tslib_es6/* __spread */.fl)(scope._breadcrumbs);
-            newScope._tags = (0,tslib_es6/* __assign */.pi)({}, scope._tags);
-            newScope._extra = (0,tslib_es6/* __assign */.pi)({}, scope._extra);
-            newScope._contexts = (0,tslib_es6/* __assign */.pi)({}, scope._contexts);
-            newScope._user = scope._user;
-            newScope._level = scope._level;
-            newScope._span = scope._span;
-            newScope._session = scope._session;
-            newScope._transactionName = scope._transactionName;
-            newScope._fingerprint = scope._fingerprint;
-            newScope._eventProcessors = (0,tslib_es6/* __spread */.fl)(scope._eventProcessors);
-        }
-        return newScope;
-    };
-    /**
-     * Add internal on change listener. Used for sub SDKs that need to store the scope.
-     * @hidden
-     */
-    Scope.prototype.addScopeListener = function (callback) {
-        this._scopeListeners.push(callback);
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.addEventProcessor = function (callback) {
-        this._eventProcessors.push(callback);
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setUser = function (user) {
-        this._user = user || {};
-        if (this._session) {
-            this._session.update({ user: user });
-        }
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.getUser = function () {
-        return this._user;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setTags = function (tags) {
-        this._tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._tags), tags);
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setTag = function (key, value) {
-        var _a;
-        this._tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._tags), (_a = {}, _a[key] = value, _a));
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setExtras = function (extras) {
-        this._extra = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._extra), extras);
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setExtra = function (key, extra) {
-        var _a;
-        this._extra = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._extra), (_a = {}, _a[key] = extra, _a));
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setFingerprint = function (fingerprint) {
-        this._fingerprint = fingerprint;
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setLevel = function (level) {
-        this._level = level;
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setTransactionName = function (name) {
-        this._transactionName = name;
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * Can be removed in major version.
-     * @deprecated in favor of {@link this.setTransactionName}
-     */
-    Scope.prototype.setTransaction = function (name) {
-        return this.setTransactionName(name);
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setContext = function (key, context) {
-        var _a;
-        if (context === null) {
-            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-            delete this._contexts[key];
-        }
-        else {
-            this._contexts = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._contexts), (_a = {}, _a[key] = context, _a));
-        }
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setSpan = function (span) {
-        this._span = span;
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.getSpan = function () {
-        return this._span;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.getTransaction = function () {
-        var _a, _b, _c, _d;
-        // often, this span will be a transaction, but it's not guaranteed to be
-        var span = this.getSpan();
-        // try it the new way first
-        if ((_a = span) === null || _a === void 0 ? void 0 : _a.transaction) {
-            return (_b = span) === null || _b === void 0 ? void 0 : _b.transaction;
-        }
-        // fallback to the old way (known bug: this only finds transactions with sampled = true)
-        if ((_d = (_c = span) === null || _c === void 0 ? void 0 : _c.spanRecorder) === null || _d === void 0 ? void 0 : _d.spans[0]) {
-            return span.spanRecorder.spans[0];
-        }
-        // neither way found a transaction
-        return undefined;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.setSession = function (session) {
-        if (!session) {
-            delete this._session;
-        }
-        else {
-            this._session = session;
-        }
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.getSession = function () {
-        return this._session;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.update = function (captureContext) {
-        if (!captureContext) {
-            return this;
-        }
-        if (typeof captureContext === 'function') {
-            var updatedScope = captureContext(this);
-            return updatedScope instanceof Scope ? updatedScope : this;
-        }
-        if (captureContext instanceof Scope) {
-            this._tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._tags), captureContext._tags);
-            this._extra = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._extra), captureContext._extra);
-            this._contexts = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._contexts), captureContext._contexts);
-            if (captureContext._user && Object.keys(captureContext._user).length) {
-                this._user = captureContext._user;
-            }
-            if (captureContext._level) {
-                this._level = captureContext._level;
-            }
-            if (captureContext._fingerprint) {
-                this._fingerprint = captureContext._fingerprint;
-            }
-        }
-        else if ((0,is/* isPlainObject */.PO)(captureContext)) {
-            // eslint-disable-next-line no-param-reassign
-            captureContext = captureContext;
-            this._tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._tags), captureContext.tags);
-            this._extra = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._extra), captureContext.extra);
-            this._contexts = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._contexts), captureContext.contexts);
-            if (captureContext.user) {
-                this._user = captureContext.user;
-            }
-            if (captureContext.level) {
-                this._level = captureContext.level;
-            }
-            if (captureContext.fingerprint) {
-                this._fingerprint = captureContext.fingerprint;
-            }
-        }
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.clear = function () {
-        this._breadcrumbs = [];
-        this._tags = {};
-        this._extra = {};
-        this._user = {};
-        this._contexts = {};
-        this._level = undefined;
-        this._transactionName = undefined;
-        this._fingerprint = undefined;
-        this._span = undefined;
-        this._session = undefined;
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.addBreadcrumb = function (breadcrumb, maxBreadcrumbs) {
-        var mergedBreadcrumb = (0,tslib_es6/* __assign */.pi)({ timestamp: (0,time/* dateTimestampInSeconds */.yW)() }, breadcrumb);
-        this._breadcrumbs =
-            maxBreadcrumbs !== undefined && maxBreadcrumbs >= 0
-                ? (0,tslib_es6/* __spread */.fl)(this._breadcrumbs, [mergedBreadcrumb]).slice(-maxBreadcrumbs)
-                : (0,tslib_es6/* __spread */.fl)(this._breadcrumbs, [mergedBreadcrumb]);
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * @inheritDoc
-     */
-    Scope.prototype.clearBreadcrumbs = function () {
-        this._breadcrumbs = [];
-        this._notifyScopeListeners();
-        return this;
-    };
-    /**
-     * Applies the current context and fingerprint to the event.
-     * Note that breadcrumbs will be added by the client.
-     * Also if the event has already breadcrumbs on it, we do not merge them.
-     * @param event Event
-     * @param hint May contain additional informartion about the original exception.
-     * @hidden
-     */
-    Scope.prototype.applyToEvent = function (event, hint) {
-        var _a;
-        if (this._extra && Object.keys(this._extra).length) {
-            event.extra = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._extra), event.extra);
-        }
-        if (this._tags && Object.keys(this._tags).length) {
-            event.tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._tags), event.tags);
-        }
-        if (this._user && Object.keys(this._user).length) {
-            event.user = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._user), event.user);
-        }
-        if (this._contexts && Object.keys(this._contexts).length) {
-            event.contexts = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, this._contexts), event.contexts);
-        }
-        if (this._level) {
-            event.level = this._level;
-        }
-        if (this._transactionName) {
-            event.transaction = this._transactionName;
-        }
-        // We want to set the trace context for normal events only if there isn't already
-        // a trace context on the event. There is a product feature in place where we link
-        // errors with transaction and it relys on that.
-        if (this._span) {
-            event.contexts = (0,tslib_es6/* __assign */.pi)({ trace: this._span.getTraceContext() }, event.contexts);
-            var transactionName = (_a = this._span.transaction) === null || _a === void 0 ? void 0 : _a.name;
-            if (transactionName) {
-                event.tags = (0,tslib_es6/* __assign */.pi)({ transaction: transactionName }, event.tags);
-            }
-        }
-        this._applyFingerprint(event);
-        event.breadcrumbs = (0,tslib_es6/* __spread */.fl)((event.breadcrumbs || []), this._breadcrumbs);
-        event.breadcrumbs = event.breadcrumbs.length > 0 ? event.breadcrumbs : undefined;
-        return this._notifyEventProcessors((0,tslib_es6/* __spread */.fl)(getGlobalEventProcessors(), this._eventProcessors), event, hint);
-    };
-    /**
-     * This will be called after {@link applyToEvent} is finished.
-     */
-    Scope.prototype._notifyEventProcessors = function (processors, event, hint, index) {
-        var _this = this;
-        if (index === void 0) { index = 0; }
-        return new SyncPromise(function (resolve, reject) {
-            var processor = processors[index];
-            if (event === null || typeof processor !== 'function') {
-                resolve(event);
-            }
-            else {
-                var result = processor((0,tslib_es6/* __assign */.pi)({}, event), hint);
-                if ((0,is/* isThenable */.J8)(result)) {
-                    result
-                        .then(function (final) { return _this._notifyEventProcessors(processors, final, hint, index + 1).then(resolve); })
-                        .then(null, reject);
-                }
-                else {
-                    _this._notifyEventProcessors(processors, result, hint, index + 1)
-                        .then(resolve)
-                        .then(null, reject);
-                }
-            }
-        });
-    };
-    /**
-     * This will be called on every set call.
-     */
-    Scope.prototype._notifyScopeListeners = function () {
-        var _this = this;
-        // We need this check for this._notifyingListeners to be able to work on scope during updates
-        // If this check is not here we'll produce endless recursion when something is done with the scope
-        // during the callback.
-        if (!this._notifyingListeners) {
-            this._notifyingListeners = true;
-            this._scopeListeners.forEach(function (callback) {
-                callback(_this);
-            });
-            this._notifyingListeners = false;
-        }
-    };
-    /**
-     * Applies fingerprint from the scope to the event if there's one,
-     * uses message if there's one instead or get rid of empty fingerprint
-     */
-    Scope.prototype._applyFingerprint = function (event) {
-        // Make sure it's an array first and we actually have something in place
-        event.fingerprint = event.fingerprint
-            ? Array.isArray(event.fingerprint)
-                ? event.fingerprint
-                : [event.fingerprint]
-            : [];
-        // If we have something on the scope, then merge it with event
-        if (this._fingerprint) {
-            event.fingerprint = event.fingerprint.concat(this._fingerprint);
-        }
-        // If we have no data at all, remove empty array default
-        if (event.fingerprint && !event.fingerprint.length) {
-            delete event.fingerprint;
-        }
-    };
-    return Scope;
-}());
-
-/**
- * Retruns the global event processors.
- */
-function getGlobalEventProcessors() {
-    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access  */
-    var global = (0,misc/* getGlobalObject */.Rf)();
-    global.__SENTRY__ = global.__SENTRY__ || {};
-    global.__SENTRY__.globalEventProcessors = global.__SENTRY__.globalEventProcessors || [];
-    return global.__SENTRY__.globalEventProcessors;
-    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access */
-}
-/**
- * Add a EventProcessor to be kept globally.
- * @param callback EventProcessor to add
- */
-function addGlobalEventProcessor(callback) {
-    getGlobalEventProcessors().push(callback);
-}
-//# sourceMappingURL=scope.js.map
-// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/logger.js
-var logger = __webpack_require__(6922);
-// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/node.js
-var node = __webpack_require__(5728);
-;// CONCATENATED MODULE: ../node_modules/@sentry/types/esm/session.js
-/**
- * Session Status
- */
-var SessionStatus;
-(function (SessionStatus) {
-    /** JSDoc */
-    SessionStatus["Ok"] = "ok";
-    /** JSDoc */
-    SessionStatus["Exited"] = "exited";
-    /** JSDoc */
-    SessionStatus["Crashed"] = "crashed";
-    /** JSDoc */
-    SessionStatus["Abnormal"] = "abnormal";
-})(SessionStatus || (SessionStatus = {}));
-//# sourceMappingURL=session.js.map
-// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/object.js + 3 modules
-var object = __webpack_require__(5319);
-;// CONCATENATED MODULE: ../node_modules/@sentry/hub/esm/session.js
-
-
-/**
- * @inheritdoc
- */
-var Session = /** @class */ (function () {
-    function Session(context) {
-        this.errors = 0;
-        this.sid = (0,misc/* uuid4 */.DM)();
-        this.timestamp = Date.now();
-        this.started = Date.now();
-        this.duration = 0;
-        this.status = SessionStatus.Ok;
-        if (context) {
-            this.update(context);
-        }
-    }
-    /** JSDoc */
-    // eslint-disable-next-line complexity
-    Session.prototype.update = function (context) {
-        if (context === void 0) { context = {}; }
-        if (context.user) {
-            if (context.user.ip_address) {
-                this.ipAddress = context.user.ip_address;
-            }
-            if (!context.did) {
-                this.did = context.user.id || context.user.email || context.user.username;
-            }
-        }
-        this.timestamp = context.timestamp || Date.now();
-        if (context.sid) {
-            // Good enough uuid validation. — Kamil
-            this.sid = context.sid.length === 32 ? context.sid : (0,misc/* uuid4 */.DM)();
-        }
-        if (context.did) {
-            this.did = "" + context.did;
-        }
-        if (typeof context.started === 'number') {
-            this.started = context.started;
-        }
-        if (typeof context.duration === 'number') {
-            this.duration = context.duration;
-        }
-        else {
-            this.duration = this.timestamp - this.started;
-        }
-        if (context.release) {
-            this.release = context.release;
-        }
-        if (context.environment) {
-            this.environment = context.environment;
-        }
-        if (context.ipAddress) {
-            this.ipAddress = context.ipAddress;
-        }
-        if (context.userAgent) {
-            this.userAgent = context.userAgent;
-        }
-        if (typeof context.errors === 'number') {
-            this.errors = context.errors;
-        }
-        if (context.status) {
-            this.status = context.status;
-        }
-    };
-    /** JSDoc */
-    Session.prototype.close = function (status) {
-        if (status) {
-            this.update({ status: status });
-        }
-        else if (this.status === SessionStatus.Ok) {
-            this.update({ status: SessionStatus.Exited });
-        }
-        else {
-            this.update();
-        }
-    };
-    /** JSDoc */
-    Session.prototype.toJSON = function () {
-        return (0,object/* dropUndefinedKeys */.Jr)({
-            sid: "" + this.sid,
-            init: true,
-            started: new Date(this.started).toISOString(),
-            timestamp: new Date(this.timestamp).toISOString(),
-            status: this.status,
-            errors: this.errors,
-            did: typeof this.did === 'number' || typeof this.did === 'string' ? "" + this.did : undefined,
-            duration: this.duration,
-            attrs: (0,object/* dropUndefinedKeys */.Jr)({
-                release: this.release,
-                environment: this.environment,
-                ip_address: this.ipAddress,
-                user_agent: this.userAgent,
-            }),
-        });
-    };
-    return Session;
-}());
-
-//# sourceMappingURL=session.js.map
-;// CONCATENATED MODULE: ../node_modules/@sentry/hub/esm/hub.js
-
-
-
-
-/**
- * API compatibility version of this hub.
- *
- * WARNING: This number should only be increased when the global interface
- * changes and new methods are introduced.
- *
- * @hidden
- */
-var API_VERSION = 3;
-/**
- * Default maximum number of breadcrumbs added to an event. Can be overwritten
- * with {@link Options.maxBreadcrumbs}.
- */
-var DEFAULT_BREADCRUMBS = 100;
-/**
- * Absolute maximum number of breadcrumbs added to an event. The
- * `maxBreadcrumbs` option cannot be higher than this value.
- */
-var MAX_BREADCRUMBS = 100;
-/**
- * @inheritDoc
- */
-var Hub = /** @class */ (function () {
-    /**
-     * Creates a new instance of the hub, will push one {@link Layer} into the
-     * internal stack on creation.
-     *
-     * @param client bound to the hub.
-     * @param scope bound to the hub.
-     * @param version number, higher number means higher priority.
-     */
-    function Hub(client, scope, _version) {
-        if (scope === void 0) { scope = new Scope(); }
-        if (_version === void 0) { _version = API_VERSION; }
-        this._version = _version;
-        /** Is a {@link Layer}[] containing the client and scope */
-        this._stack = [{}];
-        this.getStackTop().scope = scope;
-        this.bindClient(client);
-    }
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.isOlderThan = function (version) {
-        return this._version < version;
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.bindClient = function (client) {
-        var top = this.getStackTop();
-        top.client = client;
-        if (client && client.setupIntegrations) {
-            client.setupIntegrations();
-        }
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.pushScope = function () {
-        // We want to clone the content of prev scope
-        var scope = Scope.clone(this.getScope());
-        this.getStack().push({
-            client: this.getClient(),
-            scope: scope,
-        });
-        return scope;
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.popScope = function () {
-        if (this.getStack().length <= 1)
-            return false;
-        return !!this.getStack().pop();
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.withScope = function (callback) {
-        var scope = this.pushScope();
-        try {
-            callback(scope);
-        }
-        finally {
-            this.popScope();
-        }
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.getClient = function () {
-        return this.getStackTop().client;
-    };
-    /** Returns the scope of the top stack. */
-    Hub.prototype.getScope = function () {
-        return this.getStackTop().scope;
-    };
-    /** Returns the scope stack for domains or the process. */
-    Hub.prototype.getStack = function () {
-        return this._stack;
-    };
-    /** Returns the topmost scope layer in the order domain > local > process. */
-    Hub.prototype.getStackTop = function () {
-        return this._stack[this._stack.length - 1];
-    };
-    /**
-     * @inheritDoc
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
-    Hub.prototype.captureException = function (exception, hint) {
-        var eventId = (this._lastEventId = (0,misc/* uuid4 */.DM)());
-        var finalHint = hint;
-        // If there's no explicit hint provided, mimick the same thing that would happen
-        // in the minimal itself to create a consistent behavior.
-        // We don't do this in the client, as it's the lowest level API, and doing this,
-        // would prevent user from having full control over direct calls.
-        if (!hint) {
-            var syntheticException = void 0;
-            try {
-                throw new Error('Sentry syntheticException');
-            }
-            catch (exception) {
-                syntheticException = exception;
-            }
-            finalHint = {
-                originalException: exception,
-                syntheticException: syntheticException,
-            };
-        }
-        this._invokeClient('captureException', exception, (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, finalHint), { event_id: eventId }));
-        return eventId;
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.captureMessage = function (message, level, hint) {
-        var eventId = (this._lastEventId = (0,misc/* uuid4 */.DM)());
-        var finalHint = hint;
-        // If there's no explicit hint provided, mimick the same thing that would happen
-        // in the minimal itself to create a consistent behavior.
-        // We don't do this in the client, as it's the lowest level API, and doing this,
-        // would prevent user from having full control over direct calls.
-        if (!hint) {
-            var syntheticException = void 0;
-            try {
-                throw new Error(message);
-            }
-            catch (exception) {
-                syntheticException = exception;
-            }
-            finalHint = {
-                originalException: message,
-                syntheticException: syntheticException,
-            };
-        }
-        this._invokeClient('captureMessage', message, level, (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, finalHint), { event_id: eventId }));
-        return eventId;
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.captureEvent = function (event, hint) {
-        var eventId = (this._lastEventId = (0,misc/* uuid4 */.DM)());
-        this._invokeClient('captureEvent', event, (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, hint), { event_id: eventId }));
-        return eventId;
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.lastEventId = function () {
-        return this._lastEventId;
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.addBreadcrumb = function (breadcrumb, hint) {
-        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
-        if (!scope || !client)
-            return;
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        var _b = (client.getOptions && client.getOptions()) || {}, _c = _b.beforeBreadcrumb, beforeBreadcrumb = _c === void 0 ? null : _c, _d = _b.maxBreadcrumbs, maxBreadcrumbs = _d === void 0 ? DEFAULT_BREADCRUMBS : _d;
-        if (maxBreadcrumbs <= 0)
-            return;
-        var timestamp = (0,time/* dateTimestampInSeconds */.yW)();
-        var mergedBreadcrumb = (0,tslib_es6/* __assign */.pi)({ timestamp: timestamp }, breadcrumb);
-        var finalBreadcrumb = beforeBreadcrumb
-            ? (0,misc/* consoleSandbox */.Cf)(function () { return beforeBreadcrumb(mergedBreadcrumb, hint); })
-            : mergedBreadcrumb;
-        if (finalBreadcrumb === null)
-            return;
-        scope.addBreadcrumb(finalBreadcrumb, Math.min(maxBreadcrumbs, MAX_BREADCRUMBS));
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.setUser = function (user) {
-        var scope = this.getScope();
-        if (scope)
-            scope.setUser(user);
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.setTags = function (tags) {
-        var scope = this.getScope();
-        if (scope)
-            scope.setTags(tags);
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.setExtras = function (extras) {
-        var scope = this.getScope();
-        if (scope)
-            scope.setExtras(extras);
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.setTag = function (key, value) {
-        var scope = this.getScope();
-        if (scope)
-            scope.setTag(key, value);
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.setExtra = function (key, extra) {
-        var scope = this.getScope();
-        if (scope)
-            scope.setExtra(key, extra);
-    };
-    /**
-     * @inheritDoc
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Hub.prototype.setContext = function (name, context) {
-        var scope = this.getScope();
-        if (scope)
-            scope.setContext(name, context);
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.configureScope = function (callback) {
-        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
-        if (scope && client) {
-            callback(scope);
-        }
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.run = function (callback) {
-        var oldHub = makeMain(this);
-        try {
-            callback(this);
-        }
-        finally {
-            makeMain(oldHub);
-        }
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.getIntegration = function (integration) {
-        var client = this.getClient();
-        if (!client)
-            return null;
-        try {
-            return client.getIntegration(integration);
-        }
-        catch (_oO) {
-            logger/* logger.warn */.k.warn("Cannot retrieve integration " + integration.id + " from the current Hub");
-            return null;
-        }
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.startSpan = function (context) {
-        return this._callExtensionMethod('startSpan', context);
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.startTransaction = function (context, customSamplingContext) {
-        return this._callExtensionMethod('startTransaction', context, customSamplingContext);
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.traceHeaders = function () {
-        return this._callExtensionMethod('traceHeaders');
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.startSession = function (context) {
-        // End existing session if there's one
-        this.endSession();
-        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
-        var _b = (client && client.getOptions()) || {}, release = _b.release, environment = _b.environment;
-        var session = new Session((0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({ release: release,
-            environment: environment }, (scope && { user: scope.getUser() })), context));
-        if (scope) {
-            scope.setSession(session);
-        }
-        return session;
-    };
-    /**
-     * @inheritDoc
-     */
-    Hub.prototype.endSession = function () {
-        var _a = this.getStackTop(), scope = _a.scope, client = _a.client;
-        if (!scope)
-            return;
-        var session = scope.getSession && scope.getSession();
-        if (session) {
-            session.close();
-            if (client && client.captureSession) {
-                client.captureSession(session);
-            }
-            scope.setSession();
-        }
-    };
-    /**
-     * Internal helper function to call a method on the top client if it exists.
-     *
-     * @param method The method to call on the client.
-     * @param args Arguments to pass to the client function.
-     */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Hub.prototype._invokeClient = function (method) {
-        var _a;
-        var args = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
-        }
-        var _b = this.getStackTop(), scope = _b.scope, client = _b.client;
-        if (client && client[method]) {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-            (_a = client)[method].apply(_a, (0,tslib_es6/* __spread */.fl)(args, [scope]));
-        }
-    };
-    /**
-     * Calls global extension method and binding current instance to the function call
-     */
-    // @ts-ignore Function lacks ending return statement and return type does not include 'undefined'. ts(2366)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Hub.prototype._callExtensionMethod = function (method) {
-        var args = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
-        }
-        var carrier = getMainCarrier();
-        var sentry = carrier.__SENTRY__;
-        if (sentry && sentry.extensions && typeof sentry.extensions[method] === 'function') {
-            return sentry.extensions[method].apply(this, args);
-        }
-        logger/* logger.warn */.k.warn("Extension method " + method + " couldn't be found, doing nothing.");
-    };
-    return Hub;
-}());
-
-/** Returns the global shim registry. */
-function getMainCarrier() {
-    var carrier = (0,misc/* getGlobalObject */.Rf)();
-    carrier.__SENTRY__ = carrier.__SENTRY__ || {
-        extensions: {},
-        hub: undefined,
-    };
-    return carrier;
-}
-/**
- * Replaces the current main hub with the passed one on the global object
- *
- * @returns The old replaced hub
- */
-function makeMain(hub) {
-    var registry = getMainCarrier();
-    var oldHub = getHubFromCarrier(registry);
-    setHubOnCarrier(registry, hub);
-    return oldHub;
-}
-/**
- * Returns the default hub instance.
- *
- * If a hub is already registered in the global carrier but this module
- * contains a more recent version, it replaces the registered version.
- * Otherwise, the currently registered hub will be returned.
- */
-function hub_getCurrentHub() {
-    // Get main carrier (global for every environment)
-    var registry = getMainCarrier();
-    // If there's no hub, or its an old API, assign a new one
-    if (!hasHubOnCarrier(registry) || getHubFromCarrier(registry).isOlderThan(API_VERSION)) {
-        setHubOnCarrier(registry, new Hub());
-    }
-    // Prefer domains over global if they are there (applicable only to Node environment)
-    if ((0,node/* isNodeEnv */.KV)()) {
-        return getHubFromActiveDomain(registry);
-    }
-    // Return hub that lives on a global object
-    return getHubFromCarrier(registry);
-}
-/**
- * Returns the active domain, if one exists
- *
- * @returns The domain, or undefined if there is no active domain
- */
-function getActiveDomain() {
-    var sentry = getMainCarrier().__SENTRY__;
-    return sentry && sentry.extensions && sentry.extensions.domain && sentry.extensions.domain.active;
-}
-/**
- * Try to read the hub from an active domain, and fallback to the registry if one doesn't exist
- * @returns discovered hub
- */
-function getHubFromActiveDomain(registry) {
-    try {
-        var activeDomain = getActiveDomain();
-        // If there's no active domain, just return global hub
-        if (!activeDomain) {
-            return getHubFromCarrier(registry);
-        }
-        // If there's no hub on current domain, or it's an old API, assign a new one
-        if (!hasHubOnCarrier(activeDomain) || getHubFromCarrier(activeDomain).isOlderThan(API_VERSION)) {
-            var registryHubTopStack = getHubFromCarrier(registry).getStackTop();
-            setHubOnCarrier(activeDomain, new Hub(registryHubTopStack.client, Scope.clone(registryHubTopStack.scope)));
-        }
-        // Return hub that lives on a domain
-        return getHubFromCarrier(activeDomain);
-    }
-    catch (_Oo) {
-        // Return hub that lives on a global object
-        return getHubFromCarrier(registry);
-    }
-}
-/**
- * This will tell whether a carrier has a hub on it or not
- * @param carrier object
- */
-function hasHubOnCarrier(carrier) {
-    return !!(carrier && carrier.__SENTRY__ && carrier.__SENTRY__.hub);
-}
-/**
- * This will create a new {@link Hub} and add to the passed object on
- * __SENTRY__.hub.
- * @param carrier object
- * @hidden
- */
-function getHubFromCarrier(carrier) {
-    if (carrier && carrier.__SENTRY__ && carrier.__SENTRY__.hub)
-        return carrier.__SENTRY__.hub;
-    carrier.__SENTRY__ = carrier.__SENTRY__ || {};
-    carrier.__SENTRY__.hub = new Hub();
-    return carrier.__SENTRY__.hub;
-}
-/**
- * This will set passed {@link Hub} on the passed object's __SENTRY__.hub attribute
- * @param carrier object
- * @param hub Hub
- */
-function setHubOnCarrier(carrier, hub) {
-    if (!carrier)
-        return false;
-    carrier.__SENTRY__ = carrier.__SENTRY__ || {};
-    carrier.__SENTRY__.hub = hub;
-    return true;
-}
-//# sourceMappingURL=hub.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/hub/esm/hub.js + 1 modules
+var esm_hub = __webpack_require__(7546);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/minimal/esm/index.js
 
 
@@ -3746,7 +3404,7 @@ function callOnHub(method) {
     for (var _i = 1; _i < arguments.length; _i++) {
         args[_i - 1] = arguments[_i];
     }
-    var hub = hub_getCurrentHub();
+    var hub = (0,esm_hub/* getCurrentHub */.Gd)();
     if (hub && hub[method]) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return hub[method].apply(hub, (0,tslib_es6/* __spread */.fl)(args));
@@ -3927,6 +3585,10 @@ function startTransaction(context, customSamplingContext) {
     return callOnHub('startTransaction', (0,tslib_es6/* __assign */.pi)({}, context), customSamplingContext);
 }
 //# sourceMappingURL=index.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/hub/esm/scope.js
+var esm_scope = __webpack_require__(36);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/logger.js
+var logger = __webpack_require__(6922);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/utils/esm/polyfill.js
 var setPrototypeOf = Object.setPrototypeOf || ({ __proto__: [] } instanceof Array ? setProtoOf : mixinProperties);
 /**
@@ -3971,6 +3633,8 @@ var SentryError = /** @class */ (function (_super) {
 }(Error));
 
 //# sourceMappingURL=error.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/syncpromise.js
+var syncpromise = __webpack_require__(8894);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/core/esm/transports/noop.js
 
 
@@ -3982,7 +3646,7 @@ var NoopTransport = /** @class */ (function () {
      * @inheritDoc
      */
     NoopTransport.prototype.sendEvent = function (_) {
-        return SyncPromise.resolve({
+        return syncpromise/* SyncPromise.resolve */.c.resolve({
             reason: "NoopTransport: Event has been skipped because no Dsn is configured.",
             status: Status.Skipped,
         });
@@ -3991,7 +3655,7 @@ var NoopTransport = /** @class */ (function () {
      * @inheritDoc
      */
     NoopTransport.prototype.close = function (_) {
-        return SyncPromise.resolve(true);
+        return syncpromise/* SyncPromise.resolve */.c.resolve(true);
     };
     return NoopTransport;
 }());
@@ -4062,6 +3726,12 @@ var BaseBackend = /** @class */ (function () {
 }());
 
 //# sourceMappingURL=basebackend.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/is.js
+var is = __webpack_require__(6885);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/object.js + 2 modules
+var object = __webpack_require__(806);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/misc.js
+var misc = __webpack_require__(7451);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/utils/esm/dsn.js
 
 
@@ -4302,9 +3972,9 @@ function getModule(filename, base) {
 function readSourceFiles(filenames) {
     // we're relying on filenames being de-duped already
     if (filenames.length === 0) {
-        return SyncPromise.resolve({});
+        return syncpromise/* SyncPromise.resolve */.c.resolve({});
     }
-    return new SyncPromise(function (resolve) {
+    return new syncpromise/* SyncPromise */.c(function (resolve) {
         var sourceFiles = {};
         var count = 0;
         var _loop_1 = function (i) {
@@ -4389,7 +4059,7 @@ function parseStack(stack, options) {
     });
     // We do an early return if we do not want to fetch context liens
     if (linesOfContext <= 0) {
-        return SyncPromise.resolve(frames);
+        return syncpromise/* SyncPromise.resolve */.c.resolve(frames);
     }
     try {
         return addPrePostContext(filesToRead, frames, linesOfContext);
@@ -4397,7 +4067,7 @@ function parseStack(stack, options) {
     catch (_) {
         // This happens in electron for example where we are not able to read files from asar.
         // So it's fine, we recover be just returning all frames without pre/post context.
-        return SyncPromise.resolve(frames);
+        return syncpromise/* SyncPromise.resolve */.c.resolve(frames);
     }
 }
 /**
@@ -4407,7 +4077,7 @@ function parseStack(stack, options) {
  * @param frames StackFrame[] containg all frames
  */
 function addPrePostContext(filesToRead, frames, linesOfContext) {
-    return new SyncPromise(function (resolve) {
+    return new syncpromise/* SyncPromise */.c(function (resolve) {
         return readSourceFiles(filesToRead).then(function (sourceFiles) {
             var result = frames.map(function (frame) {
                 if (frame.filename && sourceFiles[frame.filename]) {
@@ -4432,7 +4102,7 @@ function addPrePostContext(filesToRead, frames, linesOfContext) {
 function getExceptionFromError(error, options) {
     var name = error.name || error.constructor.name;
     var stack = extractStackFromError(error);
-    return new SyncPromise(function (resolve) {
+    return new syncpromise/* SyncPromise */.c(function (resolve) {
         return parseStack(stack, options).then(function (frames) {
             var result = {
                 stacktrace: {
@@ -4449,7 +4119,7 @@ function getExceptionFromError(error, options) {
  * @hidden
  */
 function parseError(error, options) {
-    return new SyncPromise(function (resolve) {
+    return new syncpromise/* SyncPromise */.c(function (resolve) {
         return getExceptionFromError(error, options).then(function (exception) {
             resolve({
                 exception: {
@@ -4672,7 +4342,7 @@ var PromiseBuffer = /** @class */ (function () {
     PromiseBuffer.prototype.add = function (task) {
         var _this = this;
         if (!this.isReady()) {
-            return SyncPromise.reject(new SentryError('Not adding Promise due to buffer limit reached.'));
+            return syncpromise/* SyncPromise.reject */.c.reject(new SentryError('Not adding Promise due to buffer limit reached.'));
         }
         if (this._buffer.indexOf(task) === -1) {
             this._buffer.push(task);
@@ -4711,13 +4381,13 @@ var PromiseBuffer = /** @class */ (function () {
      */
     PromiseBuffer.prototype.drain = function (timeout) {
         var _this = this;
-        return new SyncPromise(function (resolve) {
+        return new syncpromise/* SyncPromise */.c(function (resolve) {
             var capturedSetTimeout = setTimeout(function () {
                 if (timeout && timeout > 0) {
                     resolve(false);
                 }
             }, timeout);
-            SyncPromise.all(_this._buffer)
+            syncpromise/* SyncPromise.all */.c.all(_this._buffer)
                 .then(function () {
                 clearTimeout(capturedSetTimeout);
                 resolve(true);
@@ -4945,7 +4615,7 @@ var NodeBackend = /** @class */ (function (_super) {
                 // This will allow us to group events based on top-level keys
                 // which is much better than creating new group when any key/value change
                 var message = "Non-Error exception captured with keys: " + (0,object/* extractExceptionKeysForMessage */.zf)(exception);
-                hub_getCurrentHub().configureScope(function (scope) {
+                (0,esm_hub/* getCurrentHub */.Gd)().configureScope(function (scope) {
                     scope.setExtra('__serialized__', (0,object/* normalizeToSize */.Qy)(exception));
                 });
                 ex = (hint && hint.syntheticException) || new Error(message);
@@ -4959,7 +4629,7 @@ var NodeBackend = /** @class */ (function (_super) {
             }
             mechanism.synthetic = true;
         }
-        return new SyncPromise(function (resolve, reject) {
+        return new syncpromise/* SyncPromise */.c(function (resolve, reject) {
             return parseError(ex, _this._options)
                 .then(function (event) {
                 (0,misc/* addExceptionTypeValue */.Db)(event, undefined, undefined);
@@ -4980,7 +4650,7 @@ var NodeBackend = /** @class */ (function (_super) {
             level: level,
             message: message,
         };
-        return new SyncPromise(function (resolve) {
+        return new syncpromise/* SyncPromise */.c(function (resolve) {
             if (_this._options.attachStacktrace && hint && hint.syntheticException) {
                 var stack = hint.syntheticException ? extractStackFromError(hint.syntheticException) : [];
                 parseStack(stack, _this._options)
@@ -5021,6 +4691,10 @@ var NodeBackend = /** @class */ (function (_super) {
 }(BaseBackend));
 
 //# sourceMappingURL=backend.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/types/esm/session.js
+var esm_session = __webpack_require__(8834);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/time.js
+var time = __webpack_require__(4180);
 // EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/string.js
 var string = __webpack_require__(5268);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/core/esm/integration.js
@@ -5072,7 +4746,7 @@ function setupIntegration(integration) {
     if (installedIntegrations.indexOf(integration.name) !== -1) {
         return;
     }
-    integration.setupOnce(addGlobalEventProcessor, hub_getCurrentHub);
+    integration.setupOnce(esm_scope/* addGlobalEventProcessor */.c, esm_hub/* getCurrentHub */.Gd);
     installedIntegrations.push(integration.name);
     logger/* logger.log */.k.log("Integration installed: " + integration.name);
 }
@@ -5291,7 +4965,7 @@ var BaseClient = /** @class */ (function () {
                 }
             }
         }
-        session.update((0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, (crashed && { status: SessionStatus.Crashed })), { user: user,
+        session.update((0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, (crashed && { status: esm_session/* SessionStatus.Crashed */.$.Crashed })), { user: user,
             userAgent: userAgent, errors: session.errors + Number(errored || crashed) }));
     };
     /** Deliver captured session to Sentry */
@@ -5301,7 +4975,7 @@ var BaseClient = /** @class */ (function () {
     /** Waits for the client to be done with processing. */
     BaseClient.prototype._isClientProcessing = function (timeout) {
         var _this = this;
-        return new SyncPromise(function (resolve) {
+        return new syncpromise/* SyncPromise */.c(function (resolve) {
             var ticked = 0;
             var tick = 1;
             var interval = setInterval(function () {
@@ -5351,10 +5025,10 @@ var BaseClient = /** @class */ (function () {
         // This allows us to prevent unnecessary copying of data if `captureContext` is not provided.
         var finalScope = scope;
         if (hint && hint.captureContext) {
-            finalScope = Scope.clone(finalScope).update(hint.captureContext);
+            finalScope = esm_scope/* Scope.clone */.s.clone(finalScope).update(hint.captureContext);
         }
         // We prepare the result here with a resolved Event.
-        var result = SyncPromise.resolve(prepared);
+        var result = syncpromise/* SyncPromise.resolve */.c.resolve(prepared);
         // This should be the last thing called, since we want that
         // {@link Hub.addEventProcessor} gets the finished prepared event.
         if (finalScope) {
@@ -5486,14 +5160,14 @@ var BaseClient = /** @class */ (function () {
         // eslint-disable-next-line @typescript-eslint/unbound-method
         var _a = this.getOptions(), beforeSend = _a.beforeSend, sampleRate = _a.sampleRate;
         if (!this._isEnabled()) {
-            return SyncPromise.reject(new SentryError('SDK not enabled, will not send event.'));
+            return syncpromise/* SyncPromise.reject */.c.reject(new SentryError('SDK not enabled, will not send event.'));
         }
         var isTransaction = event.type === 'transaction';
         // 1.0 === 100% events are sent
         // 0.0 === 0% events are sent
         // Sampling for transaction happens somewhere else
         if (!isTransaction && typeof sampleRate === 'number' && Math.random() > sampleRate) {
-            return SyncPromise.reject(new SentryError('This event has been sampled, will not send event.'));
+            return syncpromise/* SyncPromise.reject */.c.reject(new SentryError('This event has been sampled, will not send event.'));
         }
         return this._prepareEvent(event, scope, hint)
             .then(function (prepared) {
@@ -5611,7 +5285,7 @@ function initAndBind(clientClass, options) {
     if (options.debug === true) {
         logger/* logger.enable */.k.enable();
     }
-    var hub = hub_getCurrentHub();
+    var hub = (0,esm_hub/* getCurrentHub */.Gd)();
     var client = new clientClass(options);
     hub.bindClient(client);
 }
@@ -5637,8 +5311,8 @@ var InboundFilters = /** @class */ (function () {
      * @inheritDoc
      */
     InboundFilters.prototype.setupOnce = function () {
-        addGlobalEventProcessor(function (event) {
-            var hub = hub_getCurrentHub();
+        (0,esm_scope/* addGlobalEventProcessor */.c)(function (event) {
+            var hub = (0,esm_hub/* getCurrentHub */.Gd)();
             if (!hub) {
                 return event;
             }
@@ -5874,8 +5548,8 @@ function createConsoleWrapper(level) {
                 sentryLevel = severity/* Severity.Log */.z.Log;
         }
         return function () {
-            if (hub_getCurrentHub().getIntegration(Console)) {
-                hub_getCurrentHub().addBreadcrumb({
+            if ((0,esm_hub/* getCurrentHub */.Gd)().getIntegration(Console)) {
+                (0,esm_hub/* getCurrentHub */.Gd)().addBreadcrumb({
                     category: 'console',
                     level: sentryLevel,
                     message: external_util_.format.apply(undefined, arguments),
@@ -5899,7 +5573,7 @@ function createConsoleWrapper(level) {
  */
 function isSentryRequest(url) {
     var _a;
-    var dsn = (_a = hub_getCurrentHub()
+    var dsn = (_a = (0,esm_hub/* getCurrentHub */.Gd)()
         .getClient()) === null || _a === void 0 ? void 0 : _a.getDsn();
     return dsn ? url.includes(dsn.host) : false;
 }
@@ -6094,7 +5768,7 @@ function _createWrappedRequestMethodFactory(breadcrumbsEnabled, tracingEnabled) 
             }
             var span;
             var parentSpan;
-            var scope = hub_getCurrentHub().getScope();
+            var scope = (0,esm_hub/* getCurrentHub */.Gd)().getScope();
             if (scope && tracingEnabled) {
                 parentSpan = scope.getSpan();
                 if (parentSpan) {
@@ -6143,10 +5817,10 @@ function _createWrappedRequestMethodFactory(breadcrumbsEnabled, tracingEnabled) 
  * Captures Breadcrumb based on provided request/response pair
  */
 function addRequestBreadcrumb(event, url, req, res) {
-    if (!hub_getCurrentHub().getIntegration(Http)) {
+    if (!(0,esm_hub/* getCurrentHub */.Gd)().getIntegration(Http)) {
         return;
     }
-    hub_getCurrentHub().addBreadcrumb({
+    (0,esm_hub/* getCurrentHub */.Gd)().addBreadcrumb({
         category: 'http',
         data: {
             method: req.method,
@@ -6161,69 +5835,10 @@ function addRequestBreadcrumb(event, url, req, res) {
     });
 }
 //# sourceMappingURL=http.js.map
-;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/utils.js
-
-var TRACEPARENT_REGEXP = new RegExp('^[ \\t]*' + // whitespace
-    '([0-9a-f]{32})?' + // trace_id
-    '-?([0-9a-f]{16})?' + // span_id
-    '-?([01])?' + // sampled
-    '[ \\t]*$');
-/**
- * Determines if tracing is currently enabled.
- *
- * Tracing is enabled when at least one of `tracesSampleRate` and `tracesSampler` is defined in the SDK config.
- */
-function hasTracingEnabled(options) {
-    return 'tracesSampleRate' in options || 'tracesSampler' in options;
-}
-/**
- * Extract transaction context data from a `sentry-trace` header.
- *
- * @param traceparent Traceparent string
- *
- * @returns Object containing data from the header, or undefined if traceparent string is malformed
- */
-function extractTraceparentData(traceparent) {
-    var matches = traceparent.match(TRACEPARENT_REGEXP);
-    if (matches) {
-        var parentSampled = void 0;
-        if (matches[3] === '1') {
-            parentSampled = true;
-        }
-        else if (matches[3] === '0') {
-            parentSampled = false;
-        }
-        return {
-            traceId: matches[1],
-            parentSampled: parentSampled,
-            parentSpanId: matches[2],
-        };
-    }
-    return undefined;
-}
-/** Grabs active transaction off scope, if any */
-function getActiveTransaction(hub) {
-    if (hub === void 0) { hub = getCurrentHub(); }
-    var _a, _b;
-    return (_b = (_a = hub) === null || _a === void 0 ? void 0 : _a.getScope()) === null || _b === void 0 ? void 0 : _b.getTransaction();
-}
-/**
- * Converts from milliseconds to seconds
- * @param time time in ms
- */
-function msToSec(time) {
-    return time / 1000;
-}
-/**
- * Converts from seconds to milliseconds
- * @param time time in seconds
- */
-function secToMs(time) {
-    return time * 1000;
-}
-// so it can be used in manual instrumentation without necessitating a hard dependency on @sentry/utils
-
-//# sourceMappingURL=utils.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/utils.js
+var utils = __webpack_require__(5498);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/node.js
+var node = __webpack_require__(5728);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/utils/esm/async.js
 /**
  * Consumes the promise and logs the error when it rejects.
@@ -6260,11 +5875,11 @@ function tracingHandler() {
         // If there is a trace header set, we extract the data from it (parentSpanId, traceId, and sampling decision)
         var traceparentData;
         if (req.headers && (0,is/* isString */.HD)(req.headers['sentry-trace'])) {
-            traceparentData = extractTraceparentData(req.headers['sentry-trace']);
+            traceparentData = (0,utils/* extractTraceparentData */.qG)(req.headers['sentry-trace']);
         }
         var transaction = startTransaction((0,tslib_es6/* __assign */.pi)({ name: extractExpressTransactionName(req, { path: true, method: true }), op: 'http.server' }, traceparentData));
         // We put the transaction on the scope so users can attach children to it
-        hub_getCurrentHub().configureScope(function (scope) {
+        (0,esm_hub/* getCurrentHub */.Gd)().configureScope(function (scope) {
             scope.setSpan(transaction);
         });
         // We also set __sentry_transaction on the response so people can grab the transaction there to add
@@ -6431,7 +6046,7 @@ function requestHandler(options) {
         local.add(res);
         local.on('error', next);
         local.run(function () {
-            hub_getCurrentHub().configureScope(function (scope) {
+            (0,esm_hub/* getCurrentHub */.Gd)().configureScope(function (scope) {
                 return scope.addEventProcessor(function (event) { return parseRequest(event, req, options); });
             });
             next();
@@ -6480,7 +6095,7 @@ function errorHandler(options) {
 function logAndExitProcess(error) {
     // eslint-disable-next-line no-console
     console.error(error && error.stack ? error.stack : error);
-    var client = hub_getCurrentHub().getClient();
+    var client = (0,esm_hub/* getCurrentHub */.Gd)().getClient();
     if (client === undefined) {
         logger/* logger.warn */.k.warn('No NodeClient was defined, we are exiting the process now.');
         global.process.exit(1);
@@ -6537,7 +6152,7 @@ var OnUncaughtException = /** @class */ (function () {
         var firstError;
         return function (error) {
             var onFatalError = logAndExitProcess;
-            var client = hub_getCurrentHub().getClient();
+            var client = (0,esm_hub/* getCurrentHub */.Gd)().getClient();
             if (_this._options.onFatalError) {
                 // eslint-disable-next-line @typescript-eslint/unbound-method
                 onFatalError = _this._options.onFatalError;
@@ -6547,7 +6162,7 @@ var OnUncaughtException = /** @class */ (function () {
                 onFatalError = client.getOptions().onFatalError;
             }
             if (!caughtFirstError) {
-                var hub_1 = hub_getCurrentHub();
+                var hub_1 = (0,esm_hub/* getCurrentHub */.Gd)();
                 // this is the first uncaught error and the ultimate reason for shutting down
                 // we want to do absolutely everything possible to ensure it gets captured
                 // also we want to make sure we don't go recursion crazy if more errors happen after this one
@@ -6642,7 +6257,7 @@ var OnUnhandledRejection = /** @class */ (function () {
      */
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
     OnUnhandledRejection.prototype.sendUnhandledPromise = function (reason, promise) {
-        var hub = hub_getCurrentHub();
+        var hub = (0,esm_hub/* getCurrentHub */.Gd)();
         if (!hub.getIntegration(OnUnhandledRejection)) {
             this._handleRejection(reason);
             return;
@@ -6725,8 +6340,8 @@ var LinkedErrors = /** @class */ (function () {
      * @inheritDoc
      */
     LinkedErrors.prototype.setupOnce = function () {
-        addGlobalEventProcessor(function (event, hint) {
-            var self = hub_getCurrentHub().getIntegration(LinkedErrors);
+        (0,esm_scope/* addGlobalEventProcessor */.c)(function (event, hint) {
+            var self = (0,esm_hub/* getCurrentHub */.Gd)().getIntegration(LinkedErrors);
             if (self) {
                 var handler = self._handler && self._handler.bind(self);
                 return typeof handler === 'function' ? handler(event, hint) : event;
@@ -6740,9 +6355,9 @@ var LinkedErrors = /** @class */ (function () {
     LinkedErrors.prototype._handler = function (event, hint) {
         var _this = this;
         if (!event.exception || !event.exception.values || !hint || !(0,is/* isInstanceOf */.V9)(hint.originalException, Error)) {
-            return SyncPromise.resolve(event);
+            return syncpromise/* SyncPromise.resolve */.c.resolve(event);
         }
-        return new SyncPromise(function (resolve) {
+        return new syncpromise/* SyncPromise */.c(function (resolve) {
             _this._walkErrorTree(hint.originalException, _this._key)
                 .then(function (linkedErrors) {
                 if (event && event.exception && event.exception.values) {
@@ -6762,9 +6377,9 @@ var LinkedErrors = /** @class */ (function () {
         var _this = this;
         if (stack === void 0) { stack = []; }
         if (!(0,is/* isInstanceOf */.V9)(error[key], Error) || stack.length + 1 >= this._limit) {
-            return SyncPromise.resolve(stack);
+            return syncpromise/* SyncPromise.resolve */.c.resolve(stack);
         }
-        return new SyncPromise(function (resolve, reject) {
+        return new syncpromise/* SyncPromise */.c(function (resolve, reject) {
             getExceptionFromError(error[key])
                 .then(function (exception) {
                 _this._walkErrorTree(error[key], key, (0,tslib_es6/* __spread */.fl)([exception], stack))
@@ -6971,7 +6586,7 @@ function init(options) {
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     if (external_domain_namespaceObject.active) {
-        setHubOnCarrier(getMainCarrier(), hub_getCurrentHub());
+        (0,esm_hub/* setHubOnCarrier */.j0)((0,esm_hub/* getMainCarrier */.cu)(), (0,esm_hub/* getCurrentHub */.Gd)());
     }
     initAndBind(NodeClient, options);
 }
@@ -6981,7 +6596,7 @@ function init(options) {
  * @returns The last event id of a captured event.
  */
 function lastEventId() {
-    return hub_getCurrentHub().lastEventId();
+    return (0,esm_hub/* getCurrentHub */.Gd)().lastEventId();
 }
 /**
  * A promise that resolves when all current events have been sent.
@@ -6993,7 +6608,7 @@ function flush(timeout) {
     return (0,tslib_es6/* __awaiter */.mG)(this, void 0, void 0, function () {
         var client;
         return (0,tslib_es6/* __generator */.Jh)(this, function (_a) {
-            client = hub_getCurrentHub().getClient();
+            client = (0,esm_hub/* getCurrentHub */.Gd)().getClient();
             if (client) {
                 return [2 /*return*/, client.flush(timeout)];
             }
@@ -7011,7 +6626,7 @@ function sdk_close(timeout) {
     return (0,tslib_es6/* __awaiter */.mG)(this, void 0, void 0, function () {
         var client;
         return (0,tslib_es6/* __generator */.Jh)(this, function (_a) {
-            client = hub_getCurrentHub().getClient();
+            client = (0,esm_hub/* getCurrentHub */.Gd)().getClient();
             if (client) {
                 return [2 /*return*/, client.close(timeout)];
             }
@@ -7042,12 +6657,2889 @@ var INTEGRATIONS = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)
 
 // We need to patch domain on the global __SENTRY__ object to make it work for node in cross-platform packages like
 // @sentry/hub. If we don't do this, browser bundlers will have troubles resolving `require('domain')`.
-var carrier = getMainCarrier();
+var carrier = (0,esm_hub/* getMainCarrier */.cu)();
 if (carrier.__SENTRY__) {
     carrier.__SENTRY__.extensions = carrier.__SENTRY__.extensions || {};
     carrier.__SENTRY__.extensions.domain = carrier.__SENTRY__.extensions.domain || external_domain_namespaceObject;
 }
 //# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 2749:
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "ro": () => /* binding */ addExtensionMethods,
+  "lb": () => /* binding */ startIdleTransaction
+});
+
+// UNUSED EXPORTS: _addTracingExtensions
+
+// EXTERNAL MODULE: ../node_modules/tslib/tslib.es6.js
+var tslib_es6 = __webpack_require__(9312);
+// EXTERNAL MODULE: ../node_modules/@sentry/hub/esm/hub.js + 1 modules
+var hub = __webpack_require__(7546);
+;// CONCATENATED MODULE: ../node_modules/@sentry/types/esm/transaction.js
+var TransactionSamplingMethod;
+(function (TransactionSamplingMethod) {
+    TransactionSamplingMethod["Explicit"] = "explicitly_set";
+    TransactionSamplingMethod["Sampler"] = "client_sampler";
+    TransactionSamplingMethod["Rate"] = "client_rate";
+    TransactionSamplingMethod["Inheritance"] = "inheritance";
+})(TransactionSamplingMethod || (TransactionSamplingMethod = {}));
+//# sourceMappingURL=transaction.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/logger.js
+var logger = __webpack_require__(6922);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/node.js
+var node = __webpack_require__(5728);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/is.js
+var is = __webpack_require__(6885);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/misc.js
+var misc = __webpack_require__(7451);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/instrument.js
+var instrument = __webpack_require__(9338);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/spanstatus.js
+var spanstatus = __webpack_require__(2033);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/utils.js
+var utils = __webpack_require__(5498);
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/errors.js
+
+
+
+/**
+ * Configures global error listeners
+ */
+function registerErrorInstrumentation() {
+    (0,instrument/* addInstrumentationHandler */.o)({
+        callback: errorCallback,
+        type: 'error',
+    });
+    (0,instrument/* addInstrumentationHandler */.o)({
+        callback: errorCallback,
+        type: 'unhandledrejection',
+    });
+}
+/**
+ * If an error or unhandled promise occurs, we mark the active transaction as failed
+ */
+function errorCallback() {
+    var activeTransaction = (0,utils/* getActiveTransaction */.x1)();
+    if (activeTransaction) {
+        logger/* logger.log */.k.log("[Tracing] Transaction: " + spanstatus/* SpanStatus.InternalError */.p.InternalError + " -> Global error occured");
+        activeTransaction.setStatus(spanstatus/* SpanStatus.InternalError */.p.InternalError);
+    }
+}
+//# sourceMappingURL=errors.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/idletransaction.js
+var idletransaction = __webpack_require__(4061);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/transaction.js
+var esm_transaction = __webpack_require__(6590);
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/hubextensions.js
+/* module decorator */ module = __webpack_require__.hmd(module);
+
+
+
+
+
+
+
+
+/** Returns all trace headers that are currently on the top scope. */
+function traceHeaders() {
+    var scope = this.getScope();
+    if (scope) {
+        var span = scope.getSpan();
+        if (span) {
+            return {
+                'sentry-trace': span.toTraceparent(),
+            };
+        }
+    }
+    return {};
+}
+/**
+ * Makes a sampling decision for the given transaction and stores it on the transaction.
+ *
+ * Called every time a transaction is created. Only transactions which emerge with a `sampled` value of `true` will be
+ * sent to Sentry.
+ *
+ * @param hub: The hub off of which to read config options
+ * @param transaction: The transaction needing a sampling decision
+ * @param samplingContext: Default and user-provided data which may be used to help make the decision
+ *
+ * @returns The given transaction with its `sampled` value set
+ */
+function sample(hub, transaction, samplingContext) {
+    var _a;
+    var client = hub.getClient();
+    var options = (client && client.getOptions()) || {};
+    // nothing to do if there's no client or if tracing is disabled
+    if (!client || !(0,utils/* hasTracingEnabled */.zu)(options)) {
+        transaction.sampled = false;
+        return transaction;
+    }
+    // if the user has forced a sampling decision by passing a `sampled` value in their transaction context, go with that
+    if (transaction.sampled !== undefined) {
+        transaction.tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, transaction.tags), { __sentry_samplingMethod: TransactionSamplingMethod.Explicit });
+        return transaction;
+    }
+    // we would have bailed already if neither `tracesSampler` nor `tracesSampleRate` were defined, so one of these should
+    // work; prefer the hook if so
+    var sampleRate;
+    if (typeof options.tracesSampler === 'function') {
+        sampleRate = options.tracesSampler(samplingContext);
+        // cast the rate to a number first in case it's a boolean
+        transaction.tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, transaction.tags), { __sentry_samplingMethod: TransactionSamplingMethod.Sampler, 
+            // TODO kmclb - once tag types are loosened, don't need to cast to string here
+            __sentry_sampleRate: String(Number(sampleRate)) });
+    }
+    else if (samplingContext.parentSampled !== undefined) {
+        sampleRate = samplingContext.parentSampled;
+        transaction.tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, transaction.tags), { __sentry_samplingMethod: TransactionSamplingMethod.Inheritance });
+    }
+    else {
+        sampleRate = options.tracesSampleRate;
+        // cast the rate to a number first in case it's a boolean
+        transaction.tags = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, transaction.tags), { __sentry_samplingMethod: TransactionSamplingMethod.Rate, 
+            // TODO kmclb - once tag types are loosened, don't need to cast to string here
+            __sentry_sampleRate: String(Number(sampleRate)) });
+    }
+    // Since this is coming from the user (or from a function provided by the user), who knows what we might get. (The
+    // only valid values are booleans or numbers between 0 and 1.)
+    if (!isValidSampleRate(sampleRate)) {
+        logger/* logger.warn */.k.warn("[Tracing] Discarding transaction because of invalid sample rate.");
+        transaction.sampled = false;
+        return transaction;
+    }
+    // if the function returned 0 (or false), or if `tracesSampleRate` is 0, it's a sign the transaction should be dropped
+    if (!sampleRate) {
+        logger/* logger.log */.k.log("[Tracing] Discarding transaction because " + (typeof options.tracesSampler === 'function'
+            ? 'tracesSampler returned 0 or false'
+            : 'a negative sampling decision was inherited or tracesSampleRate is set to 0'));
+        transaction.sampled = false;
+        return transaction;
+    }
+    // Now we roll the dice. Math.random is inclusive of 0, but not of 1, so strict < is safe here. In case sampleRate is
+    // a boolean, the < comparison will cause it to be automatically cast to 1 if it's true and 0 if it's false.
+    transaction.sampled = Math.random() < sampleRate;
+    // if we're not going to keep it, we're done
+    if (!transaction.sampled) {
+        logger/* logger.log */.k.log("[Tracing] Discarding transaction because it's not included in the random sample (sampling rate = " + Number(sampleRate) + ")");
+        return transaction;
+    }
+    // at this point we know we're keeping the transaction, whether because of an inherited decision or because it got
+    // lucky with the dice roll
+    transaction.initSpanRecorder((_a = options._experiments) === null || _a === void 0 ? void 0 : _a.maxSpans);
+    logger/* logger.log */.k.log("[Tracing] starting " + transaction.op + " transaction - " + transaction.name);
+    return transaction;
+}
+/**
+ * Gets the correct context to pass to the tracesSampler, based on the environment (i.e., which SDK is being used)
+ *
+ * @returns The default sample context
+ */
+function getDefaultSamplingContext(transactionContext) {
+    // promote parent sampling decision (if any) for easy access
+    var parentSampled = transactionContext.parentSampled;
+    var defaultSamplingContext = { transactionContext: transactionContext, parentSampled: parentSampled };
+    if ((0,node/* isNodeEnv */.KV)()) {
+        var domain = (0,hub/* getActiveDomain */.vc)();
+        if (domain) {
+            // for all node servers that we currently support, we store the incoming request object (which is an instance of
+            // http.IncomingMessage) on the domain
+            // the domain members are stored as an array, so our only way to find the request is to iterate through the array
+            // and compare types
+            var nodeHttpModule = (0,node/* dynamicRequire */.l$)(module, 'http');
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            var requestType_1 = nodeHttpModule.IncomingMessage;
+            var request = domain.members.find(function (member) { return (0,is/* isInstanceOf */.V9)(member, requestType_1); });
+            if (request) {
+                defaultSamplingContext.request = (0,node/* extractNodeRequestData */.SB)(request);
+            }
+        }
+    }
+    // we must be in browser-js (or some derivative thereof)
+    else {
+        // we use `getGlobalObject()` rather than `window` since service workers also have a `location` property on `self`
+        var globalObject = (0,misc/* getGlobalObject */.Rf)();
+        if ('location' in globalObject) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+            defaultSamplingContext.location = (0,tslib_es6/* __assign */.pi)({}, globalObject.location);
+        }
+    }
+    return defaultSamplingContext;
+}
+/**
+ * Checks the given sample rate to make sure it is valid type and value (a boolean, or a number between 0 and 1).
+ */
+function isValidSampleRate(rate) {
+    // we need to check NaN explicitly because it's of type 'number' and therefore wouldn't get caught by this typecheck
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (isNaN(rate) || !(typeof rate === 'number' || typeof rate === 'boolean')) {
+        logger/* logger.warn */.k.warn("[Tracing] Given sample rate is invalid. Sample rate must be a boolean or a number between 0 and 1. Got " + JSON.stringify(rate) + " of type " + JSON.stringify(typeof rate) + ".");
+        return false;
+    }
+    // in case sampleRate is a boolean, it will get automatically cast to 1 if it's true and 0 if it's false
+    if (rate < 0 || rate > 1) {
+        logger/* logger.warn */.k.warn("[Tracing] Given sample rate is invalid. Sample rate must be between 0 and 1. Got " + rate + ".");
+        return false;
+    }
+    return true;
+}
+/**
+ * Creates a new transaction and adds a sampling decision if it doesn't yet have one.
+ *
+ * The Hub.startTransaction method delegates to this method to do its work, passing the Hub instance in as `this`, as if
+ * it had been called on the hub directly. Exists as a separate function so that it can be injected into the class as an
+ * "extension method."
+ *
+ * @param this: The Hub starting the transaction
+ * @param transactionContext: Data used to configure the transaction
+ * @param CustomSamplingContext: Optional data to be provided to the `tracesSampler` function (if any)
+ *
+ * @returns The new transaction
+ *
+ * @see {@link Hub.startTransaction}
+ */
+function _startTransaction(transactionContext, customSamplingContext) {
+    var transaction = new esm_transaction/* Transaction */.Y(transactionContext, this);
+    return sample(this, transaction, (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, getDefaultSamplingContext(transactionContext)), customSamplingContext));
+}
+/**
+ * Create new idle transaction.
+ */
+function startIdleTransaction(hub, transactionContext, idleTimeout, onScope) {
+    var transaction = new idletransaction/* IdleTransaction */.io(transactionContext, hub, idleTimeout, onScope);
+    return sample(hub, transaction, getDefaultSamplingContext(transactionContext));
+}
+/**
+ * @private
+ */
+function _addTracingExtensions() {
+    var carrier = (0,hub/* getMainCarrier */.cu)();
+    if (carrier.__SENTRY__) {
+        carrier.__SENTRY__.extensions = carrier.__SENTRY__.extensions || {};
+        if (!carrier.__SENTRY__.extensions.startTransaction) {
+            carrier.__SENTRY__.extensions.startTransaction = _startTransaction;
+        }
+        if (!carrier.__SENTRY__.extensions.traceHeaders) {
+            carrier.__SENTRY__.extensions.traceHeaders = traceHeaders;
+        }
+    }
+}
+/**
+ * This patches the global object and injects the Tracing extensions methods
+ */
+function addExtensionMethods() {
+    _addTracingExtensions();
+    // If an error happens globally, we should make sure transaction status is set to error.
+    registerErrorInstrumentation();
+}
+//# sourceMappingURL=hubextensions.js.map
+
+/***/ }),
+
+/***/ 4061:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "nT": () => /* binding */ DEFAULT_IDLE_TIMEOUT,
+/* harmony export */   "io": () => /* binding */ IdleTransaction
+/* harmony export */ });
+/* unused harmony export IdleTransactionSpanRecorder */
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9312);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4180);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(6922);
+/* harmony import */ var _span__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(92);
+/* harmony import */ var _spanstatus__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(2033);
+/* harmony import */ var _transaction__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(6590);
+
+
+
+
+
+var DEFAULT_IDLE_TIMEOUT = 1000;
+/**
+ * @inheritDoc
+ */
+var IdleTransactionSpanRecorder = /** @class */ (function (_super) {
+    (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__extends */ .ZT)(IdleTransactionSpanRecorder, _super);
+    function IdleTransactionSpanRecorder(_pushActivity, _popActivity, transactionSpanId, maxlen) {
+        if (transactionSpanId === void 0) { transactionSpanId = ''; }
+        var _this = _super.call(this, maxlen) || this;
+        _this._pushActivity = _pushActivity;
+        _this._popActivity = _popActivity;
+        _this.transactionSpanId = transactionSpanId;
+        return _this;
+    }
+    /**
+     * @inheritDoc
+     */
+    IdleTransactionSpanRecorder.prototype.add = function (span) {
+        var _this = this;
+        // We should make sure we do not push and pop activities for
+        // the transaction that this span recorder belongs to.
+        if (span.spanId !== this.transactionSpanId) {
+            // We patch span.finish() to pop an activity after setting an endTimestamp.
+            span.finish = function (endTimestamp) {
+                span.endTimestamp = typeof endTimestamp === 'number' ? endTimestamp : (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .timestampWithMs */ ._I)();
+                _this._popActivity(span.spanId);
+            };
+            // We should only push new activities if the span does not have an end timestamp.
+            if (span.endTimestamp === undefined) {
+                this._pushActivity(span.spanId);
+            }
+        }
+        _super.prototype.add.call(this, span);
+    };
+    return IdleTransactionSpanRecorder;
+}(_span__WEBPACK_IMPORTED_MODULE_2__/* .SpanRecorder */ .g));
+
+/**
+ * An IdleTransaction is a transaction that automatically finishes. It does this by tracking child spans as activities.
+ * You can have multiple IdleTransactions active, but if the `onScope` option is specified, the idle transaction will
+ * put itself on the scope on creation.
+ */
+var IdleTransaction = /** @class */ (function (_super) {
+    (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__extends */ .ZT)(IdleTransaction, _super);
+    function IdleTransaction(transactionContext, _idleHub, 
+    // The time to wait in ms until the idle transaction will be finished. Default: 1000
+    _idleTimeout, 
+    // If an idle transaction should be put itself on and off the scope automatically.
+    _onScope) {
+        if (_idleTimeout === void 0) { _idleTimeout = DEFAULT_IDLE_TIMEOUT; }
+        if (_onScope === void 0) { _onScope = false; }
+        var _this = _super.call(this, transactionContext, _idleHub) || this;
+        _this._idleHub = _idleHub;
+        _this._idleTimeout = _idleTimeout;
+        _this._onScope = _onScope;
+        // Activities store a list of active spans
+        _this.activities = {};
+        // Stores reference to the timeout that calls _beat().
+        _this._heartbeatTimer = 0;
+        // Amount of times heartbeat has counted. Will cause transaction to finish after 3 beats.
+        _this._heartbeatCounter = 0;
+        // We should not use heartbeat if we finished a transaction
+        _this._finished = false;
+        _this._beforeFinishCallbacks = [];
+        if (_idleHub && _onScope) {
+            // There should only be one active transaction on the scope
+            clearActiveTransaction(_idleHub);
+            // We set the transaction here on the scope so error events pick up the trace
+            // context and attach it to the error.
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log("Setting idle transaction on scope. Span ID: " + _this.spanId);
+            _idleHub.configureScope(function (scope) { return scope.setSpan(_this); });
+        }
+        return _this;
+    }
+    /** {@inheritDoc} */
+    IdleTransaction.prototype.finish = function (endTimestamp) {
+        var e_1, _a;
+        var _this = this;
+        if (endTimestamp === void 0) { endTimestamp = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .timestampWithMs */ ._I)(); }
+        this._finished = true;
+        this.activities = {};
+        if (this.spanRecorder) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('[Tracing] finishing IdleTransaction', new Date(endTimestamp * 1000).toISOString(), this.op);
+            try {
+                for (var _b = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__values */ .XA)(this._beforeFinishCallbacks), _c = _b.next(); !_c.done; _c = _b.next()) {
+                    var callback = _c.value;
+                    callback(this, endTimestamp);
+                }
+            }
+            catch (e_1_1) { e_1 = { error: e_1_1 }; }
+            finally {
+                try {
+                    if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+                }
+                finally { if (e_1) throw e_1.error; }
+            }
+            this.spanRecorder.spans = this.spanRecorder.spans.filter(function (span) {
+                // If we are dealing with the transaction itself, we just return it
+                if (span.spanId === _this.spanId) {
+                    return true;
+                }
+                // We cancel all pending spans with status "cancelled" to indicate the idle transaction was finished early
+                if (!span.endTimestamp) {
+                    span.endTimestamp = endTimestamp;
+                    span.setStatus(_spanstatus__WEBPACK_IMPORTED_MODULE_4__/* .SpanStatus.Cancelled */ .p.Cancelled);
+                    _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('[Tracing] cancelling span since transaction ended early', JSON.stringify(span, undefined, 2));
+                }
+                var keepSpan = span.startTimestamp < endTimestamp;
+                if (!keepSpan) {
+                    _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('[Tracing] discarding Span since it happened after Transaction was finished', JSON.stringify(span, undefined, 2));
+                }
+                return keepSpan;
+            });
+            // this._onScope is true if the transaction was previously on the scope.
+            if (this._onScope) {
+                clearActiveTransaction(this._idleHub);
+            }
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('[Tracing] flushing IdleTransaction');
+        }
+        else {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('[Tracing] No active IdleTransaction');
+        }
+        return _super.prototype.finish.call(this, endTimestamp);
+    };
+    /**
+     * Register a callback function that gets excecuted before the transaction finishes.
+     * Useful for cleanup or if you want to add any additional spans based on current context.
+     *
+     * This is exposed because users have no other way of running something before an idle transaction
+     * finishes.
+     */
+    IdleTransaction.prototype.registerBeforeFinishCallback = function (callback) {
+        this._beforeFinishCallbacks.push(callback);
+    };
+    /**
+     * @inheritDoc
+     */
+    IdleTransaction.prototype.initSpanRecorder = function (maxlen) {
+        var _this = this;
+        if (!this.spanRecorder) {
+            this._initTimeout = setTimeout(function () {
+                if (!_this._finished) {
+                    _this.finish();
+                }
+            }, this._idleTimeout);
+            var pushActivity = function (id) {
+                if (_this._finished) {
+                    return;
+                }
+                _this._pushActivity(id);
+            };
+            var popActivity = function (id) {
+                if (_this._finished) {
+                    return;
+                }
+                _this._popActivity(id);
+            };
+            this.spanRecorder = new IdleTransactionSpanRecorder(pushActivity, popActivity, this.spanId, maxlen);
+            // Start heartbeat so that transactions do not run forever.
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('Starting heartbeat');
+            this._pingHeartbeat();
+        }
+        this.spanRecorder.add(this);
+    };
+    /**
+     * Start tracking a specific activity.
+     * @param spanId The span id that represents the activity
+     */
+    IdleTransaction.prototype._pushActivity = function (spanId) {
+        if (this._initTimeout) {
+            clearTimeout(this._initTimeout);
+            this._initTimeout = undefined;
+        }
+        _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log("[Tracing] pushActivity: " + spanId);
+        this.activities[spanId] = true;
+        _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('[Tracing] new activities count', Object.keys(this.activities).length);
+    };
+    /**
+     * Remove an activity from usage
+     * @param spanId The span id that represents the activity
+     */
+    IdleTransaction.prototype._popActivity = function (spanId) {
+        var _this = this;
+        if (this.activities[spanId]) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log("[Tracing] popActivity " + spanId);
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete this.activities[spanId];
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log('[Tracing] new activities count', Object.keys(this.activities).length);
+        }
+        if (Object.keys(this.activities).length === 0) {
+            var timeout = this._idleTimeout;
+            // We need to add the timeout here to have the real endtimestamp of the transaction
+            // Remember timestampWithMs is in seconds, timeout is in ms
+            var end_1 = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .timestampWithMs */ ._I)() + timeout / 1000;
+            setTimeout(function () {
+                if (!_this._finished) {
+                    _this.finish(end_1);
+                }
+            }, timeout);
+        }
+    };
+    /**
+     * Checks when entries of this.activities are not changing for 3 beats.
+     * If this occurs we finish the transaction.
+     */
+    IdleTransaction.prototype._beat = function () {
+        clearTimeout(this._heartbeatTimer);
+        // We should not be running heartbeat if the idle transaction is finished.
+        if (this._finished) {
+            return;
+        }
+        var keys = Object.keys(this.activities);
+        var heartbeatString = keys.length ? keys.reduce(function (prev, current) { return prev + current; }) : '';
+        if (heartbeatString === this._prevHeartbeatString) {
+            this._heartbeatCounter += 1;
+        }
+        else {
+            this._heartbeatCounter = 1;
+        }
+        this._prevHeartbeatString = heartbeatString;
+        if (this._heartbeatCounter >= 3) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log("[Tracing] Transaction finished because of no change for 3 heart beats");
+            this.setStatus(_spanstatus__WEBPACK_IMPORTED_MODULE_4__/* .SpanStatus.DeadlineExceeded */ .p.DeadlineExceeded);
+            this.setTag('heartbeat', 'failed');
+            this.finish();
+        }
+        else {
+            this._pingHeartbeat();
+        }
+    };
+    /**
+     * Pings the heartbeat
+     */
+    IdleTransaction.prototype._pingHeartbeat = function () {
+        var _this = this;
+        _sentry_utils__WEBPACK_IMPORTED_MODULE_3__/* .logger.log */ .k.log("pinging Heartbeat -> current counter: " + this._heartbeatCounter);
+        this._heartbeatTimer = setTimeout(function () {
+            _this._beat();
+        }, 5000);
+    };
+    return IdleTransaction;
+}(_transaction__WEBPACK_IMPORTED_MODULE_5__/* .Transaction */ .Y));
+
+/**
+ * Reset active transaction on scope
+ */
+function clearActiveTransaction(hub) {
+    if (hub) {
+        var scope = hub.getScope();
+        if (scope) {
+            var transaction = scope.getTransaction();
+            if (transaction) {
+                scope.setSpan(undefined);
+            }
+        }
+    }
+}
+//# sourceMappingURL=idletransaction.js.map
+
+/***/ }),
+
+/***/ 7819:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+// ESM COMPAT FLAG
+__webpack_require__.r(__webpack_exports__);
+
+// EXPORTS
+__webpack_require__.d(__webpack_exports__, {
+  "Integrations": () => /* binding */ Integrations,
+  "Span": () => /* reexport */ span/* Span */.D,
+  "SpanStatus": () => /* reexport */ spanstatus/* SpanStatus */.p,
+  "TRACEPARENT_REGEXP": () => /* reexport */ utils/* TRACEPARENT_REGEXP */.Ke,
+  "Transaction": () => /* reexport */ transaction/* Transaction */.Y,
+  "addExtensionMethods": () => /* reexport */ hubextensions/* addExtensionMethods */.ro,
+  "extractTraceparentData": () => /* reexport */ utils/* extractTraceparentData */.qG,
+  "getActiveTransaction": () => /* reexport */ utils/* getActiveTransaction */.x1,
+  "hasTracingEnabled": () => /* reexport */ utils/* hasTracingEnabled */.zu,
+  "stripUrlQueryAndFragment": () => /* reexport */ misc/* stripUrlQueryAndFragment */.rt
+});
+
+// NAMESPACE OBJECT: ../node_modules/@sentry/tracing/esm/integrations/index.js
+var integrations_namespaceObject = {};
+__webpack_require__.r(integrations_namespaceObject);
+__webpack_require__.d(integrations_namespaceObject, {
+  "Express": () => Express,
+  "Mongo": () => mongo/* Mongo */._,
+  "Mysql": () => mysql/* Mysql */.m,
+  "Postgres": () => postgres/* Postgres */.E
+});
+
+// EXTERNAL MODULE: ../node_modules/tslib/tslib.es6.js
+var tslib_es6 = __webpack_require__(9312);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/logger.js
+var logger = __webpack_require__(6922);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/hubextensions.js + 2 modules
+var hubextensions = __webpack_require__(2749);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/idletransaction.js
+var idletransaction = __webpack_require__(4061);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/spanstatus.js
+var spanstatus = __webpack_require__(2033);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/utils.js
+var utils = __webpack_require__(5498);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/misc.js
+var misc = __webpack_require__(7451);
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/backgroundtab.js
+
+
+
+var global = (0,misc/* getGlobalObject */.Rf)();
+/**
+ * Add a listener that cancels and finishes a transaction when the global
+ * document is hidden.
+ */
+function registerBackgroundTabDetection() {
+    if (global && global.document) {
+        global.document.addEventListener('visibilitychange', function () {
+            var activeTransaction = (0,utils/* getActiveTransaction */.x1)();
+            if (global.document.hidden && activeTransaction) {
+                logger/* logger.log */.k.log("[Tracing] Transaction: " + spanstatus/* SpanStatus.Cancelled */.p.Cancelled + " -> since tab moved to the background, op: " + activeTransaction.op);
+                // We should not set status if it is already set, this prevent important statuses like
+                // error or data loss from being overwritten on transaction.
+                if (!activeTransaction.status) {
+                    activeTransaction.setStatus(spanstatus/* SpanStatus.Cancelled */.p.Cancelled);
+                }
+                activeTransaction.setTag('visibilitychange', 'document.hidden');
+                activeTransaction.finish();
+            }
+        });
+    }
+    else {
+        logger/* logger.warn */.k.warn('[Tracing] Could not set up background tab detection due to lack of global document');
+    }
+}
+//# sourceMappingURL=backgroundtab.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/time.js
+var time = __webpack_require__(4180);
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/lib/bindReporter.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var bindReporter = function (callback, metric, po, observeAllUpdates) {
+    var prevValue;
+    return function () {
+        if (po && metric.isFinal) {
+            po.disconnect();
+        }
+        if (metric.value >= 0) {
+            if (observeAllUpdates || metric.isFinal || document.visibilityState === 'hidden') {
+                metric.delta = metric.value - (prevValue || 0);
+                // Report the metric if there's a non-zero delta, if the metric is
+                // final, or if no previous value exists (which can happen in the case
+                // of the document becoming hidden when the metric value is 0).
+                // See: https://github.com/GoogleChrome/web-vitals/issues/14
+                if (metric.delta || metric.isFinal || prevValue === undefined) {
+                    callback(metric);
+                    prevValue = metric.value;
+                }
+            }
+        }
+    };
+};
+//# sourceMappingURL=bindReporter.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/lib/generateUniqueID.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Performantly generate a unique, 27-char string by combining the current
+ * timestamp with a 13-digit random number.
+ * @return {string}
+ */
+var generateUniqueID = function () {
+    return Date.now() + "-" + (Math.floor(Math.random() * (9e12 - 1)) + 1e12);
+};
+//# sourceMappingURL=generateUniqueID.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/lib/initMetric.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+var initMetric = function (name, value) {
+    if (value === void 0) { value = -1; }
+    return {
+        name: name,
+        value: value,
+        delta: 0,
+        entries: [],
+        id: generateUniqueID(),
+        isFinal: false,
+    };
+};
+//# sourceMappingURL=initMetric.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/lib/observe.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
+ * Takes a performance entry type and a callback function, and creates a
+ * `PerformanceObserver` instance that will observe the specified entry type
+ * with buffering enabled and call the callback _for each entry_.
+ *
+ * This function also feature-detects entry support and wraps the logic in a
+ * try/catch to avoid errors in unsupporting browsers.
+ */
+var observe = function (type, callback) {
+    try {
+        if (PerformanceObserver.supportedEntryTypes.includes(type)) {
+            var po = new PerformanceObserver(function (l) { return l.getEntries().map(callback); });
+            po.observe({ type: type, buffered: true });
+            return po;
+        }
+    }
+    catch (e) {
+        // Do nothing.
+    }
+    return;
+};
+//# sourceMappingURL=observe.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/lib/onHidden.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var isUnloading = false;
+var listenersAdded = false;
+var onPageHide = function (event) {
+    isUnloading = !event.persisted;
+};
+var addListeners = function () {
+    addEventListener('pagehide', onPageHide);
+    // `beforeunload` is needed to fix this bug:
+    // https://bugs.chromium.org/p/chromium/issues/detail?id=987409
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    addEventListener('beforeunload', function () { });
+};
+var onHidden = function (cb, once) {
+    if (once === void 0) { once = false; }
+    if (!listenersAdded) {
+        addListeners();
+        listenersAdded = true;
+    }
+    addEventListener('visibilitychange', function (_a) {
+        var timeStamp = _a.timeStamp;
+        if (document.visibilityState === 'hidden') {
+            cb({ timeStamp: timeStamp, isUnloading: isUnloading });
+        }
+    }, { capture: true, once: once });
+};
+//# sourceMappingURL=onHidden.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/getCLS.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+
+
+var getCLS = function (onReport, reportAllChanges) {
+    if (reportAllChanges === void 0) { reportAllChanges = false; }
+    var metric = initMetric('CLS', 0);
+    var report;
+    var entryHandler = function (entry) {
+        // Only count layout shifts without recent user input.
+        if (!entry.hadRecentInput) {
+            metric.value += entry.value;
+            metric.entries.push(entry);
+            report();
+        }
+    };
+    var po = observe('layout-shift', entryHandler);
+    if (po) {
+        report = bindReporter(onReport, metric, po, reportAllChanges);
+        onHidden(function (_a) {
+            var isUnloading = _a.isUnloading;
+            po.takeRecords().map(entryHandler);
+            if (isUnloading) {
+                metric.isFinal = true;
+            }
+            report();
+        });
+    }
+};
+//# sourceMappingURL=getCLS.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/lib/getFirstHidden.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+var firstHiddenTime;
+var getFirstHidden = function () {
+    if (firstHiddenTime === undefined) {
+        // If the document is hidden when this code runs, assume it was hidden
+        // since navigation start. This isn't a perfect heuristic, but it's the
+        // best we can do until an API is available to support querying past
+        // visibilityState.
+        firstHiddenTime = document.visibilityState === 'hidden' ? 0 : Infinity;
+        // Update the time if/when the document becomes hidden.
+        onHidden(function (_a) {
+            var timeStamp = _a.timeStamp;
+            return (firstHiddenTime = timeStamp);
+        }, true);
+    }
+    return {
+        get timeStamp() {
+            return firstHiddenTime;
+        },
+    };
+};
+//# sourceMappingURL=getFirstHidden.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/getFID.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+
+
+
+var getFID = function (onReport) {
+    var metric = initMetric('FID');
+    var firstHidden = getFirstHidden();
+    var entryHandler = function (entry) {
+        // Only report if the page wasn't hidden prior to the first input.
+        if (entry.startTime < firstHidden.timeStamp) {
+            metric.value = entry.processingStart - entry.startTime;
+            metric.entries.push(entry);
+            metric.isFinal = true;
+            report();
+        }
+    };
+    var po = observe('first-input', entryHandler);
+    var report = bindReporter(onReport, metric, po);
+    if (po) {
+        onHidden(function () {
+            po.takeRecords().map(entryHandler);
+            po.disconnect();
+        }, true);
+    }
+    else {
+        if (window.perfMetrics && window.perfMetrics.onFirstInputDelay) {
+            window.perfMetrics.onFirstInputDelay(function (value, event) {
+                // Only report if the page wasn't hidden prior to the first input.
+                if (event.timeStamp < firstHidden.timeStamp) {
+                    metric.value = value;
+                    metric.isFinal = true;
+                    metric.entries = [
+                        {
+                            entryType: 'first-input',
+                            name: event.type,
+                            target: event.target,
+                            cancelable: event.cancelable,
+                            startTime: event.timeStamp,
+                            processingStart: event.timeStamp + value,
+                        },
+                    ];
+                    report();
+                }
+            });
+        }
+    }
+};
+//# sourceMappingURL=getFID.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/lib/whenInput.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+var inputPromise;
+var whenInput = function () {
+    if (!inputPromise) {
+        inputPromise = new Promise(function (r) {
+            return ['scroll', 'keydown', 'pointerdown'].map(function (type) {
+                addEventListener(type, r, {
+                    once: true,
+                    passive: true,
+                    capture: true,
+                });
+            });
+        });
+    }
+    return inputPromise;
+};
+//# sourceMappingURL=whenInput.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/getLCP.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+
+
+
+
+var getLCP = function (onReport, reportAllChanges) {
+    if (reportAllChanges === void 0) { reportAllChanges = false; }
+    var metric = initMetric('LCP');
+    var firstHidden = getFirstHidden();
+    var report;
+    var entryHandler = function (entry) {
+        // The startTime attribute returns the value of the renderTime if it is not 0,
+        // and the value of the loadTime otherwise.
+        var value = entry.startTime;
+        // If the page was hidden prior to paint time of the entry,
+        // ignore it and mark the metric as final, otherwise add the entry.
+        if (value < firstHidden.timeStamp) {
+            metric.value = value;
+            metric.entries.push(entry);
+        }
+        else {
+            metric.isFinal = true;
+        }
+        report();
+    };
+    var po = observe('largest-contentful-paint', entryHandler);
+    if (po) {
+        report = bindReporter(onReport, metric, po, reportAllChanges);
+        var onFinal = function () {
+            if (!metric.isFinal) {
+                po.takeRecords().map(entryHandler);
+                metric.isFinal = true;
+                report();
+            }
+        };
+        void whenInput().then(onFinal);
+        onHidden(onFinal, true);
+    }
+};
+//# sourceMappingURL=getLCP.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/web-vitals/getTTFB.js
+/*
+ * Copyright 2020 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+var getTTFB_global = (0,misc/* getGlobalObject */.Rf)();
+var afterLoad = function (callback) {
+    if (document.readyState === 'complete') {
+        // Queue a task so the callback runs after `loadEventEnd`.
+        setTimeout(callback, 0);
+    }
+    else {
+        // Use `pageshow` so the callback runs after `loadEventEnd`.
+        addEventListener('pageshow', callback);
+    }
+};
+var getNavigationEntryFromPerformanceTiming = function () {
+    // Really annoying that TypeScript errors when using `PerformanceTiming`.
+    // eslint-disable-next-line deprecation/deprecation
+    var timing = getTTFB_global.performance.timing;
+    var navigationEntry = {
+        entryType: 'navigation',
+        startTime: 0,
+    };
+    for (var key in timing) {
+        if (key !== 'navigationStart' && key !== 'toJSON') {
+            navigationEntry[key] = Math.max(timing[key] - timing.navigationStart, 0);
+        }
+    }
+    return navigationEntry;
+};
+var getTTFB = function (onReport) {
+    var metric = initMetric('TTFB');
+    afterLoad(function () {
+        try {
+            // Use the NavigationTiming L2 entry if available.
+            var navigationEntry = getTTFB_global.performance.getEntriesByType('navigation')[0] || getNavigationEntryFromPerformanceTiming();
+            metric.value = metric.delta = navigationEntry.responseStart;
+            metric.entries = [navigationEntry];
+            onReport(metric);
+        }
+        catch (error) {
+            // Do nothing.
+        }
+    });
+};
+//# sourceMappingURL=getTTFB.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/metrics.js
+
+
+
+
+
+
+
+
+var metrics_global = (0,misc/* getGlobalObject */.Rf)();
+/** Class tracking metrics  */
+var MetricsInstrumentation = /** @class */ (function () {
+    function MetricsInstrumentation() {
+        this._measurements = {};
+        this._performanceCursor = 0;
+        if (metrics_global && metrics_global.performance) {
+            if (metrics_global.performance.mark) {
+                metrics_global.performance.mark('sentry-tracing-init');
+            }
+            this._trackCLS();
+            this._trackLCP();
+            this._trackFID();
+            this._trackTTFB();
+        }
+    }
+    /** Add performance related spans to a transaction */
+    MetricsInstrumentation.prototype.addPerformanceEntries = function (transaction) {
+        var _this = this;
+        if (!metrics_global || !metrics_global.performance || !metrics_global.performance.getEntries || !time/* browserPerformanceTimeOrigin */.Z1) {
+            // Gatekeeper if performance API not available
+            return;
+        }
+        logger/* logger.log */.k.log('[Tracing] Adding & adjusting spans using Performance API');
+        var timeOrigin = (0,utils/* msToSec */.XL)(time/* browserPerformanceTimeOrigin */.Z1);
+        var entryScriptSrc;
+        if (metrics_global.document) {
+            // eslint-disable-next-line @typescript-eslint/prefer-for-of
+            for (var i = 0; i < document.scripts.length; i++) {
+                // We go through all scripts on the page and look for 'data-entry'
+                // We remember the name and measure the time between this script finished loading and
+                // our mark 'sentry-tracing-init'
+                if (document.scripts[i].dataset.entry === 'true') {
+                    entryScriptSrc = document.scripts[i].src;
+                    break;
+                }
+            }
+        }
+        var entryScriptStartTimestamp;
+        var tracingInitMarkStartTime;
+        metrics_global.performance
+            .getEntries()
+            .slice(this._performanceCursor)
+            .forEach(function (entry) {
+            var startTime = (0,utils/* msToSec */.XL)(entry.startTime);
+            var duration = (0,utils/* msToSec */.XL)(entry.duration);
+            if (transaction.op === 'navigation' && timeOrigin + startTime < transaction.startTimestamp) {
+                return;
+            }
+            switch (entry.entryType) {
+                case 'navigation':
+                    addNavigationSpans(transaction, entry, timeOrigin);
+                    break;
+                case 'mark':
+                case 'paint':
+                case 'measure': {
+                    var startTimestamp = addMeasureSpans(transaction, entry, startTime, duration, timeOrigin);
+                    if (tracingInitMarkStartTime === undefined && entry.name === 'sentry-tracing-init') {
+                        tracingInitMarkStartTime = startTimestamp;
+                    }
+                    // capture web vitals
+                    var firstHidden = getFirstHidden();
+                    // Only report if the page wasn't hidden prior to the web vital.
+                    var shouldRecord = entry.startTime < firstHidden.timeStamp;
+                    if (entry.name === 'first-paint' && shouldRecord) {
+                        logger/* logger.log */.k.log('[Measurements] Adding FP');
+                        _this._measurements['fp'] = { value: entry.startTime };
+                        _this._measurements['mark.fp'] = { value: startTimestamp };
+                    }
+                    if (entry.name === 'first-contentful-paint' && shouldRecord) {
+                        logger/* logger.log */.k.log('[Measurements] Adding FCP');
+                        _this._measurements['fcp'] = { value: entry.startTime };
+                        _this._measurements['mark.fcp'] = { value: startTimestamp };
+                    }
+                    break;
+                }
+                case 'resource': {
+                    var resourceName = entry.name.replace(window.location.origin, '');
+                    var endTimestamp = addResourceSpans(transaction, entry, resourceName, startTime, duration, timeOrigin);
+                    // We remember the entry script end time to calculate the difference to the first init mark
+                    if (entryScriptStartTimestamp === undefined && (entryScriptSrc || '').indexOf(resourceName) > -1) {
+                        entryScriptStartTimestamp = endTimestamp;
+                    }
+                    break;
+                }
+                default:
+                // Ignore other entry types.
+            }
+        });
+        if (entryScriptStartTimestamp !== undefined && tracingInitMarkStartTime !== undefined) {
+            _startChild(transaction, {
+                description: 'evaluation',
+                endTimestamp: tracingInitMarkStartTime,
+                op: 'script',
+                startTimestamp: entryScriptStartTimestamp,
+            });
+        }
+        this._performanceCursor = Math.max(performance.getEntries().length - 1, 0);
+        this._trackNavigator(transaction);
+        // Measurements are only available for pageload transactions
+        if (transaction.op === 'pageload') {
+            // normalize applicable web vital values to be relative to transaction.startTimestamp
+            var timeOrigin_1 = (0,utils/* msToSec */.XL)(time/* browserPerformanceTimeOrigin */.Z1);
+            ['fcp', 'fp', 'lcp', 'ttfb'].forEach(function (name) {
+                if (!_this._measurements[name] || timeOrigin_1 >= transaction.startTimestamp) {
+                    return;
+                }
+                // The web vitals, fcp, fp, lcp, and ttfb, all measure relative to timeOrigin.
+                // Unfortunately, timeOrigin is not captured within the transaction span data, so these web vitals will need
+                // to be adjusted to be relative to transaction.startTimestamp.
+                var oldValue = _this._measurements[name].value;
+                var measurementTimestamp = timeOrigin_1 + (0,utils/* msToSec */.XL)(oldValue);
+                // normalizedValue should be in milliseconds
+                var normalizedValue = Math.abs((measurementTimestamp - transaction.startTimestamp) * 1000);
+                var delta = normalizedValue - oldValue;
+                logger/* logger.log */.k.log("[Measurements] Normalized " + name + " from " + oldValue + " to " + normalizedValue + " (" + delta + ")");
+                _this._measurements[name].value = normalizedValue;
+            });
+            if (this._measurements['mark.fid'] && this._measurements['fid']) {
+                // create span for FID
+                _startChild(transaction, {
+                    description: 'first input delay',
+                    endTimestamp: this._measurements['mark.fid'].value + (0,utils/* msToSec */.XL)(this._measurements['fid'].value),
+                    op: 'web.vitals',
+                    startTimestamp: this._measurements['mark.fid'].value,
+                });
+            }
+            transaction.setMeasurements(this._measurements);
+        }
+    };
+    /** Starts tracking the Cumulative Layout Shift on the current page. */
+    MetricsInstrumentation.prototype._trackCLS = function () {
+        var _this = this;
+        getCLS(function (metric) {
+            var entry = metric.entries.pop();
+            if (!entry) {
+                return;
+            }
+            logger/* logger.log */.k.log('[Measurements] Adding CLS');
+            _this._measurements['cls'] = { value: metric.value };
+        });
+    };
+    /**
+     * Capture the information of the user agent.
+     */
+    MetricsInstrumentation.prototype._trackNavigator = function (transaction) {
+        var navigator = metrics_global.navigator;
+        if (!navigator) {
+            return;
+        }
+        // track network connectivity
+        var connection = navigator.connection;
+        if (connection) {
+            if (connection.effectiveType) {
+                transaction.setTag('effectiveConnectionType', connection.effectiveType);
+            }
+            if (connection.type) {
+                transaction.setTag('connectionType', connection.type);
+            }
+            if (isMeasurementValue(connection.rtt)) {
+                this._measurements['connection.rtt'] = { value: connection.rtt };
+            }
+            if (isMeasurementValue(connection.downlink)) {
+                this._measurements['connection.downlink'] = { value: connection.downlink };
+            }
+        }
+        if (isMeasurementValue(navigator.deviceMemory)) {
+            transaction.setTag('deviceMemory', String(navigator.deviceMemory));
+        }
+        if (isMeasurementValue(navigator.hardwareConcurrency)) {
+            transaction.setTag('hardwareConcurrency', String(navigator.hardwareConcurrency));
+        }
+    };
+    /** Starts tracking the Largest Contentful Paint on the current page. */
+    MetricsInstrumentation.prototype._trackLCP = function () {
+        var _this = this;
+        getLCP(function (metric) {
+            var entry = metric.entries.pop();
+            if (!entry) {
+                return;
+            }
+            var timeOrigin = (0,utils/* msToSec */.XL)(performance.timeOrigin);
+            var startTime = (0,utils/* msToSec */.XL)(entry.startTime);
+            logger/* logger.log */.k.log('[Measurements] Adding LCP');
+            _this._measurements['lcp'] = { value: metric.value };
+            _this._measurements['mark.lcp'] = { value: timeOrigin + startTime };
+        });
+    };
+    /** Starts tracking the First Input Delay on the current page. */
+    MetricsInstrumentation.prototype._trackFID = function () {
+        var _this = this;
+        getFID(function (metric) {
+            var entry = metric.entries.pop();
+            if (!entry) {
+                return;
+            }
+            var timeOrigin = (0,utils/* msToSec */.XL)(performance.timeOrigin);
+            var startTime = (0,utils/* msToSec */.XL)(entry.startTime);
+            logger/* logger.log */.k.log('[Measurements] Adding FID');
+            _this._measurements['fid'] = { value: metric.value };
+            _this._measurements['mark.fid'] = { value: timeOrigin + startTime };
+        });
+    };
+    /** Starts tracking the Time to First Byte on the current page. */
+    MetricsInstrumentation.prototype._trackTTFB = function () {
+        var _this = this;
+        getTTFB(function (metric) {
+            var _a;
+            var entry = metric.entries.pop();
+            if (!entry) {
+                return;
+            }
+            logger/* logger.log */.k.log('[Measurements] Adding TTFB');
+            _this._measurements['ttfb'] = { value: metric.value };
+            // Capture the time spent making the request and receiving the first byte of the response
+            var requestTime = metric.value - (_a = metric.entries[0], (_a !== null && _a !== void 0 ? _a : entry)).requestStart;
+            _this._measurements['ttfb.requestTime'] = { value: requestTime };
+        });
+    };
+    return MetricsInstrumentation;
+}());
+
+/** Instrument navigation entries */
+function addNavigationSpans(transaction, entry, timeOrigin) {
+    addPerformanceNavigationTiming(transaction, entry, 'unloadEvent', timeOrigin);
+    addPerformanceNavigationTiming(transaction, entry, 'redirect', timeOrigin);
+    addPerformanceNavigationTiming(transaction, entry, 'domContentLoadedEvent', timeOrigin);
+    addPerformanceNavigationTiming(transaction, entry, 'loadEvent', timeOrigin);
+    addPerformanceNavigationTiming(transaction, entry, 'connect', timeOrigin);
+    addPerformanceNavigationTiming(transaction, entry, 'secureConnection', timeOrigin, 'connectEnd');
+    addPerformanceNavigationTiming(transaction, entry, 'fetch', timeOrigin, 'domainLookupStart');
+    addPerformanceNavigationTiming(transaction, entry, 'domainLookup', timeOrigin);
+    addRequest(transaction, entry, timeOrigin);
+}
+/** Create measure related spans */
+function addMeasureSpans(transaction, entry, startTime, duration, timeOrigin) {
+    var measureStartTimestamp = timeOrigin + startTime;
+    var measureEndTimestamp = measureStartTimestamp + duration;
+    _startChild(transaction, {
+        description: entry.name,
+        endTimestamp: measureEndTimestamp,
+        op: entry.entryType,
+        startTimestamp: measureStartTimestamp,
+    });
+    return measureStartTimestamp;
+}
+/** Create resource related spans */
+function addResourceSpans(transaction, entry, resourceName, startTime, duration, timeOrigin) {
+    // we already instrument based on fetch and xhr, so we don't need to
+    // duplicate spans here.
+    if (entry.initiatorType === 'xmlhttprequest' || entry.initiatorType === 'fetch') {
+        return undefined;
+    }
+    var data = {};
+    if ('transferSize' in entry) {
+        data['Transfer Size'] = entry.transferSize;
+    }
+    if ('encodedBodySize' in entry) {
+        data['Encoded Body Size'] = entry.encodedBodySize;
+    }
+    if ('decodedBodySize' in entry) {
+        data['Decoded Body Size'] = entry.decodedBodySize;
+    }
+    var startTimestamp = timeOrigin + startTime;
+    var endTimestamp = startTimestamp + duration;
+    _startChild(transaction, {
+        description: resourceName,
+        endTimestamp: endTimestamp,
+        op: entry.initiatorType ? "resource." + entry.initiatorType : 'resource',
+        startTimestamp: startTimestamp,
+        data: data,
+    });
+    return endTimestamp;
+}
+/** Create performance navigation related spans */
+function addPerformanceNavigationTiming(transaction, entry, event, timeOrigin, eventEnd) {
+    var end = eventEnd ? entry[eventEnd] : entry[event + "End"];
+    var start = entry[event + "Start"];
+    if (!start || !end) {
+        return;
+    }
+    _startChild(transaction, {
+        description: event,
+        endTimestamp: timeOrigin + (0,utils/* msToSec */.XL)(end),
+        op: 'browser',
+        startTimestamp: timeOrigin + (0,utils/* msToSec */.XL)(start),
+    });
+}
+/** Create request and response related spans */
+function addRequest(transaction, entry, timeOrigin) {
+    _startChild(transaction, {
+        description: 'request',
+        endTimestamp: timeOrigin + (0,utils/* msToSec */.XL)(entry.responseEnd),
+        op: 'browser',
+        startTimestamp: timeOrigin + (0,utils/* msToSec */.XL)(entry.requestStart),
+    });
+    _startChild(transaction, {
+        description: 'response',
+        endTimestamp: timeOrigin + (0,utils/* msToSec */.XL)(entry.responseEnd),
+        op: 'browser',
+        startTimestamp: timeOrigin + (0,utils/* msToSec */.XL)(entry.responseStart),
+    });
+}
+/**
+ * Helper function to start child on transactions. This function will make sure that the transaction will
+ * use the start timestamp of the created child span if it is earlier than the transactions actual
+ * start timestamp.
+ */
+function _startChild(transaction, _a) {
+    var startTimestamp = _a.startTimestamp, ctx = (0,tslib_es6/* __rest */._T)(_a, ["startTimestamp"]);
+    if (startTimestamp && transaction.startTimestamp > startTimestamp) {
+        transaction.startTimestamp = startTimestamp;
+    }
+    return transaction.startChild((0,tslib_es6/* __assign */.pi)({ startTimestamp: startTimestamp }, ctx));
+}
+/**
+ * Checks if a given value is a valid measurement value.
+ */
+function isMeasurementValue(value) {
+    return typeof value === 'number' && isFinite(value);
+}
+//# sourceMappingURL=metrics.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/hub/esm/hub.js + 1 modules
+var hub = __webpack_require__(7546);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/string.js
+var string = __webpack_require__(5268);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/instrument.js
+var instrument = __webpack_require__(9338);
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/is.js
+var is = __webpack_require__(6885);
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/request.js
+
+
+
+
+var DEFAULT_TRACING_ORIGINS = ['localhost', /^\//];
+var defaultRequestInstrumentationOptions = {
+    traceFetch: true,
+    traceXHR: true,
+    tracingOrigins: DEFAULT_TRACING_ORIGINS,
+};
+/** Registers span creators for xhr and fetch requests  */
+function registerRequestInstrumentation(_options) {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    var _a = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, defaultRequestInstrumentationOptions), _options), traceFetch = _a.traceFetch, traceXHR = _a.traceXHR, tracingOrigins = _a.tracingOrigins, shouldCreateSpanForRequest = _a.shouldCreateSpanForRequest;
+    // We should cache url -> decision so that we don't have to compute
+    // regexp everytime we create a request.
+    var urlMap = {};
+    var defaultShouldCreateSpan = function (url) {
+        if (urlMap[url]) {
+            return urlMap[url];
+        }
+        var origins = tracingOrigins;
+        urlMap[url] =
+            origins.some(function (origin) { return (0,string/* isMatchingPattern */.zC)(url, origin); }) &&
+                !(0,string/* isMatchingPattern */.zC)(url, 'sentry_key');
+        return urlMap[url];
+    };
+    // We want that our users don't have to re-implement shouldCreateSpanForRequest themselves
+    // That's why we filter out already unwanted Spans from tracingOrigins
+    var shouldCreateSpan = defaultShouldCreateSpan;
+    if (typeof shouldCreateSpanForRequest === 'function') {
+        shouldCreateSpan = function (url) {
+            return defaultShouldCreateSpan(url) && shouldCreateSpanForRequest(url);
+        };
+    }
+    var spans = {};
+    if (traceFetch) {
+        (0,instrument/* addInstrumentationHandler */.o)({
+            callback: function (handlerData) {
+                fetchCallback(handlerData, shouldCreateSpan, spans);
+            },
+            type: 'fetch',
+        });
+    }
+    if (traceXHR) {
+        (0,instrument/* addInstrumentationHandler */.o)({
+            callback: function (handlerData) {
+                xhrCallback(handlerData, shouldCreateSpan, spans);
+            },
+            type: 'xhr',
+        });
+    }
+}
+/**
+ * Create and track fetch request spans
+ */
+function fetchCallback(handlerData, shouldCreateSpan, spans) {
+    var _a;
+    var currentClientOptions = (_a = (0,hub/* getCurrentHub */.Gd)()
+        .getClient()) === null || _a === void 0 ? void 0 : _a.getOptions();
+    if (!(currentClientOptions && (0,utils/* hasTracingEnabled */.zu)(currentClientOptions)) ||
+        !(handlerData.fetchData && shouldCreateSpan(handlerData.fetchData.url))) {
+        return;
+    }
+    if (handlerData.endTimestamp && handlerData.fetchData.__span) {
+        var span = spans[handlerData.fetchData.__span];
+        if (span) {
+            var response = handlerData.response;
+            if (response) {
+                // TODO (kmclb) remove this once types PR goes through
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                span.setHttpStatus(response.status);
+            }
+            span.finish();
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete spans[handlerData.fetchData.__span];
+        }
+        return;
+    }
+    var activeTransaction = (0,utils/* getActiveTransaction */.x1)();
+    if (activeTransaction) {
+        var span = activeTransaction.startChild({
+            data: (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, handlerData.fetchData), { type: 'fetch' }),
+            description: handlerData.fetchData.method + " " + handlerData.fetchData.url,
+            op: 'http',
+        });
+        handlerData.fetchData.__span = span.spanId;
+        spans[span.spanId] = span;
+        var request = (handlerData.args[0] = handlerData.args[0]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        var options = (handlerData.args[1] = handlerData.args[1] || {});
+        var headers = options.headers;
+        if ((0,is/* isInstanceOf */.V9)(request, Request)) {
+            headers = request.headers;
+        }
+        if (headers) {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            if (typeof headers.append === 'function') {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                headers.append('sentry-trace', span.toTraceparent());
+            }
+            else if (Array.isArray(headers)) {
+                headers = (0,tslib_es6/* __spread */.fl)(headers, [['sentry-trace', span.toTraceparent()]]);
+            }
+            else {
+                headers = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, headers), { 'sentry-trace': span.toTraceparent() });
+            }
+        }
+        else {
+            headers = { 'sentry-trace': span.toTraceparent() };
+        }
+        options.headers = headers;
+    }
+}
+/**
+ * Create and track xhr request spans
+ */
+function xhrCallback(handlerData, shouldCreateSpan, spans) {
+    var _a;
+    var currentClientOptions = (_a = (0,hub/* getCurrentHub */.Gd)()
+        .getClient()) === null || _a === void 0 ? void 0 : _a.getOptions();
+    if (!(currentClientOptions && (0,utils/* hasTracingEnabled */.zu)(currentClientOptions)) ||
+        !(handlerData.xhr && handlerData.xhr.__sentry_xhr__ && shouldCreateSpan(handlerData.xhr.__sentry_xhr__.url)) ||
+        handlerData.xhr.__sentry_own_request__) {
+        return;
+    }
+    var xhr = handlerData.xhr.__sentry_xhr__;
+    // check first if the request has finished and is tracked by an existing span which should now end
+    if (handlerData.endTimestamp && handlerData.xhr.__sentry_xhr_span_id__) {
+        var span = spans[handlerData.xhr.__sentry_xhr_span_id__];
+        if (span) {
+            span.setHttpStatus(xhr.status_code);
+            span.finish();
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+            delete spans[handlerData.xhr.__sentry_xhr_span_id__];
+        }
+        return;
+    }
+    // if not, create a new span to track it
+    var activeTransaction = (0,utils/* getActiveTransaction */.x1)();
+    if (activeTransaction) {
+        var span = activeTransaction.startChild({
+            data: (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, xhr.data), { type: 'xhr', method: xhr.method, url: xhr.url }),
+            description: xhr.method + " " + xhr.url,
+            op: 'http',
+        });
+        handlerData.xhr.__sentry_xhr_span_id__ = span.spanId;
+        spans[handlerData.xhr.__sentry_xhr_span_id__] = span;
+        if (handlerData.xhr.setRequestHeader) {
+            try {
+                handlerData.xhr.setRequestHeader('sentry-trace', span.toTraceparent());
+            }
+            catch (_) {
+                // Error: InvalidStateError: Failed to execute 'setRequestHeader' on 'XMLHttpRequest': The object's state must be OPENED.
+            }
+        }
+    }
+}
+//# sourceMappingURL=request.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/router.js
+
+var router_global = (0,misc/* getGlobalObject */.Rf)();
+/**
+ * Default function implementing pageload and navigation transactions
+ */
+function defaultRoutingInstrumentation(startTransaction, startTransactionOnPageLoad, startTransactionOnLocationChange) {
+    if (startTransactionOnPageLoad === void 0) { startTransactionOnPageLoad = true; }
+    if (startTransactionOnLocationChange === void 0) { startTransactionOnLocationChange = true; }
+    if (!router_global || !router_global.location) {
+        logger/* logger.warn */.k.warn('Could not initialize routing instrumentation due to invalid location');
+        return;
+    }
+    var startingUrl = router_global.location.href;
+    var activeTransaction;
+    if (startTransactionOnPageLoad) {
+        activeTransaction = startTransaction({ name: router_global.location.pathname, op: 'pageload' });
+    }
+    if (startTransactionOnLocationChange) {
+        (0,instrument/* addInstrumentationHandler */.o)({
+            callback: function (_a) {
+                var to = _a.to, from = _a.from;
+                /**
+                 * This early return is there to account for some cases where a navigation transaction starts right after
+                 * long-running pageload. We make sure that if `from` is undefined and a valid `startingURL` exists, we don't
+                 * create an uneccessary navigation transaction.
+                 *
+                 * This was hard to duplicate, but this behavior stopped as soon as this fix was applied. This issue might also
+                 * only be caused in certain development environments where the usage of a hot module reloader is causing
+                 * errors.
+                 */
+                if (from === undefined && startingUrl && startingUrl.indexOf(to) !== -1) {
+                    startingUrl = undefined;
+                    return;
+                }
+                if (from !== to) {
+                    startingUrl = undefined;
+                    if (activeTransaction) {
+                        logger/* logger.log */.k.log("[Tracing] Finishing current transaction with op: " + activeTransaction.op);
+                        // If there's an open transaction on the scope, we need to finish it before creating an new one.
+                        activeTransaction.finish();
+                    }
+                    activeTransaction = startTransaction({ name: router_global.location.pathname, op: 'navigation' });
+                }
+            },
+            type: 'history',
+        });
+    }
+}
+//# sourceMappingURL=router.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/browser/browsertracing.js
+
+
+
+
+
+
+
+
+
+
+var DEFAULT_MAX_TRANSACTION_DURATION_SECONDS = 600;
+var DEFAULT_BROWSER_TRACING_OPTIONS = (0,tslib_es6/* __assign */.pi)({ idleTimeout: idletransaction/* DEFAULT_IDLE_TIMEOUT */.nT, markBackgroundTransactions: true, maxTransactionDuration: DEFAULT_MAX_TRANSACTION_DURATION_SECONDS, routingInstrumentation: defaultRoutingInstrumentation, startTransactionOnLocationChange: true, startTransactionOnPageLoad: true }, defaultRequestInstrumentationOptions);
+/**
+ * The Browser Tracing integration automatically instruments browser pageload/navigation
+ * actions as transactions, and captures requests, metrics and errors as spans.
+ *
+ * The integration can be configured with a variety of options, and can be extended to use
+ * any routing library. This integration uses {@see IdleTransaction} to create transactions.
+ */
+var BrowserTracing = /** @class */ (function () {
+    function BrowserTracing(_options) {
+        /**
+         * @inheritDoc
+         */
+        this.name = BrowserTracing.id;
+        this._metrics = new MetricsInstrumentation();
+        this._emitOptionsWarning = false;
+        var tracingOrigins = defaultRequestInstrumentationOptions.tracingOrigins;
+        // NOTE: Logger doesn't work in constructors, as it's initialized after integrations instances
+        if (_options &&
+            _options.tracingOrigins &&
+            Array.isArray(_options.tracingOrigins) &&
+            _options.tracingOrigins.length !== 0) {
+            tracingOrigins = _options.tracingOrigins;
+        }
+        else {
+            this._emitOptionsWarning = true;
+        }
+        this.options = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, DEFAULT_BROWSER_TRACING_OPTIONS), _options), { tracingOrigins: tracingOrigins });
+    }
+    /**
+     * @inheritDoc
+     */
+    BrowserTracing.prototype.setupOnce = function (_, getCurrentHub) {
+        var _this = this;
+        this._getCurrentHub = getCurrentHub;
+        if (this._emitOptionsWarning) {
+            logger/* logger.warn */.k.warn('[Tracing] You need to define `tracingOrigins` in the options. Set an array of urls or patterns to trace.');
+            logger/* logger.warn */.k.warn("[Tracing] We added a reasonable default for you: " + defaultRequestInstrumentationOptions.tracingOrigins);
+        }
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        var _a = this.options, routingInstrumentation = _a.routingInstrumentation, startTransactionOnLocationChange = _a.startTransactionOnLocationChange, startTransactionOnPageLoad = _a.startTransactionOnPageLoad, markBackgroundTransactions = _a.markBackgroundTransactions, traceFetch = _a.traceFetch, traceXHR = _a.traceXHR, tracingOrigins = _a.tracingOrigins, shouldCreateSpanForRequest = _a.shouldCreateSpanForRequest;
+        routingInstrumentation(function (context) { return _this._createRouteTransaction(context); }, startTransactionOnPageLoad, startTransactionOnLocationChange);
+        if (markBackgroundTransactions) {
+            registerBackgroundTabDetection();
+        }
+        registerRequestInstrumentation({ traceFetch: traceFetch, traceXHR: traceXHR, tracingOrigins: tracingOrigins, shouldCreateSpanForRequest: shouldCreateSpanForRequest });
+    };
+    /** Create routing idle transaction. */
+    BrowserTracing.prototype._createRouteTransaction = function (context) {
+        var _this = this;
+        if (!this._getCurrentHub) {
+            logger/* logger.warn */.k.warn("[Tracing] Did not create " + context.op + " transaction because _getCurrentHub is invalid.");
+            return undefined;
+        }
+        // eslint-disable-next-line @typescript-eslint/unbound-method
+        var _a = this.options, beforeNavigate = _a.beforeNavigate, idleTimeout = _a.idleTimeout, maxTransactionDuration = _a.maxTransactionDuration;
+        var parentContextFromHeader = context.op === 'pageload' ? getHeaderContext() : undefined;
+        var expandedContext = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, context), parentContextFromHeader), { trimEnd: true });
+        var modifiedContext = typeof beforeNavigate === 'function' ? beforeNavigate(expandedContext) : expandedContext;
+        // For backwards compatibility reasons, beforeNavigate can return undefined to "drop" the transaction (prevent it
+        // from being sent to Sentry).
+        var finalContext = modifiedContext === undefined ? (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, expandedContext), { sampled: false }) : modifiedContext;
+        if (finalContext.sampled === false) {
+            logger/* logger.log */.k.log("[Tracing] Will not send " + finalContext.op + " transaction because of beforeNavigate.");
+        }
+        var hub = this._getCurrentHub();
+        var idleTransaction = (0,hubextensions/* startIdleTransaction */.lb)(hub, finalContext, idleTimeout, true);
+        logger/* logger.log */.k.log("[Tracing] Starting " + finalContext.op + " transaction on scope");
+        idleTransaction.registerBeforeFinishCallback(function (transaction, endTimestamp) {
+            _this._metrics.addPerformanceEntries(transaction);
+            adjustTransactionDuration((0,utils/* secToMs */.WB)(maxTransactionDuration), transaction, endTimestamp);
+        });
+        return idleTransaction;
+    };
+    /**
+     * @inheritDoc
+     */
+    BrowserTracing.id = 'BrowserTracing';
+    return BrowserTracing;
+}());
+
+/**
+ * Gets transaction context from a sentry-trace meta.
+ *
+ * @returns Transaction context data from the header or undefined if there's no header or the header is malformed
+ */
+function getHeaderContext() {
+    var header = getMetaContent('sentry-trace');
+    if (header) {
+        return (0,utils/* extractTraceparentData */.qG)(header);
+    }
+    return undefined;
+}
+/** Returns the value of a meta tag */
+function getMetaContent(metaName) {
+    var el = document.querySelector("meta[name=" + metaName + "]");
+    return el ? el.getAttribute('content') : null;
+}
+/** Adjusts transaction value based on max transaction duration */
+function adjustTransactionDuration(maxDuration, transaction, endTimestamp) {
+    var diff = endTimestamp - transaction.startTimestamp;
+    var isOutdatedTransaction = endTimestamp && (diff > maxDuration || diff < 0);
+    if (isOutdatedTransaction) {
+        transaction.setStatus(spanstatus/* SpanStatus.DeadlineExceeded */.p.DeadlineExceeded);
+        transaction.setTag('maxTransactionDurationExceeded', 'true');
+    }
+}
+//# sourceMappingURL=browsertracing.js.map
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/integrations/express.js
+
+
+/**
+ * Express integration
+ *
+ * Provides an request and error handler for Express framework as well as tracing capabilities
+ */
+var Express = /** @class */ (function () {
+    /**
+     * @inheritDoc
+     */
+    function Express(options) {
+        if (options === void 0) { options = {}; }
+        /**
+         * @inheritDoc
+         */
+        this.name = Express.id;
+        this._router = options.router || options.app;
+        this._methods = (Array.isArray(options.methods) ? options.methods : []).concat('use');
+    }
+    /**
+     * @inheritDoc
+     */
+    Express.prototype.setupOnce = function () {
+        if (!this._router) {
+            logger/* logger.error */.k.error('ExpressIntegration is missing an Express instance');
+            return;
+        }
+        instrumentMiddlewares(this._router, this._methods);
+    };
+    /**
+     * @inheritDoc
+     */
+    Express.id = 'Express';
+    return Express;
+}());
+
+/**
+ * Wraps original middleware function in a tracing call, which stores the info about the call as a span,
+ * and finishes it once the middleware is done invoking.
+ *
+ * Express middlewares have 3 various forms, thus we have to take care of all of them:
+ * // sync
+ * app.use(function (req, res) { ... })
+ * // async
+ * app.use(function (req, res, next) { ... })
+ * // error handler
+ * app.use(function (err, req, res, next) { ... })
+ *
+ * They all internally delegate to the `router[method]` of the given application instance.
+ */
+// eslint-disable-next-line @typescript-eslint/ban-types, @typescript-eslint/no-explicit-any
+function wrap(fn, method) {
+    var arity = fn.length;
+    switch (arity) {
+        case 2: {
+            return function (req, res) {
+                var transaction = res.__sentry_transaction;
+                if (transaction) {
+                    var span_1 = transaction.startChild({
+                        description: fn.name,
+                        op: "middleware." + method,
+                    });
+                    res.once('finish', function () {
+                        span_1.finish();
+                    });
+                }
+                return fn.call(this, req, res);
+            };
+        }
+        case 3: {
+            return function (req, res, next) {
+                var _a;
+                var transaction = res.__sentry_transaction;
+                var span = (_a = transaction) === null || _a === void 0 ? void 0 : _a.startChild({
+                    description: fn.name,
+                    op: "middleware." + method,
+                });
+                fn.call(this, req, res, function () {
+                    var args = [];
+                    for (var _i = 0; _i < arguments.length; _i++) {
+                        args[_i] = arguments[_i];
+                    }
+                    var _a;
+                    (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                    next.call.apply(next, (0,tslib_es6/* __spread */.fl)([this], args));
+                });
+            };
+        }
+        case 4: {
+            return function (err, req, res, next) {
+                var _a;
+                var transaction = res.__sentry_transaction;
+                var span = (_a = transaction) === null || _a === void 0 ? void 0 : _a.startChild({
+                    description: fn.name,
+                    op: "middleware." + method,
+                });
+                fn.call(this, err, req, res, function () {
+                    var args = [];
+                    for (var _i = 0; _i < arguments.length; _i++) {
+                        args[_i] = arguments[_i];
+                    }
+                    var _a;
+                    (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                    next.call.apply(next, (0,tslib_es6/* __spread */.fl)([this], args));
+                });
+            };
+        }
+        default: {
+            throw new Error("Express middleware takes 2-4 arguments. Got: " + arity);
+        }
+    }
+}
+/**
+ * Takes all the function arguments passed to the original `app` or `router` method, eg. `app.use` or `router.use`
+ * and wraps every function, as well as array of functions with a call to our `wrap` method.
+ * We have to take care of the arrays as well as iterate over all of the arguments,
+ * as `app.use` can accept middlewares in few various forms.
+ *
+ * app.use([<path>], <fn>)
+ * app.use([<path>], <fn>, ...<fn>)
+ * app.use([<path>], ...<fn>[])
+ */
+function wrapMiddlewareArgs(args, method) {
+    return args.map(function (arg) {
+        if (typeof arg === 'function') {
+            return wrap(arg, method);
+        }
+        if (Array.isArray(arg)) {
+            return arg.map(function (a) {
+                if (typeof a === 'function') {
+                    return wrap(a, method);
+                }
+                return a;
+            });
+        }
+        return arg;
+    });
+}
+/**
+ * Patches original router to utilize our tracing functionality
+ */
+function patchMiddleware(router, method) {
+    var originalCallback = router[method];
+    router[method] = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        return originalCallback.call.apply(originalCallback, (0,tslib_es6/* __spread */.fl)([this], wrapMiddlewareArgs(args, method)));
+    };
+    return router;
+}
+/**
+ * Patches original router methods
+ */
+function instrumentMiddlewares(router, methods) {
+    if (methods === void 0) { methods = []; }
+    methods.forEach(function (method) { return patchMiddleware(router, method); });
+}
+//# sourceMappingURL=express.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/integrations/postgres.js
+var postgres = __webpack_require__(7511);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/integrations/mysql.js
+var mysql = __webpack_require__(2414);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/integrations/mongo.js
+var mongo = __webpack_require__(782);
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/integrations/index.js
+
+
+
+
+//# sourceMappingURL=index.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/span.js
+var span = __webpack_require__(92);
+// EXTERNAL MODULE: ../node_modules/@sentry/tracing/esm/transaction.js
+var transaction = __webpack_require__(6590);
+;// CONCATENATED MODULE: ../node_modules/@sentry/tracing/esm/index.js
+
+
+
+
+var Integrations = (0,tslib_es6/* __assign */.pi)((0,tslib_es6/* __assign */.pi)({}, integrations_namespaceObject), { BrowserTracing: BrowserTracing });
+
+
+
+
+// We are patching the global object with our hub extension methods
+(0,hubextensions/* addExtensionMethods */.ro)();
+
+
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 782:
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "_": () => /* binding */ Mongo
+/* harmony export */ });
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(9312);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5728);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6922);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(806);
+/* module decorator */ module = __webpack_require__.hmd(module);
+
+
+var OPERATIONS = [
+    'aggregate',
+    'bulkWrite',
+    'countDocuments',
+    'createIndex',
+    'createIndexes',
+    'deleteMany',
+    'deleteOne',
+    'distinct',
+    'drop',
+    'dropIndex',
+    'dropIndexes',
+    'estimatedDocumentCount',
+    'findOne',
+    'findOneAndDelete',
+    'findOneAndReplace',
+    'findOneAndUpdate',
+    'indexes',
+    'indexExists',
+    'indexInformation',
+    'initializeOrderedBulkOp',
+    'insertMany',
+    'insertOne',
+    'isCapped',
+    'mapReduce',
+    'options',
+    'parallelCollectionScan',
+    'rename',
+    'replaceOne',
+    'stats',
+    'updateMany',
+    'updateOne',
+];
+// All of the operations above take `options` and `callback` as their final parameters, but some of them
+// take additional parameters as well. For those operations, this is a map of
+// { <operation name>:  [<names of additional parameters>] }, as a way to know what to call the operation's
+// positional arguments when we add them to the span's `data` object later
+var OPERATION_SIGNATURES = {
+    // aggregate intentionally not included because `pipeline` arguments are too complex to serialize well
+    // see https://github.com/getsentry/sentry-javascript/pull/3102
+    bulkWrite: ['operations'],
+    countDocuments: ['query'],
+    createIndex: ['fieldOrSpec'],
+    createIndexes: ['indexSpecs'],
+    deleteMany: ['filter'],
+    deleteOne: ['filter'],
+    distinct: ['key', 'query'],
+    dropIndex: ['indexName'],
+    findOne: ['query'],
+    findOneAndDelete: ['filter'],
+    findOneAndReplace: ['filter', 'replacement'],
+    findOneAndUpdate: ['filter', 'update'],
+    indexExists: ['indexes'],
+    insertMany: ['docs'],
+    insertOne: ['doc'],
+    mapReduce: ['map', 'reduce'],
+    rename: ['newName'],
+    replaceOne: ['filter', 'doc'],
+    updateMany: ['filter', 'update'],
+    updateOne: ['filter', 'update'],
+};
+/** Tracing integration for mongo package */
+var Mongo = /** @class */ (function () {
+    /**
+     * @inheritDoc
+     */
+    function Mongo(options) {
+        if (options === void 0) { options = {}; }
+        /**
+         * @inheritDoc
+         */
+        this.name = Mongo.id;
+        this._operations = Array.isArray(options.operations)
+            ? options.operations
+            : OPERATIONS;
+        this._describeOperations = 'describeOperations' in options ? options.describeOperations : true;
+    }
+    /**
+     * @inheritDoc
+     */
+    Mongo.prototype.setupOnce = function (_, getCurrentHub) {
+        var collection;
+        try {
+            var mongodbModule = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_0__/* .dynamicRequire */ .l$)(module, 'mongodb');
+            collection = mongodbModule.Collection;
+        }
+        catch (e) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .logger.error */ .k.error('Mongo Integration was unable to require `mongodb` package.');
+            return;
+        }
+        this._instrumentOperations(collection, this._operations, getCurrentHub);
+    };
+    /**
+     * Patches original collection methods
+     */
+    Mongo.prototype._instrumentOperations = function (collection, operations, getCurrentHub) {
+        var _this = this;
+        operations.forEach(function (operation) { return _this._patchOperation(collection, operation, getCurrentHub); });
+    };
+    /**
+     * Patches original collection to utilize our tracing functionality
+     */
+    Mongo.prototype._patchOperation = function (collection, operation, getCurrentHub) {
+        if (!(operation in collection.prototype))
+            return;
+        var getSpanContext = this._getSpanContextFromOperationArguments.bind(this);
+        (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_2__/* .fill */ .hl)(collection.prototype, operation, function (orig) {
+            return function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i] = arguments[_i];
+                }
+                var _a, _b, _c;
+                var lastArg = args[args.length - 1];
+                var scope = getCurrentHub().getScope();
+                var parentSpan = (_a = scope) === null || _a === void 0 ? void 0 : _a.getSpan();
+                // Check if the operation was passed a callback. (mapReduce requires a different check, as
+                // its (non-callback) arguments can also be functions.)
+                if (typeof lastArg !== 'function' || (operation === 'mapReduce' && args.length === 2)) {
+                    var span_1 = (_b = parentSpan) === null || _b === void 0 ? void 0 : _b.startChild(getSpanContext(this, operation, args));
+                    return orig.call.apply(orig, (0,tslib__WEBPACK_IMPORTED_MODULE_3__/* .__spread */ .fl)([this], args)).then(function (res) {
+                        var _a;
+                        (_a = span_1) === null || _a === void 0 ? void 0 : _a.finish();
+                        return res;
+                    });
+                }
+                var span = (_c = parentSpan) === null || _c === void 0 ? void 0 : _c.startChild(getSpanContext(this, operation, args.slice(0, -1)));
+                return orig.call.apply(orig, (0,tslib__WEBPACK_IMPORTED_MODULE_3__/* .__spread */ .fl)([this], args.slice(0, -1), [function (err, result) {
+                        var _a;
+                        (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                        lastArg(err, result);
+                    }]));
+            };
+        });
+    };
+    /**
+     * Form a SpanContext based on the user input to a given operation.
+     */
+    Mongo.prototype._getSpanContextFromOperationArguments = function (collection, operation, args) {
+        var data = {
+            collectionName: collection.collectionName,
+            dbName: collection.dbName,
+            namespace: collection.namespace,
+        };
+        var spanContext = {
+            op: "db",
+            description: operation,
+            data: data,
+        };
+        // If the operation takes no arguments besides `options` and `callback`, or if argument
+        // collection is disabled for this operation, just return early.
+        var signature = OPERATION_SIGNATURES[operation];
+        var shouldDescribe = Array.isArray(this._describeOperations)
+            ? this._describeOperations.includes(operation)
+            : this._describeOperations;
+        if (!signature || !shouldDescribe) {
+            return spanContext;
+        }
+        try {
+            // Special case for `mapReduce`, as the only one accepting functions as arguments.
+            if (operation === 'mapReduce') {
+                var _a = (0,tslib__WEBPACK_IMPORTED_MODULE_3__/* .__read */ .CR)(args, 2), map = _a[0], reduce = _a[1];
+                data[signature[0]] = typeof map === 'string' ? map : map.name || '<anonymous>';
+                data[signature[1]] = typeof reduce === 'string' ? reduce : reduce.name || '<anonymous>';
+            }
+            else {
+                for (var i = 0; i < signature.length; i++) {
+                    data[signature[i]] = JSON.stringify(args[i]);
+                }
+            }
+        }
+        catch (_oO) {
+            // no-empty
+        }
+        return spanContext;
+    };
+    /**
+     * @inheritDoc
+     */
+    Mongo.id = 'Mongo';
+    return Mongo;
+}());
+
+//# sourceMappingURL=mongo.js.map
+
+/***/ }),
+
+/***/ 2414:
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "m": () => /* binding */ Mysql
+/* harmony export */ });
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5728);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6922);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(806);
+/* module decorator */ module = __webpack_require__.hmd(module);
+
+/** Tracing integration for node-mysql package */
+var Mysql = /** @class */ (function () {
+    function Mysql() {
+        /**
+         * @inheritDoc
+         */
+        this.name = Mysql.id;
+    }
+    /**
+     * @inheritDoc
+     */
+    Mysql.prototype.setupOnce = function (_, getCurrentHub) {
+        var connection;
+        try {
+            // Unfortunatelly mysql is using some custom loading system and `Connection` is not exported directly.
+            connection = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_0__/* .dynamicRequire */ .l$)(module, 'mysql/lib/Connection.js');
+        }
+        catch (e) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .logger.error */ .k.error('Mysql Integration was unable to require `mysql` package.');
+            return;
+        }
+        // The original function will have one of these signatures:
+        //    function (callback) => void
+        //    function (options, callback) => void
+        //    function (options, values, callback) => void
+        (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_2__/* .fill */ .hl)(connection.prototype, 'query', function (orig) {
+            return function (options, values, callback) {
+                var _a, _b;
+                var scope = getCurrentHub().getScope();
+                var parentSpan = (_a = scope) === null || _a === void 0 ? void 0 : _a.getSpan();
+                var span = (_b = parentSpan) === null || _b === void 0 ? void 0 : _b.startChild({
+                    description: typeof options === 'string' ? options : options.sql,
+                    op: "db",
+                });
+                if (typeof callback === 'function') {
+                    return orig.call(this, options, values, function (err, result, fields) {
+                        var _a;
+                        (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                        callback(err, result, fields);
+                    });
+                }
+                if (typeof values === 'function') {
+                    return orig.call(this, options, function (err, result, fields) {
+                        var _a;
+                        (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                        values(err, result, fields);
+                    });
+                }
+                return orig.call(this, options, values, callback);
+            };
+        });
+    };
+    /**
+     * @inheritDoc
+     */
+    Mysql.id = 'Mysql';
+    return Mysql;
+}());
+
+//# sourceMappingURL=mysql.js.map
+
+/***/ }),
+
+/***/ 7511:
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "E": () => /* binding */ Postgres
+/* harmony export */ });
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(5728);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6922);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(806);
+/* module decorator */ module = __webpack_require__.hmd(module);
+
+/** Tracing integration for node-postgres package */
+var Postgres = /** @class */ (function () {
+    function Postgres() {
+        /**
+         * @inheritDoc
+         */
+        this.name = Postgres.id;
+    }
+    /**
+     * @inheritDoc
+     */
+    Postgres.prototype.setupOnce = function (_, getCurrentHub) {
+        var client;
+        try {
+            var pgModule = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_0__/* .dynamicRequire */ .l$)(module, 'pg');
+            client = pgModule.Client;
+        }
+        catch (e) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .logger.error */ .k.error('Postgres Integration was unable to require `pg` package.');
+            return;
+        }
+        /**
+         * function (query, callback) => void
+         * function (query, params, callback) => void
+         * function (query) => Promise
+         * function (query, params) => Promise
+         */
+        (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_2__/* .fill */ .hl)(client.prototype, 'query', function (orig) {
+            return function (config, values, callback) {
+                var _a, _b;
+                var scope = getCurrentHub().getScope();
+                var parentSpan = (_a = scope) === null || _a === void 0 ? void 0 : _a.getSpan();
+                var span = (_b = parentSpan) === null || _b === void 0 ? void 0 : _b.startChild({
+                    description: typeof config === 'string' ? config : config.text,
+                    op: "db",
+                });
+                if (typeof callback === 'function') {
+                    return orig.call(this, config, values, function (err, result) {
+                        var _a;
+                        (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                        callback(err, result);
+                    });
+                }
+                if (typeof values === 'function') {
+                    return orig.call(this, config, function (err, result) {
+                        var _a;
+                        (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                        values(err, result);
+                    });
+                }
+                return orig.call(this, config, values).then(function (res) {
+                    var _a;
+                    (_a = span) === null || _a === void 0 ? void 0 : _a.finish();
+                    return res;
+                });
+            };
+        });
+    };
+    /**
+     * @inheritDoc
+     */
+    Postgres.id = 'Postgres';
+    return Postgres;
+}());
+
+//# sourceMappingURL=postgres.js.map
+
+/***/ }),
+
+/***/ 92:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "g": () => /* binding */ SpanRecorder,
+/* harmony export */   "D": () => /* binding */ Span
+/* harmony export */ });
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9312);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7451);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(4180);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(806);
+/* harmony import */ var _spanstatus__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(2033);
+
+
+
+/**
+ * Keeps track of finished spans for a given transaction
+ * @internal
+ * @hideconstructor
+ * @hidden
+ */
+var SpanRecorder = /** @class */ (function () {
+    function SpanRecorder(maxlen) {
+        if (maxlen === void 0) { maxlen = 1000; }
+        this.spans = [];
+        this._maxlen = maxlen;
+    }
+    /**
+     * This is just so that we don't run out of memory while recording a lot
+     * of spans. At some point we just stop and flush out the start of the
+     * trace tree (i.e.the first n spans with the smallest
+     * start_timestamp).
+     */
+    SpanRecorder.prototype.add = function (span) {
+        if (this.spans.length > this._maxlen) {
+            span.spanRecorder = undefined;
+        }
+        else {
+            this.spans.push(span);
+        }
+    };
+    return SpanRecorder;
+}());
+
+/**
+ * Span contains all data about a span
+ */
+var Span = /** @class */ (function () {
+    /**
+     * You should never call the constructor manually, always use `Sentry.startTransaction()`
+     * or call `startChild()` on an existing span.
+     * @internal
+     * @hideconstructor
+     * @hidden
+     */
+    function Span(spanContext) {
+        /**
+         * @inheritDoc
+         */
+        this.traceId = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_0__/* .uuid4 */ .DM)();
+        /**
+         * @inheritDoc
+         */
+        this.spanId = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_0__/* .uuid4 */ .DM)().substring(16);
+        /**
+         * Timestamp in seconds when the span was created.
+         */
+        this.startTimestamp = (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .timestampWithMs */ ._I)();
+        /**
+         * @inheritDoc
+         */
+        this.tags = {};
+        /**
+         * @inheritDoc
+         */
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        this.data = {};
+        if (!spanContext) {
+            return this;
+        }
+        if (spanContext.traceId) {
+            this.traceId = spanContext.traceId;
+        }
+        if (spanContext.spanId) {
+            this.spanId = spanContext.spanId;
+        }
+        if (spanContext.parentSpanId) {
+            this.parentSpanId = spanContext.parentSpanId;
+        }
+        // We want to include booleans as well here
+        if ('sampled' in spanContext) {
+            this.sampled = spanContext.sampled;
+        }
+        if (spanContext.op) {
+            this.op = spanContext.op;
+        }
+        if (spanContext.description) {
+            this.description = spanContext.description;
+        }
+        if (spanContext.data) {
+            this.data = spanContext.data;
+        }
+        if (spanContext.tags) {
+            this.tags = spanContext.tags;
+        }
+        if (spanContext.status) {
+            this.status = spanContext.status;
+        }
+        if (spanContext.startTimestamp) {
+            this.startTimestamp = spanContext.startTimestamp;
+        }
+        if (spanContext.endTimestamp) {
+            this.endTimestamp = spanContext.endTimestamp;
+        }
+    }
+    /**
+     * @inheritDoc
+     * @deprecated
+     */
+    Span.prototype.child = function (spanContext) {
+        return this.startChild(spanContext);
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.startChild = function (spanContext) {
+        var childSpan = new Span((0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)({}, spanContext), { parentSpanId: this.spanId, sampled: this.sampled, traceId: this.traceId }));
+        childSpan.spanRecorder = this.spanRecorder;
+        if (childSpan.spanRecorder) {
+            childSpan.spanRecorder.add(childSpan);
+        }
+        childSpan.transaction = this.transaction;
+        return childSpan;
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.setTag = function (key, value) {
+        var _a;
+        this.tags = (0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)({}, this.tags), (_a = {}, _a[key] = value, _a));
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/explicit-module-boundary-types
+    Span.prototype.setData = function (key, value) {
+        var _a;
+        this.data = (0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)({}, this.data), (_a = {}, _a[key] = value, _a));
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.setStatus = function (value) {
+        this.status = value;
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.setHttpStatus = function (httpStatus) {
+        this.setTag('http.status_code', String(httpStatus));
+        var spanStatus = _spanstatus__WEBPACK_IMPORTED_MODULE_3__/* .SpanStatus.fromHttpCode */ .p.fromHttpCode(httpStatus);
+        if (spanStatus !== _spanstatus__WEBPACK_IMPORTED_MODULE_3__/* .SpanStatus.UnknownError */ .p.UnknownError) {
+            this.setStatus(spanStatus);
+        }
+        return this;
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.isSuccess = function () {
+        return this.status === _spanstatus__WEBPACK_IMPORTED_MODULE_3__/* .SpanStatus.Ok */ .p.Ok;
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.finish = function (endTimestamp) {
+        this.endTimestamp = typeof endTimestamp === 'number' ? endTimestamp : (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_1__/* .timestampWithMs */ ._I)();
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.toTraceparent = function () {
+        var sampledString = '';
+        if (this.sampled !== undefined) {
+            sampledString = this.sampled ? '-1' : '-0';
+        }
+        return this.traceId + "-" + this.spanId + sampledString;
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.getTraceContext = function () {
+        return (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_4__/* .dropUndefinedKeys */ .Jr)({
+            data: Object.keys(this.data).length > 0 ? this.data : undefined,
+            description: this.description,
+            op: this.op,
+            parent_span_id: this.parentSpanId,
+            span_id: this.spanId,
+            status: this.status,
+            tags: Object.keys(this.tags).length > 0 ? this.tags : undefined,
+            trace_id: this.traceId,
+        });
+    };
+    /**
+     * @inheritDoc
+     */
+    Span.prototype.toJSON = function () {
+        return (0,_sentry_utils__WEBPACK_IMPORTED_MODULE_4__/* .dropUndefinedKeys */ .Jr)({
+            data: Object.keys(this.data).length > 0 ? this.data : undefined,
+            description: this.description,
+            op: this.op,
+            parent_span_id: this.parentSpanId,
+            span_id: this.spanId,
+            start_timestamp: this.startTimestamp,
+            status: this.status,
+            tags: Object.keys(this.tags).length > 0 ? this.tags : undefined,
+            timestamp: this.endTimestamp,
+            trace_id: this.traceId,
+        });
+    };
+    return Span;
+}());
+
+//# sourceMappingURL=span.js.map
+
+/***/ }),
+
+/***/ 2033:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "p": () => /* binding */ SpanStatus
+/* harmony export */ });
+/** The status of an Span. */
+// eslint-disable-next-line import/export
+var SpanStatus;
+(function (SpanStatus) {
+    /** The operation completed successfully. */
+    SpanStatus["Ok"] = "ok";
+    /** Deadline expired before operation could complete. */
+    SpanStatus["DeadlineExceeded"] = "deadline_exceeded";
+    /** 401 Unauthorized (actually does mean unauthenticated according to RFC 7235) */
+    SpanStatus["Unauthenticated"] = "unauthenticated";
+    /** 403 Forbidden */
+    SpanStatus["PermissionDenied"] = "permission_denied";
+    /** 404 Not Found. Some requested entity (file or directory) was not found. */
+    SpanStatus["NotFound"] = "not_found";
+    /** 429 Too Many Requests */
+    SpanStatus["ResourceExhausted"] = "resource_exhausted";
+    /** Client specified an invalid argument. 4xx. */
+    SpanStatus["InvalidArgument"] = "invalid_argument";
+    /** 501 Not Implemented */
+    SpanStatus["Unimplemented"] = "unimplemented";
+    /** 503 Service Unavailable */
+    SpanStatus["Unavailable"] = "unavailable";
+    /** Other/generic 5xx. */
+    SpanStatus["InternalError"] = "internal_error";
+    /** Unknown. Any non-standard HTTP status code. */
+    SpanStatus["UnknownError"] = "unknown_error";
+    /** The operation was cancelled (typically by the user). */
+    SpanStatus["Cancelled"] = "cancelled";
+    /** Already exists (409) */
+    SpanStatus["AlreadyExists"] = "already_exists";
+    /** Operation was rejected because the system is not in a state required for the operation's */
+    SpanStatus["FailedPrecondition"] = "failed_precondition";
+    /** The operation was aborted, typically due to a concurrency issue. */
+    SpanStatus["Aborted"] = "aborted";
+    /** Operation was attempted past the valid range. */
+    SpanStatus["OutOfRange"] = "out_of_range";
+    /** Unrecoverable data loss or corruption */
+    SpanStatus["DataLoss"] = "data_loss";
+})(SpanStatus || (SpanStatus = {}));
+// eslint-disable-next-line @typescript-eslint/no-namespace, import/export
+(function (SpanStatus) {
+    /**
+     * Converts a HTTP status code into a {@link SpanStatus}.
+     *
+     * @param httpStatus The HTTP response status code.
+     * @returns The span status or {@link SpanStatus.UnknownError}.
+     */
+    function fromHttpCode(httpStatus) {
+        if (httpStatus < 400) {
+            return SpanStatus.Ok;
+        }
+        if (httpStatus >= 400 && httpStatus < 500) {
+            switch (httpStatus) {
+                case 401:
+                    return SpanStatus.Unauthenticated;
+                case 403:
+                    return SpanStatus.PermissionDenied;
+                case 404:
+                    return SpanStatus.NotFound;
+                case 409:
+                    return SpanStatus.AlreadyExists;
+                case 413:
+                    return SpanStatus.FailedPrecondition;
+                case 429:
+                    return SpanStatus.ResourceExhausted;
+                default:
+                    return SpanStatus.InvalidArgument;
+            }
+        }
+        if (httpStatus >= 500 && httpStatus < 600) {
+            switch (httpStatus) {
+                case 501:
+                    return SpanStatus.Unimplemented;
+                case 503:
+                    return SpanStatus.Unavailable;
+                case 504:
+                    return SpanStatus.DeadlineExceeded;
+                default:
+                    return SpanStatus.InternalError;
+            }
+        }
+        return SpanStatus.UnknownError;
+    }
+    SpanStatus.fromHttpCode = fromHttpCode;
+})(SpanStatus || (SpanStatus = {}));
+//# sourceMappingURL=spanstatus.js.map
+
+/***/ }),
+
+/***/ 6590:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Y": () => /* binding */ Transaction
+/* harmony export */ });
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(9312);
+/* harmony import */ var _sentry_hub__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(7546);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(6885);
+/* harmony import */ var _sentry_utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(6922);
+/* harmony import */ var _span__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(92);
+
+
+
+
+/** JSDoc */
+var Transaction = /** @class */ (function (_super) {
+    (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__extends */ .ZT)(Transaction, _super);
+    /**
+     * This constructor should never be called manually. Those instrumenting tracing should use
+     * `Sentry.startTransaction()`, and internal methods should use `hub.startTransaction()`.
+     * @internal
+     * @hideconstructor
+     * @hidden
+     */
+    function Transaction(transactionContext, hub) {
+        var _this = _super.call(this, transactionContext) || this;
+        _this._measurements = {};
+        /**
+         * The reference to the current hub.
+         */
+        _this._hub = (0,_sentry_hub__WEBPACK_IMPORTED_MODULE_1__/* .getCurrentHub */ .Gd)();
+        if ((0,_sentry_utils__WEBPACK_IMPORTED_MODULE_2__/* .isInstanceOf */ .V9)(hub, _sentry_hub__WEBPACK_IMPORTED_MODULE_1__/* .Hub */ .Xb)) {
+            _this._hub = hub;
+        }
+        _this.name = transactionContext.name ? transactionContext.name : '';
+        _this._trimEnd = transactionContext.trimEnd;
+        // this is because transactions are also spans, and spans have a transaction pointer
+        _this.transaction = _this;
+        return _this;
+    }
+    /**
+     * JSDoc
+     */
+    Transaction.prototype.setName = function (name) {
+        this.name = name;
+    };
+    /**
+     * Attaches SpanRecorder to the span itself
+     * @param maxlen maximum number of spans that can be recorded
+     */
+    Transaction.prototype.initSpanRecorder = function (maxlen) {
+        if (maxlen === void 0) { maxlen = 1000; }
+        if (!this.spanRecorder) {
+            this.spanRecorder = new _span__WEBPACK_IMPORTED_MODULE_3__/* .SpanRecorder */ .g(maxlen);
+        }
+        this.spanRecorder.add(this);
+    };
+    /**
+     * Set observed measurements for this transaction.
+     * @hidden
+     */
+    Transaction.prototype.setMeasurements = function (measurements) {
+        this._measurements = (0,tslib__WEBPACK_IMPORTED_MODULE_0__/* .__assign */ .pi)({}, measurements);
+    };
+    /**
+     * @inheritDoc
+     */
+    Transaction.prototype.finish = function (endTimestamp) {
+        var _this = this;
+        // This transaction is already finished, so we should not flush it again.
+        if (this.endTimestamp !== undefined) {
+            return undefined;
+        }
+        if (!this.name) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_4__/* .logger.warn */ .k.warn('Transaction has no name, falling back to `<unlabeled transaction>`.');
+            this.name = '<unlabeled transaction>';
+        }
+        // just sets the end timestamp
+        _super.prototype.finish.call(this, endTimestamp);
+        if (this.sampled !== true) {
+            // At this point if `sampled !== true` we want to discard the transaction.
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_4__/* .logger.log */ .k.log('[Tracing] Discarding transaction because its trace was not chosen to be sampled.');
+            return undefined;
+        }
+        var finishedSpans = this.spanRecorder ? this.spanRecorder.spans.filter(function (s) { return s !== _this && s.endTimestamp; }) : [];
+        if (this._trimEnd && finishedSpans.length > 0) {
+            this.endTimestamp = finishedSpans.reduce(function (prev, current) {
+                if (prev.endTimestamp && current.endTimestamp) {
+                    return prev.endTimestamp > current.endTimestamp ? prev : current;
+                }
+                return prev;
+            }).endTimestamp;
+        }
+        var transaction = {
+            contexts: {
+                trace: this.getTraceContext(),
+            },
+            spans: finishedSpans,
+            start_timestamp: this.startTimestamp,
+            tags: this.tags,
+            timestamp: this.endTimestamp,
+            transaction: this.name,
+            type: 'transaction',
+        };
+        var hasMeasurements = Object.keys(this._measurements).length > 0;
+        if (hasMeasurements) {
+            _sentry_utils__WEBPACK_IMPORTED_MODULE_4__/* .logger.log */ .k.log('[Measurements] Adding measurements to transaction', JSON.stringify(this._measurements, undefined, 2));
+            transaction.measurements = this._measurements;
+        }
+        return this._hub.captureEvent(transaction);
+    };
+    return Transaction;
+}(_span__WEBPACK_IMPORTED_MODULE_3__/* .Span */ .D));
+
+//# sourceMappingURL=transaction.js.map
+
+/***/ }),
+
+/***/ 5498:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Ke": () => /* binding */ TRACEPARENT_REGEXP,
+/* harmony export */   "zu": () => /* binding */ hasTracingEnabled,
+/* harmony export */   "qG": () => /* binding */ extractTraceparentData,
+/* harmony export */   "x1": () => /* binding */ getActiveTransaction,
+/* harmony export */   "XL": () => /* binding */ msToSec,
+/* harmony export */   "WB": () => /* binding */ secToMs
+/* harmony export */ });
+/* harmony import */ var _sentry_hub__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7546);
+
+var TRACEPARENT_REGEXP = new RegExp('^[ \\t]*' + // whitespace
+    '([0-9a-f]{32})?' + // trace_id
+    '-?([0-9a-f]{16})?' + // span_id
+    '-?([01])?' + // sampled
+    '[ \\t]*$');
+/**
+ * Determines if tracing is currently enabled.
+ *
+ * Tracing is enabled when at least one of `tracesSampleRate` and `tracesSampler` is defined in the SDK config.
+ */
+function hasTracingEnabled(options) {
+    return 'tracesSampleRate' in options || 'tracesSampler' in options;
+}
+/**
+ * Extract transaction context data from a `sentry-trace` header.
+ *
+ * @param traceparent Traceparent string
+ *
+ * @returns Object containing data from the header, or undefined if traceparent string is malformed
+ */
+function extractTraceparentData(traceparent) {
+    var matches = traceparent.match(TRACEPARENT_REGEXP);
+    if (matches) {
+        var parentSampled = void 0;
+        if (matches[3] === '1') {
+            parentSampled = true;
+        }
+        else if (matches[3] === '0') {
+            parentSampled = false;
+        }
+        return {
+            traceId: matches[1],
+            parentSampled: parentSampled,
+            parentSpanId: matches[2],
+        };
+    }
+    return undefined;
+}
+/** Grabs active transaction off scope, if any */
+function getActiveTransaction(hub) {
+    if (hub === void 0) { hub = (0,_sentry_hub__WEBPACK_IMPORTED_MODULE_0__/* .getCurrentHub */ .Gd)(); }
+    var _a, _b;
+    return (_b = (_a = hub) === null || _a === void 0 ? void 0 : _a.getScope()) === null || _b === void 0 ? void 0 : _b.getTransaction();
+}
+/**
+ * Converts from milliseconds to seconds
+ * @param time time in ms
+ */
+function msToSec(time) {
+    return time / 1000;
+}
+/**
+ * Converts from seconds to milliseconds
+ * @param time time in seconds
+ */
+function secToMs(time) {
+    return time * 1000;
+}
+// so it can be used in manual instrumentation without necessitating a hard dependency on @sentry/utils
+
+//# sourceMappingURL=utils.js.map
+
+/***/ }),
+
+/***/ 8834:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "$": () => /* binding */ SessionStatus
+/* harmony export */ });
+/**
+ * Session Status
+ */
+var SessionStatus;
+(function (SessionStatus) {
+    /** JSDoc */
+    SessionStatus["Ok"] = "ok";
+    /** JSDoc */
+    SessionStatus["Exited"] = "exited";
+    /** JSDoc */
+    SessionStatus["Crashed"] = "crashed";
+    /** JSDoc */
+    SessionStatus["Abnormal"] = "abnormal";
+})(SessionStatus || (SessionStatus = {}));
+//# sourceMappingURL=session.js.map
 
 /***/ }),
 
@@ -7108,6 +9600,513 @@ var Severity;
     Severity.fromString = fromString;
 })(Severity || (Severity = {}));
 //# sourceMappingURL=severity.js.map
+
+/***/ }),
+
+/***/ 9338:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "o": () => /* binding */ addInstrumentationHandler
+/* harmony export */ });
+/* harmony import */ var tslib__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(9312);
+/* harmony import */ var _is__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(6885);
+/* harmony import */ var _logger__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6922);
+/* harmony import */ var _misc__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7451);
+/* harmony import */ var _object__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(806);
+/* harmony import */ var _stacktrace__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(5514);
+/* harmony import */ var _supports__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(3589);
+
+
+
+
+
+
+
+var global = (0,_misc__WEBPACK_IMPORTED_MODULE_0__/* .getGlobalObject */ .Rf)();
+/**
+ * Instrument native APIs to call handlers that can be used to create breadcrumbs, APM spans etc.
+ *  - Console API
+ *  - Fetch API
+ *  - XHR API
+ *  - History API
+ *  - DOM API (click/typing)
+ *  - Error API
+ *  - UnhandledRejection API
+ */
+var handlers = {};
+var instrumented = {};
+/** Instruments given API */
+function instrument(type) {
+    if (instrumented[type]) {
+        return;
+    }
+    instrumented[type] = true;
+    switch (type) {
+        case 'console':
+            instrumentConsole();
+            break;
+        case 'dom':
+            instrumentDOM();
+            break;
+        case 'xhr':
+            instrumentXHR();
+            break;
+        case 'fetch':
+            instrumentFetch();
+            break;
+        case 'history':
+            instrumentHistory();
+            break;
+        case 'error':
+            instrumentError();
+            break;
+        case 'unhandledrejection':
+            instrumentUnhandledRejection();
+            break;
+        default:
+            _logger__WEBPACK_IMPORTED_MODULE_1__/* .logger.warn */ .k.warn('unknown instrumentation type:', type);
+    }
+}
+/**
+ * Add handler that will be called when given type of instrumentation triggers.
+ * Use at your own risk, this might break without changelog notice, only used internally.
+ * @hidden
+ */
+function addInstrumentationHandler(handler) {
+    if (!handler || typeof handler.type !== 'string' || typeof handler.callback !== 'function') {
+        return;
+    }
+    handlers[handler.type] = handlers[handler.type] || [];
+    handlers[handler.type].push(handler.callback);
+    instrument(handler.type);
+}
+/** JSDoc */
+function triggerHandlers(type, data) {
+    var e_1, _a;
+    if (!type || !handlers[type]) {
+        return;
+    }
+    try {
+        for (var _b = (0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__values */ .XA)(handlers[type] || []), _c = _b.next(); !_c.done; _c = _b.next()) {
+            var handler = _c.value;
+            try {
+                handler(data);
+            }
+            catch (e) {
+                _logger__WEBPACK_IMPORTED_MODULE_1__/* .logger.error */ .k.error("Error while triggering instrumentation handler.\nType: " + type + "\nName: " + (0,_stacktrace__WEBPACK_IMPORTED_MODULE_3__/* .getFunctionName */ .$)(handler) + "\nError: " + e);
+            }
+        }
+    }
+    catch (e_1_1) { e_1 = { error: e_1_1 }; }
+    finally {
+        try {
+            if (_c && !_c.done && (_a = _b.return)) _a.call(_b);
+        }
+        finally { if (e_1) throw e_1.error; }
+    }
+}
+/** JSDoc */
+function instrumentConsole() {
+    if (!('console' in global)) {
+        return;
+    }
+    ['debug', 'info', 'warn', 'error', 'log', 'assert'].forEach(function (level) {
+        if (!(level in global.console)) {
+            return;
+        }
+        (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(global.console, level, function (originalConsoleLevel) {
+            return function () {
+                var args = [];
+                for (var _i = 0; _i < arguments.length; _i++) {
+                    args[_i] = arguments[_i];
+                }
+                triggerHandlers('console', { args: args, level: level });
+                // this fails for some browsers. :(
+                if (originalConsoleLevel) {
+                    Function.prototype.apply.call(originalConsoleLevel, global.console, args);
+                }
+            };
+        });
+    });
+}
+/** JSDoc */
+function instrumentFetch() {
+    if (!(0,_supports__WEBPACK_IMPORTED_MODULE_5__/* .supportsNativeFetch */ .t$)()) {
+        return;
+    }
+    (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(global, 'fetch', function (originalFetch) {
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var handlerData = {
+                args: args,
+                fetchData: {
+                    method: getFetchMethod(args),
+                    url: getFetchUrl(args),
+                },
+                startTimestamp: Date.now(),
+            };
+            triggerHandlers('fetch', (0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)({}, handlerData));
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            return originalFetch.apply(global, args).then(function (response) {
+                triggerHandlers('fetch', (0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)({}, handlerData), { endTimestamp: Date.now(), response: response }));
+                return response;
+            }, function (error) {
+                triggerHandlers('fetch', (0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)((0,tslib__WEBPACK_IMPORTED_MODULE_2__/* .__assign */ .pi)({}, handlerData), { endTimestamp: Date.now(), error: error }));
+                // NOTE: If you are a Sentry user, and you are seeing this stack frame,
+                //       it means the sentry.javascript SDK caught an error invoking your application code.
+                //       This is expected behavior and NOT indicative of a bug with sentry.javascript.
+                throw error;
+            });
+        };
+    });
+}
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/** Extract `method` from fetch call arguments */
+function getFetchMethod(fetchArgs) {
+    if (fetchArgs === void 0) { fetchArgs = []; }
+    if ('Request' in global && (0,_is__WEBPACK_IMPORTED_MODULE_6__/* .isInstanceOf */ .V9)(fetchArgs[0], Request) && fetchArgs[0].method) {
+        return String(fetchArgs[0].method).toUpperCase();
+    }
+    if (fetchArgs[1] && fetchArgs[1].method) {
+        return String(fetchArgs[1].method).toUpperCase();
+    }
+    return 'GET';
+}
+/** Extract `url` from fetch call arguments */
+function getFetchUrl(fetchArgs) {
+    if (fetchArgs === void 0) { fetchArgs = []; }
+    if (typeof fetchArgs[0] === 'string') {
+        return fetchArgs[0];
+    }
+    if ('Request' in global && (0,_is__WEBPACK_IMPORTED_MODULE_6__/* .isInstanceOf */ .V9)(fetchArgs[0], Request)) {
+        return fetchArgs[0].url;
+    }
+    return String(fetchArgs[0]);
+}
+/* eslint-enable @typescript-eslint/no-unsafe-member-access */
+/** JSDoc */
+function instrumentXHR() {
+    if (!('XMLHttpRequest' in global)) {
+        return;
+    }
+    // Poor man's implementation of ES6 `Map`, tracking and keeping in sync key and value separately.
+    var requestKeys = [];
+    var requestValues = [];
+    var xhrproto = XMLHttpRequest.prototype;
+    (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(xhrproto, 'open', function (originalOpen) {
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            // eslint-disable-next-line @typescript-eslint/no-this-alias
+            var xhr = this;
+            var url = args[1];
+            xhr.__sentry_xhr__ = {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+                method: (0,_is__WEBPACK_IMPORTED_MODULE_6__/* .isString */ .HD)(args[0]) ? args[0].toUpperCase() : args[0],
+                url: args[1],
+            };
+            // if Sentry key appears in URL, don't capture it as a request
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            if ((0,_is__WEBPACK_IMPORTED_MODULE_6__/* .isString */ .HD)(url) && xhr.__sentry_xhr__.method === 'POST' && url.match(/sentry_key/)) {
+                xhr.__sentry_own_request__ = true;
+            }
+            var onreadystatechangeHandler = function () {
+                if (xhr.readyState === 4) {
+                    try {
+                        // touching statusCode in some platforms throws
+                        // an exception
+                        if (xhr.__sentry_xhr__) {
+                            xhr.__sentry_xhr__.status_code = xhr.status;
+                        }
+                    }
+                    catch (e) {
+                        /* do nothing */
+                    }
+                    try {
+                        var requestPos = requestKeys.indexOf(xhr);
+                        if (requestPos !== -1) {
+                            // Make sure to pop both key and value to keep it in sync.
+                            requestKeys.splice(requestPos);
+                            var args_1 = requestValues.splice(requestPos)[0];
+                            if (xhr.__sentry_xhr__ && args_1[0] !== undefined) {
+                                xhr.__sentry_xhr__.body = args_1[0];
+                            }
+                        }
+                    }
+                    catch (e) {
+                        /* do nothing */
+                    }
+                    triggerHandlers('xhr', {
+                        args: args,
+                        endTimestamp: Date.now(),
+                        startTimestamp: Date.now(),
+                        xhr: xhr,
+                    });
+                }
+            };
+            if ('onreadystatechange' in xhr && typeof xhr.onreadystatechange === 'function') {
+                (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(xhr, 'onreadystatechange', function (original) {
+                    return function () {
+                        var readyStateArgs = [];
+                        for (var _i = 0; _i < arguments.length; _i++) {
+                            readyStateArgs[_i] = arguments[_i];
+                        }
+                        onreadystatechangeHandler();
+                        return original.apply(xhr, readyStateArgs);
+                    };
+                });
+            }
+            else {
+                xhr.addEventListener('readystatechange', onreadystatechangeHandler);
+            }
+            return originalOpen.apply(xhr, args);
+        };
+    });
+    (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(xhrproto, 'send', function (originalSend) {
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            requestKeys.push(this);
+            requestValues.push(args);
+            triggerHandlers('xhr', {
+                args: args,
+                startTimestamp: Date.now(),
+                xhr: this,
+            });
+            return originalSend.apply(this, args);
+        };
+    });
+}
+var lastHref;
+/** JSDoc */
+function instrumentHistory() {
+    if (!(0,_supports__WEBPACK_IMPORTED_MODULE_5__/* .supportsHistory */ .Bf)()) {
+        return;
+    }
+    var oldOnPopState = global.onpopstate;
+    global.onpopstate = function () {
+        var args = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            args[_i] = arguments[_i];
+        }
+        var to = global.location.href;
+        // keep track of the current URL state, as we always receive only the updated state
+        var from = lastHref;
+        lastHref = to;
+        triggerHandlers('history', {
+            from: from,
+            to: to,
+        });
+        if (oldOnPopState) {
+            return oldOnPopState.apply(this, args);
+        }
+    };
+    /** @hidden */
+    function historyReplacementFunction(originalHistoryFunction) {
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var url = args.length > 2 ? args[2] : undefined;
+            if (url) {
+                // coerce to string (this is what pushState does)
+                var from = lastHref;
+                var to = String(url);
+                // keep track of the current URL state, as we always receive only the updated state
+                lastHref = to;
+                triggerHandlers('history', {
+                    from: from,
+                    to: to,
+                });
+            }
+            return originalHistoryFunction.apply(this, args);
+        };
+    }
+    (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(global.history, 'pushState', historyReplacementFunction);
+    (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(global.history, 'replaceState', historyReplacementFunction);
+}
+/** JSDoc */
+function instrumentDOM() {
+    if (!('document' in global)) {
+        return;
+    }
+    // Capture breadcrumbs from any click that is unhandled / bubbled up all the way
+    // to the document. Do this before we instrument addEventListener.
+    global.document.addEventListener('click', domEventHandler('click', triggerHandlers.bind(null, 'dom')), false);
+    global.document.addEventListener('keypress', keypressEventHandler(triggerHandlers.bind(null, 'dom')), false);
+    // After hooking into document bubbled up click and keypresses events, we also hook into user handled click & keypresses.
+    ['EventTarget', 'Node'].forEach(function (target) {
+        /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+        var proto = global[target] && global[target].prototype;
+        // eslint-disable-next-line no-prototype-builtins
+        if (!proto || !proto.hasOwnProperty || !proto.hasOwnProperty('addEventListener')) {
+            return;
+        }
+        /* eslint-enable @typescript-eslint/no-unsafe-member-access */
+        (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(proto, 'addEventListener', function (original) {
+            return function (eventName, fn, options) {
+                if (fn && fn.handleEvent) {
+                    if (eventName === 'click') {
+                        (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(fn, 'handleEvent', function (innerOriginal) {
+                            return function (event) {
+                                domEventHandler('click', triggerHandlers.bind(null, 'dom'))(event);
+                                return innerOriginal.call(this, event);
+                            };
+                        });
+                    }
+                    if (eventName === 'keypress') {
+                        (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(fn, 'handleEvent', function (innerOriginal) {
+                            return function (event) {
+                                keypressEventHandler(triggerHandlers.bind(null, 'dom'))(event);
+                                return innerOriginal.call(this, event);
+                            };
+                        });
+                    }
+                }
+                else {
+                    if (eventName === 'click') {
+                        domEventHandler('click', triggerHandlers.bind(null, 'dom'), true)(this);
+                    }
+                    if (eventName === 'keypress') {
+                        keypressEventHandler(triggerHandlers.bind(null, 'dom'))(this);
+                    }
+                }
+                return original.call(this, eventName, fn, options);
+            };
+        });
+        (0,_object__WEBPACK_IMPORTED_MODULE_4__/* .fill */ .hl)(proto, 'removeEventListener', function (original) {
+            return function (eventName, fn, options) {
+                try {
+                    original.call(this, eventName, fn.__sentry_wrapped__, options);
+                }
+                catch (e) {
+                    // ignore, accessing __sentry_wrapped__ will throw in some Selenium environments
+                }
+                return original.call(this, eventName, fn, options);
+            };
+        });
+    });
+}
+var debounceDuration = 1000;
+var debounceTimer = 0;
+var keypressTimeout;
+var lastCapturedEvent;
+/**
+ * Wraps addEventListener to capture UI breadcrumbs
+ * @param name the event name (e.g. "click")
+ * @param handler function that will be triggered
+ * @param debounce decides whether it should wait till another event loop
+ * @returns wrapped breadcrumb events handler
+ * @hidden
+ */
+function domEventHandler(name, handler, debounce) {
+    if (debounce === void 0) { debounce = false; }
+    return function (event) {
+        // reset keypress timeout; e.g. triggering a 'click' after
+        // a 'keypress' will reset the keypress debounce so that a new
+        // set of keypresses can be recorded
+        keypressTimeout = undefined;
+        // It's possible this handler might trigger multiple times for the same
+        // event (e.g. event propagation through node ancestors). Ignore if we've
+        // already captured the event.
+        if (!event || lastCapturedEvent === event) {
+            return;
+        }
+        lastCapturedEvent = event;
+        if (debounceTimer) {
+            clearTimeout(debounceTimer);
+        }
+        if (debounce) {
+            debounceTimer = setTimeout(function () {
+                handler({ event: event, name: name });
+            });
+        }
+        else {
+            handler({ event: event, name: name });
+        }
+    };
+}
+/**
+ * Wraps addEventListener to capture keypress UI events
+ * @param handler function that will be triggered
+ * @returns wrapped keypress events handler
+ * @hidden
+ */
+function keypressEventHandler(handler) {
+    // TODO: if somehow user switches keypress target before
+    //       debounce timeout is triggered, we will only capture
+    //       a single breadcrumb from the FIRST target (acceptable?)
+    return function (event) {
+        var target;
+        try {
+            target = event.target;
+        }
+        catch (e) {
+            // just accessing event properties can throw an exception in some rare circumstances
+            // see: https://github.com/getsentry/raven-js/issues/838
+            return;
+        }
+        var tagName = target && target.tagName;
+        // only consider keypress events on actual input elements
+        // this will disregard keypresses targeting body (e.g. tabbing
+        // through elements, hotkeys, etc)
+        if (!tagName || (tagName !== 'INPUT' && tagName !== 'TEXTAREA' && !target.isContentEditable)) {
+            return;
+        }
+        // record first keypress in a series, but ignore subsequent
+        // keypresses until debounce clears
+        if (!keypressTimeout) {
+            domEventHandler('input', handler)(event);
+        }
+        clearTimeout(keypressTimeout);
+        keypressTimeout = setTimeout(function () {
+            keypressTimeout = undefined;
+        }, debounceDuration);
+    };
+}
+var _oldOnErrorHandler = null;
+/** JSDoc */
+function instrumentError() {
+    _oldOnErrorHandler = global.onerror;
+    global.onerror = function (msg, url, line, column, error) {
+        triggerHandlers('error', {
+            column: column,
+            error: error,
+            line: line,
+            msg: msg,
+            url: url,
+        });
+        if (_oldOnErrorHandler) {
+            // eslint-disable-next-line prefer-rest-params
+            return _oldOnErrorHandler.apply(this, arguments);
+        }
+        return false;
+    };
+}
+var _oldOnUnhandledRejectionHandler = null;
+/** JSDoc */
+function instrumentUnhandledRejection() {
+    _oldOnUnhandledRejectionHandler = global.onunhandledrejection;
+    global.onunhandledrejection = function (e) {
+        triggerHandlers('unhandledrejection', e);
+        if (_oldOnUnhandledRejectionHandler) {
+            // eslint-disable-next-line prefer-rest-params
+            return _oldOnUnhandledRejectionHandler.apply(this, arguments);
+        }
+        return true;
+    };
+}
+//# sourceMappingURL=instrument.js.map
 
 /***/ }),
 
@@ -7625,7 +10624,7 @@ function stripUrlQueryAndFragment(urlPath) {
 /* harmony export */   "SB": () => /* binding */ extractNodeRequestData
 /* harmony export */ });
 /* harmony import */ var _is__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6885);
-/* harmony import */ var _object__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5319);
+/* harmony import */ var _object__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(806);
 /* module decorator */ module = __webpack_require__.hmd(module);
 
 
@@ -7735,7 +10734,7 @@ function extractNodeRequestData(req, keys) {
 
 /***/ }),
 
-/***/ 5319:
+/***/ 806:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
@@ -7893,25 +10892,8 @@ var Memo = /** @class */ (function () {
 }());
 
 //# sourceMappingURL=memo.js.map
-;// CONCATENATED MODULE: ../node_modules/@sentry/utils/esm/stacktrace.js
-var defaultFunctionName = '<anonymous>';
-/**
- * Safely extract function name from itself
- */
-function getFunctionName(fn) {
-    try {
-        if (!fn || typeof fn !== 'function') {
-            return defaultFunctionName;
-        }
-        return fn.name || defaultFunctionName;
-    }
-    catch (e) {
-        // Just accessing custom props in some Selenium environments
-        // can cause a "Permission denied" exception (see raven-js#495).
-        return defaultFunctionName;
-    }
-}
-//# sourceMappingURL=stacktrace.js.map
+// EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/stacktrace.js
+var stacktrace = __webpack_require__(5514);
 // EXTERNAL MODULE: ../node_modules/@sentry/utils/esm/string.js
 var string = __webpack_require__(5268);
 ;// CONCATENATED MODULE: ../node_modules/@sentry/utils/esm/object.js
@@ -8102,7 +11084,7 @@ function normalizeValue(value, key) {
         return '[undefined]';
     }
     if (typeof value === 'function') {
-        return "[Function: " + getFunctionName(value) + "]";
+        return "[Function: " + (0,stacktrace/* getFunctionName */.$)(value) + "]";
     }
     // symbols and bigints are considered primitives by TS, but aren't natively JSON-serilaizable
     if (typeof value === 'symbol') {
@@ -8421,6 +11403,34 @@ function basename(path, ext) {
 
 /***/ }),
 
+/***/ 5514:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "$": () => /* binding */ getFunctionName
+/* harmony export */ });
+var defaultFunctionName = '<anonymous>';
+/**
+ * Safely extract function name from itself
+ */
+function getFunctionName(fn) {
+    try {
+        if (!fn || typeof fn !== 'function') {
+            return defaultFunctionName;
+        }
+        return fn.name || defaultFunctionName;
+    }
+    catch (e) {
+        // Just accessing custom props in some Selenium environments
+        // can cause a "Permission denied" exception (see raven-js#495).
+        return defaultFunctionName;
+    }
+}
+//# sourceMappingURL=stacktrace.js.map
+
+/***/ }),
+
 /***/ 5268:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
@@ -8530,15 +11540,410 @@ function isMatchingPattern(value, pattern) {
 
 /***/ }),
 
+/***/ 3589:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "t$": () => /* binding */ supportsNativeFetch,
+/* harmony export */   "zb": () => /* binding */ supportsReportingObserver,
+/* harmony export */   "Bf": () => /* binding */ supportsHistory
+/* harmony export */ });
+/* unused harmony exports supportsErrorEvent, supportsDOMError, supportsDOMException, supportsFetch, supportsReferrerPolicy */
+/* harmony import */ var _logger__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(6922);
+/* harmony import */ var _misc__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7451);
+
+
+/**
+ * Tells whether current environment supports ErrorEvent objects
+ * {@link supportsErrorEvent}.
+ *
+ * @returns Answer to the given question.
+ */
+function supportsErrorEvent() {
+    try {
+        new ErrorEvent('');
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+/**
+ * Tells whether current environment supports DOMError objects
+ * {@link supportsDOMError}.
+ *
+ * @returns Answer to the given question.
+ */
+function supportsDOMError() {
+    try {
+        // Chrome: VM89:1 Uncaught TypeError: Failed to construct 'DOMError':
+        // 1 argument required, but only 0 present.
+        // @ts-ignore It really needs 1 argument, not 0.
+        new DOMError('');
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+/**
+ * Tells whether current environment supports DOMException objects
+ * {@link supportsDOMException}.
+ *
+ * @returns Answer to the given question.
+ */
+function supportsDOMException() {
+    try {
+        new DOMException('');
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+/**
+ * Tells whether current environment supports Fetch API
+ * {@link supportsFetch}.
+ *
+ * @returns Answer to the given question.
+ */
+function supportsFetch() {
+    if (!('fetch' in (0,_misc__WEBPACK_IMPORTED_MODULE_0__/* .getGlobalObject */ .Rf)())) {
+        return false;
+    }
+    try {
+        new Headers();
+        new Request('');
+        new Response();
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+/**
+ * isNativeFetch checks if the given function is a native implementation of fetch()
+ */
+// eslint-disable-next-line @typescript-eslint/ban-types
+function isNativeFetch(func) {
+    return func && /^function fetch\(\)\s+\{\s+\[native code\]\s+\}$/.test(func.toString());
+}
+/**
+ * Tells whether current environment supports Fetch API natively
+ * {@link supportsNativeFetch}.
+ *
+ * @returns true if `window.fetch` is natively implemented, false otherwise
+ */
+function supportsNativeFetch() {
+    if (!supportsFetch()) {
+        return false;
+    }
+    var global = (0,_misc__WEBPACK_IMPORTED_MODULE_0__/* .getGlobalObject */ .Rf)();
+    // Fast path to avoid DOM I/O
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    if (isNativeFetch(global.fetch)) {
+        return true;
+    }
+    // window.fetch is implemented, but is polyfilled or already wrapped (e.g: by a chrome extension)
+    // so create a "pure" iframe to see if that has native fetch
+    var result = false;
+    var doc = global.document;
+    // eslint-disable-next-line deprecation/deprecation
+    if (doc && typeof doc.createElement === "function") {
+        try {
+            var sandbox = doc.createElement('iframe');
+            sandbox.hidden = true;
+            doc.head.appendChild(sandbox);
+            if (sandbox.contentWindow && sandbox.contentWindow.fetch) {
+                // eslint-disable-next-line @typescript-eslint/unbound-method
+                result = isNativeFetch(sandbox.contentWindow.fetch);
+            }
+            doc.head.removeChild(sandbox);
+        }
+        catch (err) {
+            _logger__WEBPACK_IMPORTED_MODULE_1__/* .logger.warn */ .k.warn('Could not create sandbox iframe for pure fetch check, bailing to window.fetch: ', err);
+        }
+    }
+    return result;
+}
+/**
+ * Tells whether current environment supports ReportingObserver API
+ * {@link supportsReportingObserver}.
+ *
+ * @returns Answer to the given question.
+ */
+function supportsReportingObserver() {
+    return 'ReportingObserver' in (0,_misc__WEBPACK_IMPORTED_MODULE_0__/* .getGlobalObject */ .Rf)();
+}
+/**
+ * Tells whether current environment supports Referrer Policy API
+ * {@link supportsReferrerPolicy}.
+ *
+ * @returns Answer to the given question.
+ */
+function supportsReferrerPolicy() {
+    // Despite all stars in the sky saying that Edge supports old draft syntax, aka 'never', 'always', 'origin' and 'default
+    // https://caniuse.com/#feat=referrer-policy
+    // It doesn't. And it throw exception instead of ignoring this parameter...
+    // REF: https://github.com/getsentry/raven-js/issues/1233
+    if (!supportsFetch()) {
+        return false;
+    }
+    try {
+        new Request('_', {
+            referrerPolicy: 'origin',
+        });
+        return true;
+    }
+    catch (e) {
+        return false;
+    }
+}
+/**
+ * Tells whether current environment supports History API
+ * {@link supportsHistory}.
+ *
+ * @returns Answer to the given question.
+ */
+function supportsHistory() {
+    // NOTE: in Chrome App environment, touching history.pushState, *even inside
+    //       a try/catch block*, will cause Chrome to output an error to console.error
+    // borrowed from: https://github.com/angular/angular.js/pull/13945/files
+    var global = (0,_misc__WEBPACK_IMPORTED_MODULE_0__/* .getGlobalObject */ .Rf)();
+    /* eslint-disable @typescript-eslint/no-unsafe-member-access */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    var chrome = global.chrome;
+    var isChromePackagedApp = chrome && chrome.app && chrome.app.runtime;
+    /* eslint-enable @typescript-eslint/no-unsafe-member-access */
+    var hasHistoryApi = 'history' in global && !!global.history.pushState && !!global.history.replaceState;
+    return !isChromePackagedApp && hasHistoryApi;
+}
+//# sourceMappingURL=supports.js.map
+
+/***/ }),
+
+/***/ 8894:
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "c": () => /* binding */ SyncPromise
+/* harmony export */ });
+/* harmony import */ var _is__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(6885);
+/* eslint-disable @typescript-eslint/explicit-function-return-type */
+/* eslint-disable @typescript-eslint/typedef */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+/** SyncPromise internal states */
+var States;
+(function (States) {
+    /** Pending */
+    States["PENDING"] = "PENDING";
+    /** Resolved / OK */
+    States["RESOLVED"] = "RESOLVED";
+    /** Rejected / Error */
+    States["REJECTED"] = "REJECTED";
+})(States || (States = {}));
+/**
+ * Thenable class that behaves like a Promise and follows it's interface
+ * but is not async internally
+ */
+var SyncPromise = /** @class */ (function () {
+    function SyncPromise(executor) {
+        var _this = this;
+        this._state = States.PENDING;
+        this._handlers = [];
+        /** JSDoc */
+        this._resolve = function (value) {
+            _this._setResult(States.RESOLVED, value);
+        };
+        /** JSDoc */
+        this._reject = function (reason) {
+            _this._setResult(States.REJECTED, reason);
+        };
+        /** JSDoc */
+        this._setResult = function (state, value) {
+            if (_this._state !== States.PENDING) {
+                return;
+            }
+            if ((0,_is__WEBPACK_IMPORTED_MODULE_0__/* .isThenable */ .J8)(value)) {
+                value.then(_this._resolve, _this._reject);
+                return;
+            }
+            _this._state = state;
+            _this._value = value;
+            _this._executeHandlers();
+        };
+        // TODO: FIXME
+        /** JSDoc */
+        this._attachHandler = function (handler) {
+            _this._handlers = _this._handlers.concat(handler);
+            _this._executeHandlers();
+        };
+        /** JSDoc */
+        this._executeHandlers = function () {
+            if (_this._state === States.PENDING) {
+                return;
+            }
+            var cachedHandlers = _this._handlers.slice();
+            _this._handlers = [];
+            cachedHandlers.forEach(function (handler) {
+                if (handler.done) {
+                    return;
+                }
+                if (_this._state === States.RESOLVED) {
+                    if (handler.onfulfilled) {
+                        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+                        handler.onfulfilled(_this._value);
+                    }
+                }
+                if (_this._state === States.REJECTED) {
+                    if (handler.onrejected) {
+                        handler.onrejected(_this._value);
+                    }
+                }
+                handler.done = true;
+            });
+        };
+        try {
+            executor(this._resolve, this._reject);
+        }
+        catch (e) {
+            this._reject(e);
+        }
+    }
+    /** JSDoc */
+    SyncPromise.resolve = function (value) {
+        return new SyncPromise(function (resolve) {
+            resolve(value);
+        });
+    };
+    /** JSDoc */
+    SyncPromise.reject = function (reason) {
+        return new SyncPromise(function (_, reject) {
+            reject(reason);
+        });
+    };
+    /** JSDoc */
+    SyncPromise.all = function (collection) {
+        return new SyncPromise(function (resolve, reject) {
+            if (!Array.isArray(collection)) {
+                reject(new TypeError("Promise.all requires an array as input."));
+                return;
+            }
+            if (collection.length === 0) {
+                resolve([]);
+                return;
+            }
+            var counter = collection.length;
+            var resolvedCollection = [];
+            collection.forEach(function (item, index) {
+                SyncPromise.resolve(item)
+                    .then(function (value) {
+                    resolvedCollection[index] = value;
+                    counter -= 1;
+                    if (counter !== 0) {
+                        return;
+                    }
+                    resolve(resolvedCollection);
+                })
+                    .then(null, reject);
+            });
+        });
+    };
+    /** JSDoc */
+    SyncPromise.prototype.then = function (onfulfilled, onrejected) {
+        var _this = this;
+        return new SyncPromise(function (resolve, reject) {
+            _this._attachHandler({
+                done: false,
+                onfulfilled: function (result) {
+                    if (!onfulfilled) {
+                        // TODO: ¯\_(ツ)_/¯
+                        // TODO: FIXME
+                        resolve(result);
+                        return;
+                    }
+                    try {
+                        resolve(onfulfilled(result));
+                        return;
+                    }
+                    catch (e) {
+                        reject(e);
+                        return;
+                    }
+                },
+                onrejected: function (reason) {
+                    if (!onrejected) {
+                        reject(reason);
+                        return;
+                    }
+                    try {
+                        resolve(onrejected(reason));
+                        return;
+                    }
+                    catch (e) {
+                        reject(e);
+                        return;
+                    }
+                },
+            });
+        });
+    };
+    /** JSDoc */
+    SyncPromise.prototype.catch = function (onrejected) {
+        return this.then(function (val) { return val; }, onrejected);
+    };
+    /** JSDoc */
+    SyncPromise.prototype.finally = function (onfinally) {
+        var _this = this;
+        return new SyncPromise(function (resolve, reject) {
+            var val;
+            var isRejected;
+            return _this.then(function (value) {
+                isRejected = false;
+                val = value;
+                if (onfinally) {
+                    onfinally();
+                }
+            }, function (reason) {
+                isRejected = true;
+                val = reason;
+                if (onfinally) {
+                    onfinally();
+                }
+            }).then(function () {
+                if (isRejected) {
+                    reject(val);
+                    return;
+                }
+                resolve(val);
+            });
+        });
+    };
+    /** JSDoc */
+    SyncPromise.prototype.toString = function () {
+        return '[object SyncPromise]';
+    };
+    return SyncPromise;
+}());
+
+//# sourceMappingURL=syncpromise.js.map
+
+/***/ }),
+
 /***/ 4180:
 /***/ ((module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "yW": () => /* binding */ dateTimestampInSeconds,
-/* harmony export */   "_I": () => /* binding */ timestampWithMs
+/* harmony export */   "_I": () => /* binding */ timestampWithMs,
+/* harmony export */   "Z1": () => /* binding */ browserPerformanceTimeOrigin
 /* harmony export */ });
-/* unused harmony exports timestampInSeconds, usingPerformanceAPI, browserPerformanceTimeOrigin */
+/* unused harmony exports timestampInSeconds, usingPerformanceAPI */
 /* harmony import */ var _misc__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(7451);
 /* harmony import */ var _node__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(5728);
 /* module decorator */ module = __webpack_require__.hmd(module);
@@ -13542,7 +16947,7 @@ const network_1 = __webpack_require__(8152);
 const Configuration_1 = __webpack_require__(991);
 const Update_1 = __webpack_require__(5133);
 const SoundService_1 = __webpack_require__(7885);
-const Sentry = tslib_1.__importStar(__webpack_require__(8201));
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class SoundController extends network_1.CommandController {
     constructor() {
         super();
@@ -14152,8 +17557,9 @@ const tslib_1 = __webpack_require__(655);
 const environment_1 = __webpack_require__(8530);
 const Environment_1 = __webpack_require__(6814);
 const path_1 = tslib_1.__importDefault(__webpack_require__(5622));
-const Sentry = tslib_1.__importStar(__webpack_require__(8201));
-const Integrations = tslib_1.__importStar(__webpack_require__(9334));
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
+__webpack_require__(7819);
+const Integrations = tslib_1.__importStar(__webpack_require__(9514));
 const constants_1 = __webpack_require__(4780);
 async function bootstrap() {
     const environmentLoader = new environment_1.EnvironmentLoader(Environment_1.ENVIRONMENT);

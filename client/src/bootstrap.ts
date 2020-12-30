@@ -2,6 +2,7 @@ import { EnvironmentLoader } from "@mscs/environment";
 import { ENVIRONMENT } from "./Singleton/Environment";
 import path from "path";
 import * as Sentry from "@sentry/node";
+import "@sentry/tracing";
 import * as Integrations from "@sentry/integrations";
 import { HOSTNAME } from "./constants";
 
