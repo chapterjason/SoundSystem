@@ -16960,8 +16960,8 @@ class SoundController extends network_1.CommandController {
         this.set("volume", this.wrap({ op: "volume", name: "Set volume" }, this.volume).bind(this));
         this.set("update", this.wrap({ op: "update", name: "Do update" }, this.update).bind(this));
     }
-    wrap(context, callback, ...args) {
-        return async () => {
+    wrap(context, callback) {
+        return async (...args) => {
             const transaction = Sentry.startTransaction(context, {
                 args: args,
             });

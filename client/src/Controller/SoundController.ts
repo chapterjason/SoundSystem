@@ -21,8 +21,8 @@ export class SoundController extends CommandController {
         this.set("update", this.wrap({ op: "update", name: "Do update" }, this.update).bind(this));
     }
 
-    private wrap(context: TransactionContext, callback: (...args: any[]) => Promise<void>, ...args: any[]) {
-        return async () => {
+    private wrap(context: TransactionContext, callback: (...args: any[]) => Promise<void>) {
+        return async (...args: any[]) => {
             const transaction = Sentry.startTransaction(context, {
                 args: args,
             });
