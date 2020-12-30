@@ -12,18 +12,20 @@ export class SoundController extends CommandController {
         super();
 
         this.set("idle", this.wrap({ op: "idle", name: "Set idle" }, this.idle).bind(this));
-        this.set("listen", this.listen.bind(this));
-        this.set("single", this.single.bind(this));
-        this.set("stream", this.stream.bind(this));
-        this.set("mute", this.mute.bind(this));
-        this.set("unmute", this.unmute.bind(this));
-        this.set("volume", this.volume.bind(this));
-        this.set("update", this.update.bind(this));
+        this.set("listen", this.wrap({ op: "listen", name: "Set listen" }, this.listen).bind(this));
+        this.set("single", this.wrap({ op: "single", name: "Set single" }, this.single).bind(this));
+        this.set("stream", this.wrap({ op: "stream", name: "Set stream" }, this.stream).bind(this));
+        this.set("mute", this.wrap({ op: "mute", name: "Mute" }, this.mute).bind(this));
+        this.set("unmute", this.wrap({ op: "unmute", name: "Unmute" }, this.unmute).bind(this));
+        this.set("volume", this.wrap({ op: "volume", name: "Set volume" }, this.volume).bind(this));
+        this.set("update", this.wrap({ op: "update", name: "Do update" }, this.update).bind(this));
     }
 
     private wrap(context: TransactionContext, callback: (...args: any[]) => Promise<void>, ...args: any[]) {
         return async () => {
-            const transaction = Sentry.startTransaction(context);
+            const transaction = Sentry.startTransaction(context, {
+                args: args,
+            });
 
             try {
                 await callback(...args);
