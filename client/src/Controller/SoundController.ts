@@ -26,7 +26,6 @@ export class SoundController extends CommandController {
             const transaction = Sentry.startTransaction({
                 ...context,
                 data: {
-                    socket: socket.getUserData(),
                     command: {
                         id: command.getId(),
                         command: command.getCommandName(),
