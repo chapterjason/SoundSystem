@@ -1,1 +1,6 @@
+# Ignore static folder
 public/
+
+# Ignore local env files
+.env.local
+.env.*.local

@@ -5,8 +5,9 @@ import { AirplayService } from "../SystemService/AirplayService";
 import { AlsaService } from "../SystemService/AlsaService";
 import { Mode, Stream } from "@soundsystem/common";
 import { Configuration } from "../Configuration";
-import { ENVIRONMENT, HOSTNAME } from "../meta";
 import { ConfigurationData } from "../ConfigurationData";
+import { HOSTNAME } from "../constants";
+import { DEVICE } from "../settings";
 
 export class SoundService {
 
@@ -146,12 +147,10 @@ export class SoundService {
     public async setMuted(previousMuted: boolean, muted: boolean): Promise<void> {
         console.log("--> [Muted]", muted);
         if (previousMuted !== muted) {
-            const device = this.getDevice();
-
             if (muted) {
-                await this.alsaService.mute(device);
+                await this.alsaService.mute(DEVICE);
             } else {
-                await this.alsaService.unmute(device);
+                await this.alsaService.unmute(DEVICE);
             }
 
             await Configuration.setMuted(muted);
@@ -162,8 +161,7 @@ export class SoundService {
     public async setVolume(previousVolume: number, volume: number): Promise<void> {
         console.log("<-- [Volume]", volume);
         if (previousVolume !== volume) {
-            const device = this.getDevice();
-            await this.alsaService.setVolume(volume, device);
+            await this.alsaService.setVolume(volume, DEVICE);
             await Configuration.setVolume(volume);
         }
         console.log("--> [Volume]", volume);
@@ -239,8 +237,5 @@ export class SoundService {
         await Configuration.setStream(stream);
     }
 
-    private getDevice(): string {
-        return ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone";
-    }
 
 }

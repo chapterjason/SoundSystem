@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post, Scope } from "@nestjs/common";
-import { Command, SoundNodeResponseData, Stream } from "@soundsystem/common";
 import { SoundServer } from "../Service/Node/SoundServer";
+import { Command } from "@soundsystem/network";
+import { SoundNodeResponseData, Stream } from "@soundsystem/common";
 
 @Controller({ scope: Scope.REQUEST })
 export class NodeController {

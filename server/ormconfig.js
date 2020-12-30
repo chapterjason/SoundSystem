@@ -29,13 +29,13 @@ module.exports = new Promise(async function (resolve) {
         "synchronize": false,
         "logging": false,
         "entities": [
-            path.join(__dirname, "src/Module/Application/Entity/**/*.ts"),
+            path.join(__dirname, "dist/Module/Application/Entity/**/*.js"),
         ],
         "migrations": [
-            path.join(__dirname, "src/Module/Application/Migration/**/*.ts"),
+            path.join(__dirname, "dist/Module/Application/Migration/**/*.js"),
         ],
         "subscribers": [
-            path.join(__dirname, "src/Module/Application/Subscriber/**/*.ts"),
+            path.join(__dirname, "dist/Module/Application/Subscriber/**/*.js"),
         ],
         "cli": {
             "entitiesDir": path.join(__dirname, "src/Module/Application/Entity"),

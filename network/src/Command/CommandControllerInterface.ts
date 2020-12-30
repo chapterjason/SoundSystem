@@ -1,5 +1,6 @@
-import { Command, DataType } from "@soundsystem/common";
 import { BidirectionalSocket } from "../Common/BidirectionalSocket";
+import { Command } from "./Command";
+import { DataType } from "../Common/DataType";
 
 export interface CommandControllerInterface {
     getCommands(): string[];

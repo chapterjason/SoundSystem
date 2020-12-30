@@ -1,8 +1,9 @@
-import { Command, Packet } from "@soundsystem/common";
 import { CommandControllerInterface } from "./CommandControllerInterface";
 import { BidirectionalSocket } from "../Common/BidirectionalSocket";
 import { EventEmitter } from "events";
 import { CommandQueueItem } from "./CommandQueueItem";
+import { Packet } from "../Common/Packet";
+import { Command } from "./Command";
 
 export class CommandQueue {
 

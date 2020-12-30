@@ -1,7 +1,8 @@
 const path = require("path");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
 module.exports = {
-    devtool: "inline-source-map",
+    devtool: "source-map",
     target: "node",
     entry: "./src/index.ts",
     module: {
@@ -23,14 +24,17 @@ module.exports = {
                     ],
                     plugins: [
                         "@babel/plugin-syntax-dynamic-import",
-                        "@babel/plugin-proposal-class-properties"
-                    ]
+                        "@babel/plugin-proposal-class-properties",
+                    ],
                 },
             },
         ],
     },
+    plugins: [
+        new CleanWebpackPlugin(),
+    ],
     optimization: {
-        minimize: false
+        minimize: false,
     },
     resolve: {
         extensions: [".tsx", ".ts", ".js"],

@@ -1,7 +1,7 @@
-import { Command } from "../src/Network/Command";
+import { Command } from "@soundsystem/network/dist/Command/Command";
 import { validate } from "uuid";
 import { Buffer } from "buffer";
-import { Packet } from "../src/Network/Packet";
+import { Packet } from "@soundsystem/network/dist/Common/Packet";
 
 describe("Command", () => {
 

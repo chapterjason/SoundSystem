@@ -10,11 +10,6 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "ts-node": {
-    "transpileOnly": true,
-    "typeCheck": false,
-    "files": false
-  },
   "exclude": [
     "node_modules"
   ],

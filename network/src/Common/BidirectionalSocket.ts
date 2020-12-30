@@ -1,7 +1,7 @@
 import { Socket } from "net";
 import { ResponseHandler } from "./ResponseHandler";
 import { EventEmitter } from "events";
-import { Packet } from "@soundsystem/common";
+import { Packet } from "./Packet";
 
 export class BidirectionalSocket<UserDataType extends object = {}> extends EventEmitter {
     protected socket: Socket;

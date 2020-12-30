@@ -6,7 +6,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "build": "tsc --build",
+    "prebuild": "rm -rf tsconfig.tsbuildinfo ./dist",
+    "build": "yarn run prebuild && tsc --build",
     "test": "jest --detectOpenHandles --forceExit --runInBand"
   },
   "devDependencies": {

@@ -1,7 +1,8 @@
 import { BidirectionalSocket } from "../Common/BidirectionalSocket";
 import { CommandHandler } from "./CommandHandler";
-import { Command, DataType } from "@soundsystem/common";
 import { CommandControllerInterface } from "./CommandControllerInterface";
+import { DataType } from "../Common/DataType";
+import { Command } from "./Command";
 
 export abstract class CommandController<UserDataType extends object = {}> implements CommandControllerInterface {
 

@@ -5,9 +5,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "lint": "eslint ./src/**/*",
-    "build": "tsc",
-    "typeorm": "node_modules/.bin/ts-node --require ts-node/register node_modules/typeorm/cli.js"
+    "prebuild": "rm -rf tsconfig.tsbuildinfo ./dist",
+    "build": "yarn run prebuild && tsc --build"
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.0",
@@ -31,7 +30,6 @@
     "point-of-view": "^4.7.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^6.6.3",
-    "ts-node": "^9.1.1",
     "twig": "^1.15.4",
     "typeorm": "^0.2.29",
     "uuid": "^8.3.2"

@@ -1,6 +1,7 @@
 import { BidirectionalSocket, CommandController } from "@soundsystem/network";
-import { Command, SoundNodeData } from "@soundsystem/common";
+import { Command } from "@soundsystem/network";
 import { Logger } from "@nestjs/common";
+import { SoundNodeData } from "@soundsystem/common";
 
 export class SoundServerController extends CommandController<SoundNodeData> {
 

@@ -1,4 +1,4 @@
-import { Packet } from "../src/Network/Packet";
+import { Packet } from "@soundsystem/network/dist/Common/Packet";
 import { validate } from "uuid";
 import { Buffer } from "buffer";
 

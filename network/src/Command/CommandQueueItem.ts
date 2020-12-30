@@ -1,5 +1,5 @@
 import { BidirectionalSocket } from "../Common/BidirectionalSocket";
-import { Command } from "@soundsystem/common";
+import { Command } from "./Command";
 
 export interface CommandQueueItem {
     socket: BidirectionalSocket;

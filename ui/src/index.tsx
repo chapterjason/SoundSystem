@@ -1,13 +1,14 @@
 import "./styles.scss";
 import * as React from "react";
 import { resetContext } from "kea";
-import { ComponentService } from "./services";
-import { NodeOverview } from "./Component/NodeOverview/NodeOverview";
+import { Application } from "stimulus";
+import { NodeOverViewController } from "./Controller/NodeOverViewController";
 
 resetContext({
     createStore: {},
     plugins: [],
 });
 
-ComponentService.set("node_overview", NodeOverview as any);
-ComponentService.render();
+const application = Application.start();
+
+application.register("node-overview", NodeOverViewController);
