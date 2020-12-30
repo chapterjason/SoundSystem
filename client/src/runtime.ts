@@ -4,9 +4,6 @@ import { Configuration } from "./Configuration";
 import { Command } from "@soundsystem/network";
 import { HOSTNAME } from "./constants";
 import { ID } from "./settings";
-import { errorMonitor } from "events";
-import { errorHandler } from "./errorHandler";
-import { shutdown } from "./shutdown";
 
 export async function runtime() {
     CLIENT.connect({
@@ -29,16 +26,11 @@ export async function runtime() {
         await CLIENT.init();
     });
 
-    try {
-        CLIENT.on("error", (error) => {
-            throw error;
-        });
+    CLIENT.on("error", (error) => {
+        throw error;
+    });
 
-        CLIENT.on("close", () => {
-            throw new Error("Connection closed.");
-        });
-    } catch (error) {
-        const exitCode = await errorHandler(error);
-        shutdown(exitCode);
-    }
+    CLIENT.on("close", () => {
+        throw new Error("Connection closed.");
+    });
 }

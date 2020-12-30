@@ -1,5 +1,5 @@
 export async function errorHandler(error: Error): Promise<number> {
-    console.error(error);
+    console.log(error);
 
     return 1;
 }
