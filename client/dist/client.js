@@ -2956,8 +2956,12 @@ if (!(0,external_fs_.existsSync)(idFile)) {
   external_fs_.writeFileSync(idFile, (0,v4/* default */.Z)());
 }
 
-var ID = external_fs_.readFileSync(idFile).toString();
-var DEVICE = ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone";
+var ID = function ID() {
+  return external_fs_.readFileSync(idFile).toString();
+};
+var DEVICE = function DEVICE() {
+  return ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone";
+};
 ;// CONCATENATED MODULE: ./src/Service/SoundService.ts
 
 
@@ -3473,7 +3477,7 @@ var SoundService = /*#__PURE__*/function () {
                 }
 
                 _context7.next = 5;
-                return this.alsaService.mute(DEVICE);
+                return this.alsaService.mute(DEVICE());
 
               case 5:
                 _context7.next = 9;
@@ -3481,7 +3485,7 @@ var SoundService = /*#__PURE__*/function () {
 
               case 7:
                 _context7.next = 9;
-                return this.alsaService.unmute(DEVICE);
+                return this.alsaService.unmute(DEVICE());
 
               case 9:
                 _context7.next = 11;
@@ -3520,7 +3524,7 @@ var SoundService = /*#__PURE__*/function () {
                 }
 
                 _context8.next = 4;
-                return this.alsaService.setVolume(volume, DEVICE);
+                return this.alsaService.setVolume(volume, DEVICE());
 
               case 4:
                 _context8.next = 6;
@@ -9929,7 +9933,7 @@ function _runtime() {
                                 case 0:
                                   command = dist.Command.create("configuration", runtime_objectSpread(runtime_objectSpread({}, config), {}, {
                                     hostname: HOSTNAME,
-                                    id: ID
+                                    id: ID()
                                   }));
                                   _context.next = 3;
                                   return CLIENT.request(command.toPacket());

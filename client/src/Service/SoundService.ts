@@ -148,9 +148,9 @@ export class SoundService {
         console.log("--> [Muted]", muted);
         if (previousMuted !== muted) {
             if (muted) {
-                await this.alsaService.mute(DEVICE);
+                await this.alsaService.mute(DEVICE());
             } else {
-                await this.alsaService.unmute(DEVICE);
+                await this.alsaService.unmute(DEVICE());
             }
 
             await Configuration.setMuted(muted);
@@ -161,7 +161,7 @@ export class SoundService {
     public async setVolume(previousVolume: number, volume: number): Promise<void> {
         console.log("<-- [Volume]", volume);
         if (previousVolume !== volume) {
-            await this.alsaService.setVolume(volume, DEVICE);
+            await this.alsaService.setVolume(volume, DEVICE());
             await Configuration.setVolume(volume);
         }
         console.log("--> [Volume]", volume);

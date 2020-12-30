@@ -17,7 +17,7 @@ export async function runtime() {
             const command = Command.create("configuration", {
                 ...config,
                 hostname: HOSTNAME,
-                id: ID,
+                id: ID(),
             });
 
             await CLIENT.request(command.toPacket());

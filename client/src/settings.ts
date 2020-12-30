@@ -10,6 +10,6 @@ if (!existsSync(idFile)) {
     fs.writeFileSync(idFile, uuidv4());
 }
 
-export const ID = fs.readFileSync(idFile).toString();
+export const ID = () => fs.readFileSync(idFile).toString();
 
-export const DEVICE = ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone";
+export const DEVICE = () => ENVIRONMENT.has("DEVICE") ? ENVIRONMENT.get("DEVICE") : "Headphone";
