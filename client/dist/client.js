@@ -9882,6 +9882,41 @@ var SoundClient = /*#__PURE__*/function (_Client) {
 ;// CONCATENATED MODULE: ./src/Singleton/Client.ts
 
 var CLIENT = new SoundClient();
+;// CONCATENATED MODULE: ./src/errorHandler.ts
+
+
+
+
+function errorHandler_asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
+
+function errorHandler_asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { errorHandler_asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { errorHandler_asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
+
+function errorHandler_errorHandler(_x) {
+  return _errorHandler.apply(this, arguments);
+}
+
+function _errorHandler() {
+  _errorHandler = errorHandler_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(error) {
+    return regeneratorRuntime.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            console.error(error);
+            return _context.abrupt("return", 1);
+
+          case 2:
+          case "end":
+            return _context.stop();
+        }
+      }
+    }, _callee);
+  }));
+  return _errorHandler.apply(this, arguments);
+}
+;// CONCATENATED MODULE: ./src/shutdown.ts
+function shutdown(exitCode) {
+  return process.exit(exitCode);
+}
 ;// CONCATENATED MODULE: ./src/runtime.ts
 
 
@@ -9904,12 +9939,15 @@ function runtime_asyncToGenerator(fn) { return function () { var self = this, ar
 
 
 
+
+
 function runtime_runtime() {
   return _runtime.apply(this, arguments);
 }
 
 function _runtime() {
   _runtime = runtime_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee3() {
+    var exitCode;
     return regeneratorRuntime.wrap(function _callee3$(_context3) {
       while (1) {
         switch (_context3.prev = _context3.next) {
@@ -9961,19 +9999,32 @@ function _runtime() {
                 }
               }, _callee2);
             })));
+            _context3.prev = 2;
             CLIENT.on("error", function (error) {
               throw error;
             });
             CLIENT.on("close", function () {
               throw new Error("Connection closed.");
             });
+            _context3.next = 13;
+            break;
 
-          case 4:
+          case 7:
+            _context3.prev = 7;
+            _context3.t0 = _context3["catch"](2);
+            _context3.next = 11;
+            return errorHandler_errorHandler(_context3.t0);
+
+          case 11:
+            exitCode = _context3.sent;
+            shutdown(exitCode);
+
+          case 13:
           case "end":
             return _context3.stop();
         }
       }
-    }, _callee3);
+    }, _callee3, null, [[2, 7]]);
   }));
   return _runtime.apply(this, arguments);
 }
@@ -10129,41 +10180,6 @@ function _bootstrap() {
     }, _callee);
   }));
   return _bootstrap.apply(this, arguments);
-}
-;// CONCATENATED MODULE: ./src/errorHandler.ts
-
-
-
-
-function errorHandler_asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
-
-function errorHandler_asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { errorHandler_asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { errorHandler_asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
-
-function errorHandler_errorHandler(_x) {
-  return _errorHandler.apply(this, arguments);
-}
-
-function _errorHandler() {
-  _errorHandler = errorHandler_asyncToGenerator( /*#__PURE__*/regeneratorRuntime.mark(function _callee(error) {
-    return regeneratorRuntime.wrap(function _callee$(_context) {
-      while (1) {
-        switch (_context.prev = _context.next) {
-          case 0:
-            console.error(error);
-            return _context.abrupt("return", 1);
-
-          case 2:
-          case "end":
-            return _context.stop();
-        }
-      }
-    }, _callee);
-  }));
-  return _errorHandler.apply(this, arguments);
-}
-;// CONCATENATED MODULE: ./src/shutdown.ts
-function shutdown(exitCode) {
-  return process.exit(exitCode);
 }
 ;// CONCATENATED MODULE: ./src/index.ts
 
