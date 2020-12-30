@@ -17558,7 +17558,7 @@ const environment_1 = __webpack_require__(8530);
 const Environment_1 = __webpack_require__(6814);
 const path_1 = tslib_1.__importDefault(__webpack_require__(5622));
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
-__webpack_require__(7819);
+const Tracing = tslib_1.__importStar(__webpack_require__(7819));
 const Integrations = tslib_1.__importStar(__webpack_require__(9514));
 const constants_1 = __webpack_require__(4780);
 async function bootstrap() {
@@ -17566,6 +17566,7 @@ async function bootstrap() {
     await environmentLoader.loadEnvironment(path_1.default.join(__dirname, ".env"));
     if (Environment_1.ENVIRONMENT.has("SENTRY_DSN")) {
         const SENTRY_DSN = Environment_1.ENVIRONMENT.get("SENTRY_DSN");
+        Tracing.addExtensionMethods();
         Sentry.init({
             dsn: SENTRY_DSN,
             serverName: constants_1.HOSTNAME,
