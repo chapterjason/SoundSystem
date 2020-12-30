@@ -3,6 +3,7 @@ import { ENVIRONMENT } from "./Singleton/Environment";
 import path from "path";
 import * as Sentry from "@sentry/node";
 import * as Integrations from "@sentry/integrations";
+import { HOSTNAME } from "./constants";
 
 export async function bootstrap() {
     const environmentLoader = new EnvironmentLoader(ENVIRONMENT);
@@ -14,6 +15,7 @@ export async function bootstrap() {
 
         Sentry.init({
             dsn: SENTRY_DSN,
+            serverName: HOSTNAME,
 
             // We recommend adjusting this value in production, or using tracesSampler
             // for finer control

@@ -10088,6 +10088,7 @@ function bootstrap_asyncToGenerator(fn) { return function () { var self = this, 
 
 
 
+
 function bootstrap() {
   return _bootstrap.apply(this, arguments);
 }
@@ -10108,6 +10109,7 @@ function _bootstrap() {
               SENTRY_DSN = ENVIRONMENT.get("SENTRY_DSN");
               init({
                 dsn: SENTRY_DSN,
+                serverName: HOSTNAME,
                 // We recommend adjusting this value in production, or using tracesSampler
                 // for finer control
                 tracesSampleRate: 1.0,
