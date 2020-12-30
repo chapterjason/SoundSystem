@@ -55,7 +55,8 @@ Install the supervisor service with `./services.sh`
 ### Update server
 
 ```
-./update.sh
+git fetch
+git pull --rebase
 ./build.sh
 ./restart.sh
 ```
