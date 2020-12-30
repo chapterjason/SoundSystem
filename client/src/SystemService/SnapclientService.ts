@@ -1,10 +1,11 @@
 import { promises as fs } from "fs";
 import { SystemService } from "./SystemService";
+import { Transaction } from "@sentry/types";
 
 export class SnapclientService extends SystemService {
 
-    public constructor() {
-        super("snapclient");
+    public constructor(transaction: Transaction) {
+        super("snapclient", transaction);
     }
 
     public async setServer(server: string) {

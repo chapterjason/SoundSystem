@@ -16946,8 +16946,8 @@ const tslib_1 = __webpack_require__(655);
 const network_1 = __webpack_require__(8152);
 const Configuration_1 = __webpack_require__(991);
 const Update_1 = __webpack_require__(5133);
-const SoundService_1 = __webpack_require__(7885);
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
+const SoundService_1 = __webpack_require__(1096);
 class SoundController extends network_1.CommandController {
     constructor() {
         super();
@@ -16962,49 +16962,59 @@ class SoundController extends network_1.CommandController {
     }
     wrap(context, callback) {
         return async (...args) => {
-            const transaction = Sentry.startTransaction(context, {
-                args: args,
+            const transaction = Sentry.startTransaction({
+                ...context,
+                data: {
+                    args,
+                },
             });
             try {
-                await callback(...args);
+                await callback(...args, transaction);
             }
-            catch (e) {
-                Sentry.captureException(e);
+            catch (error) {
+                Sentry.captureException(error);
             }
             finally {
                 transaction.finish();
             }
         };
     }
-    async idle() {
+    async idle(transaction) {
+        const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
-        await SoundService_1.SOUNDSERVICE.idle(configuration);
+        await service.idle(configuration);
     }
-    async listen(server) {
+    async listen(server, transaction) {
+        const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
-        await SoundService_1.SOUNDSERVICE.listen(configuration, server);
+        await service.listen(configuration, server);
     }
-    async mute() {
+    async mute(transaction) {
+        const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
-        await SoundService_1.SOUNDSERVICE.setMuted(configuration.muted, true);
+        await service.setMuted(configuration.muted, true);
     }
-    async single(stream) {
+    async single(stream, transaction) {
+        const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
-        await SoundService_1.SOUNDSERVICE.single(configuration, stream);
+        await service.single(configuration, stream);
     }
-    async stream(stream) {
+    async stream(stream, transaction) {
+        const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
-        await SoundService_1.SOUNDSERVICE.stream(configuration, stream);
+        await service.stream(configuration, stream);
     }
-    async unmute() {
+    async unmute(transaction) {
+        const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
-        await SoundService_1.SOUNDSERVICE.setMuted(configuration.muted, false);
+        await service.setMuted(configuration.muted, false);
     }
-    async volume(volume) {
+    async volume(volume, transaction) {
+        const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
-        await SoundService_1.SOUNDSERVICE.setVolume(configuration.volume, volume);
+        await service.setVolume(configuration.volume, volume);
     }
-    async update() {
+    async update(transaction) {
         console.log("Update...", (new Date()).toISOString());
         await Update_1.update();
     }
@@ -17021,11 +17031,13 @@ exports.SoundController = SoundController;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SoundClient = void 0;
+const tslib_1 = __webpack_require__(655);
 const network_1 = __webpack_require__(8152);
 const SoundController_1 = __webpack_require__(7477);
 const Configuration_1 = __webpack_require__(991);
 const common_1 = __webpack_require__(194);
-const SoundService_1 = __webpack_require__(7885);
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
+const SoundService_1 = __webpack_require__(1096);
 class SoundClient extends network_1.Client {
     constructor() {
         super();
@@ -17033,25 +17045,32 @@ class SoundClient extends network_1.Client {
         this.queue.register(new SoundController_1.SoundController());
     }
     async init() {
+        const transaction = Sentry.startTransaction({
+            op: "init",
+            name: "Do init",
+        });
         console.log("---- Initialize ----");
-        const { mode, server, stream, volume, muted } = await Configuration_1.Configuration.load();
+        const service = new SoundService_1.SoundService(transaction);
+        const configurationData = await Configuration_1.Configuration.load();
+        const { mode, server, stream, volume, muted } = configurationData;
+        transaction.setData("configuration", configurationData);
         if (mode === common_1.Mode.IDLE) {
-            await SoundService_1.SOUNDSERVICE.idle(Configuration_1.Configuration.empty);
+            await service.idle(Configuration_1.Configuration.empty);
         }
         else if (mode === common_1.Mode.SINGLE) {
-            await SoundService_1.SOUNDSERVICE.single(Configuration_1.Configuration.empty, stream);
+            await service.single(Configuration_1.Configuration.empty, stream);
         }
         else if (mode === common_1.Mode.STREAM) {
-            await SoundService_1.SOUNDSERVICE.stream(Configuration_1.Configuration.empty, stream);
+            await service.stream(Configuration_1.Configuration.empty, stream);
         }
         else if (mode === common_1.Mode.LISTEN) {
-            await SoundService_1.SOUNDSERVICE.listen(Configuration_1.Configuration.empty, server);
+            await service.listen(Configuration_1.Configuration.empty, server);
         }
         else if (mode === common_1.Mode.NONE) {
-            await SoundService_1.SOUNDSERVICE.idle(Configuration_1.Configuration.empty);
+            await service.idle(Configuration_1.Configuration.empty);
         }
-        await SoundService_1.SOUNDSERVICE.setMuted(Configuration_1.Configuration.empty.muted, muted);
-        await SoundService_1.SOUNDSERVICE.setVolume(Configuration_1.Configuration.empty.volume, volume);
+        await service.setMuted(Configuration_1.Configuration.empty.muted, muted);
+        await service.setVolume(Configuration_1.Configuration.empty.volume, volume);
         console.log(await Configuration_1.Configuration.load());
         console.log("---- Initialized ----");
     }
@@ -17078,11 +17097,12 @@ const Configuration_1 = __webpack_require__(991);
 const constants_1 = __webpack_require__(4780);
 const settings_1 = __webpack_require__(923);
 class SoundService {
-    constructor() {
-        this.snapclientService = new SnapclientService_1.SnapclientService();
-        this.snapserverService = new SnapserverService_1.SnapserverService();
-        this.bluetoothService = new BluetoothService_1.BluetoothService();
-        this.airplayService = new AirplayService_1.AirplayService();
+    constructor(transaction) {
+        this.transaction = transaction;
+        this.snapclientService = new SnapclientService_1.SnapclientService(this.transaction);
+        this.snapserverService = new SnapserverService_1.SnapserverService(this.transaction);
+        this.bluetoothService = new BluetoothService_1.BluetoothService(this.transaction);
+        this.airplayService = new AirplayService_1.AirplayService(this.transaction);
         this.alsaService = new AlsaService_1.AlsaService();
     }
     async listen(configuration, server) {
@@ -17303,19 +17323,6 @@ exports.ENVIRONMENT = new environment_1.ProcessEnvironment();
 
 /***/ }),
 
-/***/ 7885:
-/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.SOUNDSERVICE = void 0;
-const SoundService_1 = __webpack_require__(1096);
-exports.SOUNDSERVICE = new SoundService_1.SoundService();
-
-
-/***/ }),
-
 /***/ 5272:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
@@ -17325,8 +17332,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AirplayService = void 0;
 const SystemService_1 = __webpack_require__(3707);
 class AirplayService extends SystemService_1.SystemService {
-    constructor() {
-        super("airplay-playback");
+    constructor(transaction) {
+        super("airplay-playback", transaction);
     }
 }
 exports.AirplayService = AirplayService;
@@ -17372,17 +17379,17 @@ exports.BluetoothService = void 0;
 const SystemService_1 = __webpack_require__(3707);
 const events_1 = __webpack_require__(8614);
 class BluetoothService extends events_1.EventEmitter {
-    constructor() {
+    constructor(transaction) {
         super();
         this.services = [];
         this.services.push(...[
-            new SystemService_1.SystemService("bthelper@hci0"),
-            new SystemService_1.SystemService("bt-agent"),
-            new SystemService_1.SystemService("bluetooth"),
-            new SystemService_1.SystemService("bluealsa"),
+            new SystemService_1.SystemService("bthelper@hci0", transaction),
+            new SystemService_1.SystemService("bt-agent", transaction),
+            new SystemService_1.SystemService("bluetooth", transaction),
+            new SystemService_1.SystemService("bluealsa", transaction),
         ]);
-        this.stream = new SystemService_1.SystemService("bluemusic-playback");
-        this.single = new SystemService_1.SystemService("bluetooth-playback");
+        this.stream = new SystemService_1.SystemService("bluemusic-playback", transaction);
+        this.single = new SystemService_1.SystemService("bluetooth-playback", transaction);
     }
     async start() {
         for await (const service of this.services) {
@@ -17434,8 +17441,8 @@ exports.SnapclientService = void 0;
 const fs_1 = __webpack_require__(5747);
 const SystemService_1 = __webpack_require__(3707);
 class SnapclientService extends SystemService_1.SystemService {
-    constructor() {
-        super("snapclient");
+    constructor(transaction) {
+        super("snapclient", transaction);
     }
     async setServer(server) {
         await fs_1.promises.writeFile("/etc/default/snapclient", `START_SNAPCLIENT=true
@@ -17457,8 +17464,8 @@ exports.SnapserverService = void 0;
 const fs_1 = __webpack_require__(5747);
 const SystemService_1 = __webpack_require__(3707);
 class SnapserverService extends SystemService_1.SystemService {
-    constructor() {
-        super("snapserver");
+    constructor(transaction) {
+        super("snapserver", transaction);
     }
     async setStream(stream) {
         const configuration = `${SnapserverService.commonConfiguration}
@@ -17487,26 +17494,53 @@ buffer = 1000`;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SystemService = void 0;
+const tslib_1 = __webpack_require__(655);
 const MustRun_1 = __webpack_require__(4704);
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class SystemService {
-    constructor(serviceName) {
+    constructor(serviceName, transaction) {
         this.serviceName = serviceName;
+        this.transaction = transaction;
     }
     getServiceName() {
         return this.serviceName;
     }
     async start() {
-        console.log(`[Service][${this.serviceName}][Start]: ${this.serviceName}`);
-        return await MustRun_1.mustRun(["sudo", "systemctl", "start", this.serviceName]);
+        const child = this.transaction.startChild({ op: "service:start" });
+        child.setData("service", this.serviceName);
+        try {
+            console.log(`[Service][${this.serviceName}][Start]: ${this.serviceName}`);
+            const process = await MustRun_1.mustRun(["sudo", "systemctl", "start", this.serviceName]);
+            console.log(`[Service][${this.serviceName}][Started]: ${this.serviceName}`);
+            return process;
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
     async stop() {
-        console.log(`[Service][${this.serviceName}][Stop]: ${this.serviceName}`);
-        return await Promise.race([
-            MustRun_1.mustRun(["sudo", "systemctl", "stop", this.serviceName]),
-            new Promise((resolve) => {
-                setTimeout(resolve, 5000);
-            }),
-        ]);
+        const child = this.transaction.startChild({ op: "service:stop" });
+        child.setData("service", this.serviceName);
+        try {
+            console.log(`[Service][${this.serviceName}][Stop]: ${this.serviceName}`);
+            const result = await Promise.race([
+                MustRun_1.mustRun(["sudo", "systemctl", "stop", this.serviceName]),
+                new Promise((resolve) => {
+                    setTimeout(resolve, 5000);
+                }),
+            ]);
+            console.log(`[Service][${this.serviceName}][Stopped]: ${this.serviceName}`);
+            return result;
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
 }
 exports.SystemService = SystemService;

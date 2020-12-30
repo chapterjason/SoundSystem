@@ -1,5 +1,6 @@
 import { SystemService } from "./SystemService";
 import { EventEmitter } from "events";
+import { Transaction } from "@sentry/types";
 
 export class BluetoothService extends EventEmitter {
 
@@ -9,19 +10,19 @@ export class BluetoothService extends EventEmitter {
 
     private single: SystemService;
 
-    public constructor() {
+    public constructor(transaction: Transaction) {
         super();
 
         this.services.push(...[
-            new SystemService("bthelper@hci0"),
-            new SystemService("bt-agent"),
-            new SystemService("bluetooth"),
-            new SystemService("bluealsa"),
+            new SystemService("bthelper@hci0", transaction),
+            new SystemService("bt-agent", transaction),
+            new SystemService("bluetooth", transaction),
+            new SystemService("bluealsa", transaction),
         ]);
 
-        this.stream = new SystemService("bluemusic-playback");
+        this.stream = new SystemService("bluemusic-playback", transaction);
 
-        this.single = new SystemService("bluetooth-playback");
+        this.single = new SystemService("bluetooth-playback", transaction);
     }
 
     public async start() {

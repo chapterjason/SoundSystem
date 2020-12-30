@@ -2,9 +2,9 @@ import { CommandController } from "@soundsystem/network";
 import { Configuration } from "../Configuration";
 import { Stream } from "@soundsystem/common";
 import { update } from "../Utils/Update";
-import { SOUNDSERVICE } from "../Singleton/SoundService";
 import * as Sentry from "@sentry/node";
-import { TransactionContext } from "@sentry/types";
+import { Transaction, TransactionContext } from "@sentry/types";
+import { SoundService } from "../Service/SoundService";
 
 export class SoundController extends CommandController {
 
@@ -23,63 +23,73 @@ export class SoundController extends CommandController {
 
     private wrap(context: TransactionContext, callback: (...args: any[]) => Promise<void>) {
         return async (...args: any[]) => {
-            const transaction = Sentry.startTransaction(context, {
-                args: args,
+            const transaction = Sentry.startTransaction({
+                ...context,
+                data: {
+                    args,
+                },
             });
 
             try {
-                await callback(...args);
-            } catch (e) {
-                Sentry.captureException(e);
+                await callback(...args, transaction);
+            } catch (error) {
+                Sentry.captureException(error);
             } finally {
                 transaction.finish();
             }
         };
     }
 
-    private async idle() {
+    private async idle(transaction: Transaction) {
+        const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
-        await SOUNDSERVICE.idle(configuration);
+        await service.idle(configuration);
     }
 
-    private async listen(server: string) {
+    private async listen(server: string, transaction: Transaction) {
+        const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
-        await SOUNDSERVICE.listen(configuration, server);
+        await service.listen(configuration, server);
     }
 
-    private async mute() {
+    private async mute(transaction: Transaction) {
+        const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
-        await SOUNDSERVICE.setMuted(configuration.muted, true);
+        await service.setMuted(configuration.muted, true);
     }
 
-    private async single(stream: Stream) {
+    private async single(stream: Stream, transaction: Transaction) {
+        const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
-        await SOUNDSERVICE.single(configuration, stream);
+        await service.single(configuration, stream);
     }
 
-    private async stream(stream: Stream) {
+    private async stream(stream: Stream, transaction: Transaction) {
+        const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
-        await SOUNDSERVICE.stream(configuration, stream);
+        await service.stream(configuration, stream);
     }
 
-    private async unmute() {
+    private async unmute(transaction: Transaction) {
+        const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
-        await SOUNDSERVICE.setMuted(configuration.muted, false);
+        await service.setMuted(configuration.muted, false);
     }
 
-    private async volume(volume: number) {
+    private async volume(volume: number, transaction: Transaction) {
+        const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
-        await SOUNDSERVICE.setVolume(configuration.volume, volume);
+        await service.setVolume(configuration.volume, volume);
     }
 
-    private async update() {
+    private async update(transaction: Transaction) {
         console.log("Update...", (new Date()).toISOString());
         await update();
     }

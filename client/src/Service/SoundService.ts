@@ -8,6 +8,7 @@ import { Configuration } from "../Configuration";
 import { ConfigurationData } from "../ConfigurationData";
 import { HOSTNAME } from "../constants";
 import { DEVICE } from "../settings";
+import { Transaction } from "@sentry/types";
 
 export class SoundService {
 
@@ -21,11 +22,15 @@ export class SoundService {
 
     protected alsaService: AlsaService;
 
-    public constructor() {
-        this.snapclientService = new SnapclientService();
-        this.snapserverService = new SnapserverService();
-        this.bluetoothService = new BluetoothService();
-        this.airplayService = new AirplayService();
+    private transaction: Transaction;
+
+    public constructor(transaction: Transaction) {
+        this.transaction = transaction;
+
+        this.snapclientService = new SnapclientService(this.transaction);
+        this.snapserverService = new SnapserverService(this.transaction);
+        this.bluetoothService = new BluetoothService(this.transaction);
+        this.airplayService = new AirplayService(this.transaction);
         this.alsaService = new AlsaService();
     }
 
@@ -236,6 +241,5 @@ export class SoundService {
 
         await Configuration.setStream(stream);
     }
-
 
 }

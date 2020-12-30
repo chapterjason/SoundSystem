@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import { SystemService } from "./SystemService";
+import { Transaction } from "@sentry/types";
 
 export class SnapserverService extends SystemService {
 
@@ -13,8 +14,8 @@ port = 1704
 chunk_ms = 20
 buffer = 1000`;
 
-    public constructor() {
-        super("snapserver");
+    public constructor(transaction: Transaction) {
+        super("snapserver", transaction);
     }
 
     public async setStream(stream: string) {
