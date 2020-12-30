@@ -9,4 +9,4 @@ echo "Build ui"
 ###################################
 rm -rf "$SCRIPT_DIRECTORY/server/public/build"
 mkdir -p "$SCRIPT_DIRECTORY/server/public/build"
-mv "$SCRIPT_DIRECTORY/ui/dist"/* "$SCRIPT_DIRECTORY/server/public/build"
+cp "$SCRIPT_DIRECTORY/ui/dist"/* "$SCRIPT_DIRECTORY/server/public/build"

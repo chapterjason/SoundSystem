@@ -8,5 +8,5 @@ echo "Build client"
 ###################################
 ###################################
 mkdir -p "$SCRIPT_DIRECTORY/server/public/client"
-mv "$SCRIPT_DIRECTORY/client/dist/client.js" "$SCRIPT_DIRECTORY/server/public/client"
+cp "$SCRIPT_DIRECTORY/client/dist/client.js" "$SCRIPT_DIRECTORY/server/public/client"
 
