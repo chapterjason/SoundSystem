@@ -1,4 +1,4 @@
-import { CommandController } from "@soundsystem/network";
+import { BidirectionalSocket, Command, CommandController, DataType } from "@soundsystem/network";
 import { Configuration } from "../Configuration";
 import { Stream } from "@soundsystem/common";
 import { update } from "../Utils/Update";
@@ -22,16 +22,21 @@ export class SoundController extends CommandController {
     }
 
     private wrap(context: TransactionContext, callback: (...args: any[]) => Promise<void>) {
-        return async (...args: any[]) => {
+        return async (data: DataType, command: Command, socket: BidirectionalSocket) => {
             const transaction = Sentry.startTransaction({
                 ...context,
                 data: {
-                    args,
+                    socket: socket.getUserData(),
+                    command: {
+                        id: command.getId(),
+                        command: command.getCommandName(),
+                        data: command.getAs(),
+                    },
                 },
             });
 
             try {
-                await callback(transaction, ...args);
+                await callback(transaction, data, command, socket);
             } catch (error) {
                 Sentry.captureException(error);
             } finally {
