@@ -8,25 +8,9 @@ module.exports = {
     module: {
         rules: [
             {
-                test: /\.(js|mjs|jsx|ts|tsx)$/,
+                test: /\.ts$/,
                 include: path.join(__dirname, "src"),
-                loader: "babel-loader",
-                options: {
-                    presets: [
-                        [
-                            "@babel/preset-env",
-                            {
-                                useBuiltIns: "usage",
-                                corejs: 3,
-                            },
-                        ],
-                        "@babel/preset-typescript",
-                    ],
-                    plugins: [
-                        "@babel/plugin-syntax-dynamic-import",
-                        "@babel/plugin-proposal-class-properties",
-                    ],
-                },
+                loader: "ts-loader",
             },
         ],
     },

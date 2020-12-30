@@ -1,6 +1,7 @@
 {
   "extends": "@tsconfig/node14/tsconfig.json",
   "compilerOptions": {
+    "target": "ES2020",
     "outDir": "./dist",
     "declarationMap": false,
     "sourceMap": true,
