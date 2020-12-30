@@ -16969,7 +16969,7 @@ class SoundController extends network_1.CommandController {
                 },
             });
             try {
-                await callback(...args, transaction);
+                await callback(transaction, ...args);
             }
             catch (error) {
                 Sentry.captureException(error);
@@ -16984,7 +16984,7 @@ class SoundController extends network_1.CommandController {
         const configuration = await Configuration_1.Configuration.load();
         await service.idle(configuration);
     }
-    async listen(server, transaction) {
+    async listen(transaction, server) {
         const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
         await service.listen(configuration, server);
@@ -16994,12 +16994,12 @@ class SoundController extends network_1.CommandController {
         const configuration = await Configuration_1.Configuration.load();
         await service.setMuted(configuration.muted, true);
     }
-    async single(stream, transaction) {
+    async single(transaction, stream) {
         const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
         await service.single(configuration, stream);
     }
-    async stream(stream, transaction) {
+    async stream(transaction, stream) {
         const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
         await service.stream(configuration, stream);
@@ -17009,12 +17009,12 @@ class SoundController extends network_1.CommandController {
         const configuration = await Configuration_1.Configuration.load();
         await service.setMuted(configuration.muted, false);
     }
-    async volume(volume, transaction) {
+    async volume(transaction, volume) {
         const service = new SoundService_1.SoundService(transaction);
         const configuration = await Configuration_1.Configuration.load();
         await service.setVolume(configuration.volume, volume);
     }
-    async update(transaction) {
+    async update() {
         console.log("Update...", (new Date()).toISOString());
         await Update_1.update();
     }

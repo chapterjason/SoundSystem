@@ -31,7 +31,7 @@ export class SoundController extends CommandController {
             });
 
             try {
-                await callback(...args, transaction);
+                await callback(transaction, ...args);
             } catch (error) {
                 Sentry.captureException(error);
             } finally {
@@ -47,7 +47,7 @@ export class SoundController extends CommandController {
         await service.idle(configuration);
     }
 
-    private async listen(server: string, transaction: Transaction) {
+    private async listen(transaction: Transaction, server: string) {
         const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
@@ -61,14 +61,14 @@ export class SoundController extends CommandController {
         await service.setMuted(configuration.muted, true);
     }
 
-    private async single(stream: Stream, transaction: Transaction) {
+    private async single(transaction: Transaction, stream: Stream) {
         const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
         await service.single(configuration, stream);
     }
 
-    private async stream(stream: Stream, transaction: Transaction) {
+    private async stream(transaction: Transaction, stream: Stream) {
         const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
@@ -82,14 +82,14 @@ export class SoundController extends CommandController {
         await service.setMuted(configuration.muted, false);
     }
 
-    private async volume(volume: number, transaction: Transaction) {
+    private async volume(transaction: Transaction, volume: number) {
         const service = new SoundService(transaction);
         const configuration = await Configuration.load();
 
         await service.setVolume(configuration.volume, volume);
     }
 
-    private async update(transaction: Transaction) {
+    private async update() {
         console.log("Update...", (new Date()).toISOString());
         await update();
     }
