@@ -16,36 +16,33 @@ export class SoundClient extends Client {
     }
 
     public async init(): Promise<void> {
-        const transaction = Sentry.startTransaction({
+        const trace = Sentry.startTransaction({
             op: "init",
             name: "Do init",
         });
 
-        console.log("---- Initialize ----");
-        const service = new SoundService(transaction);
-        const configurationData = await Configuration.load();
-        const { mode, server, stream, volume, muted } = configurationData;
+        const service = new SoundService(trace);
+        const configuration = new Configuration(trace);
+        const config = await configuration.load();
 
-        transaction.setData("configuration", configurationData);
+        const { mode, server, stream, volume, muted } = config;
+
+        trace.setData("configuration", config);
 
         if (mode === Mode.IDLE) {
-            await service.idle(Configuration.empty);
+            await service.idle();
         } else if (mode === Mode.SINGLE) {
-            await service.single(Configuration.empty, stream);
+            await service.single(stream);
         } else if (mode === Mode.STREAM) {
-            await service.stream(Configuration.empty, stream);
+            await service.stream(stream);
         } else if (mode === Mode.LISTEN) {
-            await service.listen(Configuration.empty, server);
+            await service.listen(server);
         } else if (mode === Mode.NONE) {
-            await service.idle(Configuration.empty);
+            await service.idle();
         }
 
-        await service.setMuted(Configuration.empty.muted, muted);
-        await service.setVolume(Configuration.empty.volume, volume);
-
-        console.log(await Configuration.load());
-
-        console.log("---- Initialized ----");
+        await service.setMuted(muted);
+        await service.setVolume(volume);
     }
 
 }

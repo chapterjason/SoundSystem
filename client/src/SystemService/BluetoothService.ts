@@ -1,67 +1,81 @@
 import { SystemService } from "./SystemService";
-import { EventEmitter } from "events";
-import { Transaction } from "@sentry/types";
+import { Span } from "@sentry/types";
+import * as Sentry from "@sentry/node";
 
-export class BluetoothService extends EventEmitter {
-
-    private services: SystemService[] = [];
+export class BluetoothService {
 
     private stream: SystemService;
 
     private single: SystemService;
 
-    public constructor(transaction: Transaction) {
-        super();
+    private tracing: Span;
 
-        this.services.push(...[
-            new SystemService("bthelper@hci0", transaction),
-            new SystemService("bt-agent", transaction),
-            new SystemService("bluetooth", transaction),
-            new SystemService("bluealsa", transaction),
-        ]);
+    public constructor(tracing: Span) {
+        this.tracing = tracing;
 
-        this.stream = new SystemService("bluemusic-playback", transaction);
+        this.stream = new SystemService("bluemusic-playback", tracing);
 
-        this.single = new SystemService("bluetooth-playback", transaction);
+        this.single = new SystemService("bluetooth-playback", tracing);
     }
 
     public async start() {
-        for await (const service of this.services) {
-            this.emit("beforeStart", service.getServiceName());
-            await service.start();
-            this.emit("afterStart", service.getServiceName());
+        const child = this.tracing.startChild({ op: `services:start:bluetooth` });
+
+        try {
+            const services = this.getServices(child);
+
+            child.setData("services", services.map(service => service.getServiceName()));
+
+            for await (const service of services) {
+                await service.start();
+            }
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
         }
     }
 
     public async stop() {
-        for await (const service of this.services) {
-            this.emit("beforeStop", service.getServiceName());
-            await service.stop();
-            this.emit("afterStop", service.getServiceName());
+        const child = this.tracing.startChild({ op: `services:stop:bluetooth` });
+
+        try {
+            const services = this.getServices(child);
+
+            child.setData("services", services.map(service => service.getServiceName()));
+
+            for await (const service of services) {
+                await service.stop();
+            }
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
         }
     }
 
     public async startStream() {
-        this.emit("beforeStart", this.stream.getServiceName());
         await this.stream.start();
-        this.emit("afterStart", this.stream.getServiceName());
     }
 
     public async startSingle() {
-        this.emit("beforeStart", this.single.getServiceName());
         await this.single.start();
-        this.emit("afterStart", this.single.getServiceName());
     }
 
     public async stopStream() {
-        this.emit("beforeStop", this.stream.getServiceName());
         await this.stream.stop();
-        this.emit("afterStop", this.stream.getServiceName());
     }
 
     public async stopSingle() {
-        this.emit("beforeStop", this.single.getServiceName());
         await this.single.stop();
-        this.emit("afterStop", this.single.getServiceName());
+    }
+
+    protected getServices(tracing: Span) {
+        return [
+            new SystemService("bthelper@hci0", tracing),
+            new SystemService("bt-agent", tracing),
+            new SystemService("bluetooth", tracing),
+            new SystemService("bluealsa", tracing),
+        ];
     }
 }

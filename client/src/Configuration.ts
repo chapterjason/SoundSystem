@@ -2,6 +2,8 @@ import path from "path";
 import { ConfigurationData } from "./ConfigurationData";
 import { existsSync, promises as fs } from "fs";
 import { Mode, Stream } from "@soundsystem/common";
+import { Span } from "@sentry/types";
+import * as Sentry from "@sentry/node";
 
 export class Configuration {
 
@@ -15,60 +17,149 @@ export class Configuration {
 
     private static file: string = path.join(__dirname, "client.json");
 
+    private tracing: Span;
+
+    public constructor(tracing: Span) {
+        this.tracing = tracing;
+    }
+
     public static afterSave: (config: ConfigurationData) => Promise<void> = async () => {
     };
 
-    public static async reset(): Promise<void> {
-        await this.save(this.empty);
-    }
+    public async reset(): Promise<void> {
+        const child = this.tracing.startChild({ op: "configuration:reset" });
 
-    public static async load(): Promise<ConfigurationData> {
-        if (!existsSync(this.file)) {
-            await this.reset();
+        try {
+            return await this.save(Configuration.empty);
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
         }
-
-        const buffer = await fs.readFile(this.file);
-        return JSON.parse(buffer.toString());
     }
 
-    public static async save(config: ConfigurationData) {
-        await fs.writeFile(this.file, JSON.stringify(config, null, "  "));
-        await this.afterSave({ ...config });
+    public async load(): Promise<ConfigurationData> {
+        const child = this.tracing.startChild({ op: "configuration:load" });
+
+        try {
+            if (!existsSync(Configuration.file)) {
+                await this.reset();
+            }
+
+            const buffer = await fs.readFile(Configuration.file);
+            const text = buffer.toString();
+
+            return JSON.parse(text) as ConfigurationData;
+        } catch (error) {
+            Sentry.captureException(error);
+            throw error;
+        } finally {
+            child.finish();
+        }
     }
 
-    public static async setMode(mode: Mode) {
-        const config = await this.load();
-        config.mode = mode;
-        await this.save(config);
+    public async save(config: ConfigurationData) {
+        const child = this.tracing.startChild({ op: "configuration:save" });
+
+        try {
+            const text = JSON.stringify(config, null, "  ");
+
+            await fs.writeFile(Configuration.file, text);
+            await Configuration.afterSave({ ...config });
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
+        }
     }
 
-    public static async setStream(stream: Stream) {
-        const config = await this.load();
-        config.stream = stream;
-        await this.save(config);
+    public async setMode(mode: Mode) {
+        const child = this.tracing.startChild({ op: "configuration:set:mode" });
+
+        child.setData("mode", mode);
+
+        try {
+            const config = await this.load();
+
+            config.mode = mode;
+
+            await this.save(config);
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
+        }
     }
 
-    public static async getVolume(): Promise<number> {
-        const config = await this.load();
+    public async setStream(stream: Stream) {
+        const child = this.tracing.startChild({ op: "configuration:set:stream" });
 
-        return config.volume;
+        child.setData("stream", stream);
+
+        try {
+            const config = await this.load();
+
+            config.stream = stream;
+
+            await this.save(config);
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
+        }
     }
 
-    public static async setVolume(volume: number) {
-        const config = await this.load();
-        config.volume = volume;
-        await this.save(config);
+    public async setVolume(volume: number) {
+        const child = this.tracing.startChild({ op: "configuration:set:volume" });
+
+        child.setData("volume", volume);
+
+        try {
+            const config = await this.load();
+
+            config.volume = volume;
+
+            await this.save(config);
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
+        }
     }
 
-    public static async setServer(server: string) {
-        const config = await this.load();
-        config.server = server;
-        await this.save(config);
+    public async setServer(server: string) {
+        const child = this.tracing.startChild({ op: "configuration:set:server" });
+
+        child.setData("server", server);
+
+        try {
+            const config = await this.load();
+
+            config.server = server;
+
+            await this.save(config);
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
+        }
     }
 
-    public static async setMuted(muted: boolean): Promise<void> {
-        const config = await this.load();
-        config.muted = muted;
-        await this.save(config);
+    public async setMuted(muted: boolean): Promise<void> {
+        const child = this.tracing.startChild({ op: "configuration:set:muted" });
+
+        child.setData("muted", muted);
+
+        try {
+            const config = await this.load();
+
+            config.muted = muted;
+
+            await this.save(config);
+        } catch (error) {
+            Sentry.captureException(error);
+        } finally {
+            child.finish();
+        }
     }
 }

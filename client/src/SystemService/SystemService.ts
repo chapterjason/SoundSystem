@@ -1,16 +1,16 @@
 import { mustRun } from "../Utils/MustRun";
-import { Transaction } from "@sentry/types";
+import { Span } from "@sentry/types";
 import * as Sentry from "@sentry/node";
 
 export class SystemService {
 
+    protected tracing: Span;
+
     private readonly serviceName: string;
 
-    private transaction: Transaction;
-
-    public constructor(serviceName: string, transaction: Transaction) {
+    public constructor(serviceName: string, tracing: Span) {
         this.serviceName = serviceName;
-        this.transaction = transaction;
+        this.tracing = tracing;
     }
 
     public getServiceName() {
@@ -18,17 +18,11 @@ export class SystemService {
     }
 
     public async start() {
-        const child = this.transaction.startChild({ op: "service:start" });
+        const child = this.tracing.startChild({ op: `service:start:${this.serviceName}` });
         child.setData("service", this.serviceName);
 
         try {
-            console.log(`[Service][${this.serviceName}][Start]: ${this.serviceName}`);
-
-            const process = await mustRun(["sudo", "systemctl", "start", this.serviceName]);
-
-            console.log(`[Service][${this.serviceName}][Started]: ${this.serviceName}`);
-
-            return process;
+            return await mustRun(["sudo", "systemctl", "start", this.serviceName]);
         } catch (error) {
             Sentry.captureException(error);
         } finally {
@@ -37,22 +31,16 @@ export class SystemService {
     }
 
     public async stop() {
-        const child = this.transaction.startChild({ op: "service:stop" });
+        const child = this.tracing.startChild({ op: `service:stop:${this.serviceName}` });
         child.setData("service", this.serviceName);
 
         try {
-            console.log(`[Service][${this.serviceName}][Stop]: ${this.serviceName}`);
-
-            const result = await Promise.race([
+            return await Promise.race([
                 mustRun(["sudo", "systemctl", "stop", this.serviceName]),
                 new Promise((resolve) => {
                     setTimeout(resolve, 5000);
                 }),
             ]);
-
-            console.log(`[Service][${this.serviceName}][Stopped]: ${this.serviceName}`);
-
-            return result;
         } catch (error) {
             Sentry.captureException(error);
         } finally {

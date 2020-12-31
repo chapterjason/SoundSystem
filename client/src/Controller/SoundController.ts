@@ -3,7 +3,7 @@ import { Configuration } from "../Configuration";
 import { Stream } from "@soundsystem/common";
 import { update } from "../Utils/Update";
 import * as Sentry from "@sentry/node";
-import { Transaction, TransactionContext } from "@sentry/types";
+import { Span, TransactionContext } from "@sentry/types";
 import { SoundService } from "../Service/SoundService";
 
 export class SoundController extends CommandController {
@@ -23,7 +23,7 @@ export class SoundController extends CommandController {
 
     private wrap(context: TransactionContext, callback: (...args: any[]) => Promise<void>) {
         return async (data: DataType, command: Command, socket: BidirectionalSocket) => {
-            const transaction = Sentry.startTransaction({
+            const tracing = Sentry.startTransaction({
                 ...context,
                 data: {
                     command: {
@@ -35,62 +35,55 @@ export class SoundController extends CommandController {
             });
 
             try {
-                await callback(transaction, data, command, socket);
+                await callback(tracing, data, command, socket);
             } catch (error) {
                 Sentry.captureException(error);
             } finally {
-                transaction.finish();
+                tracing.finish();
             }
         };
     }
 
-    private async idle(transaction: Transaction) {
-        const service = new SoundService(transaction);
-        const configuration = await Configuration.load();
+    private async idle(tracing: Span) {
+        const service = new SoundService(tracing);
 
-        await service.idle(configuration);
+        await service.idle();
     }
 
-    private async listen(transaction: Transaction, server: string) {
-        const service = new SoundService(transaction);
-        const configuration = await Configuration.load();
+    private async listen(tracing: Span, server: string) {
+        const service = new SoundService(tracing);
 
-        await service.listen(configuration, server);
+        await service.listen(server);
     }
 
-    private async mute(transaction: Transaction) {
-        const service = new SoundService(transaction);
-        const configuration = await Configuration.load();
+    private async mute(tracing: Span) {
+        const service = new SoundService(tracing);
 
-        await service.setMuted(configuration.muted, true);
+        await service.setMuted(true);
     }
 
-    private async single(transaction: Transaction, stream: Stream) {
-        const service = new SoundService(transaction);
-        const configuration = await Configuration.load();
+    private async single(tracing: Span, stream: Stream) {
+        const service = new SoundService(tracing);
 
-        await service.single(configuration, stream);
+        await service.single(stream);
     }
 
-    private async stream(transaction: Transaction, stream: Stream) {
-        const service = new SoundService(transaction);
-        const configuration = await Configuration.load();
+    private async stream(tracing: Span, stream: Stream) {
+        const service = new SoundService(tracing);
 
-        await service.stream(configuration, stream);
+        await service.stream(stream);
     }
 
-    private async unmute(transaction: Transaction) {
-        const service = new SoundService(transaction);
-        const configuration = await Configuration.load();
+    private async unmute(tracing: Span) {
+        const service = new SoundService(tracing);
 
-        await service.setMuted(configuration.muted, false);
+        await service.setMuted(false);
     }
 
-    private async volume(transaction: Transaction, volume: number) {
-        const service = new SoundService(transaction);
-        const configuration = await Configuration.load();
+    private async volume(tracing: Span, volume: number) {
+        const service = new SoundService(tracing);
 
-        await service.setVolume(configuration.volume, volume);
+        await service.setVolume(volume);
     }
 
     private async update() {

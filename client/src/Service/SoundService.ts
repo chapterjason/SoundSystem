@@ -8,7 +8,7 @@ import { Configuration } from "../Configuration";
 import { ConfigurationData } from "../ConfigurationData";
 import { HOSTNAME } from "../constants";
 import { DEVICE } from "../settings";
-import { Transaction } from "@sentry/types";
+import { Span } from "@sentry/types";
 
 export class SoundService {
 
@@ -22,70 +22,69 @@ export class SoundService {
 
     protected alsaService: AlsaService;
 
-    private transaction: Transaction;
+    private tracing: Span;
 
-    public constructor(transaction: Transaction) {
-        this.transaction = transaction;
+    private configuration: Configuration;
 
-        this.snapclientService = new SnapclientService(this.transaction);
-        this.snapserverService = new SnapserverService(this.transaction);
-        this.bluetoothService = new BluetoothService(this.transaction);
-        this.airplayService = new AirplayService(this.transaction);
-        this.alsaService = new AlsaService();
+    public constructor(tracing: Span) {
+        this.tracing = tracing;
+
+        this.snapclientService = new SnapclientService(this.tracing);
+        this.snapserverService = new SnapserverService(this.tracing);
+        this.bluetoothService = new BluetoothService(this.tracing);
+        this.airplayService = new AirplayService(this.tracing);
+        this.alsaService = new AlsaService(this.tracing);
+        this.configuration = new Configuration(this.tracing);
     }
 
-    public async listen(configuration: ConfigurationData, server: string) {
-        console.log("<-- [Listen]", server);
+    public async listen(server: string) {
+        const config = await this.configuration.load();
 
-        // Stop stream
-        if (configuration.mode === Mode.STREAM) {
-            if (configuration.stream === Stream.BLUETOOTH) {
+        if (config.mode === Mode.STREAM) {
+            if (config.stream === Stream.BLUETOOTH) {
                 await this.disableMultipleBluetooth();
             }
 
             await this.snapserverService.stop();
 
             await this.setAndListen(server);
-        } else if (configuration.mode === Mode.SINGLE) {
-            if (configuration.stream === Stream.BLUETOOTH) {
+        } else if (config.mode === Mode.SINGLE) {
+            if (config.stream === Stream.BLUETOOTH) {
                 await this.stopSingleBluetooth();
-            } else if (configuration.stream === Stream.AIRPLAY) {
+            } else if (config.stream === Stream.AIRPLAY) {
                 await this.airplayService.stop();
             }
 
             await this.setAndListen(server);
-        } else if (configuration.mode === Mode.LISTEN) {
-            if (configuration.server !== server) {
+        } else if (config.mode === Mode.LISTEN) {
+            if (config.server !== server) {
                 await this.setAndListen(server);
             }
-        } else if (configuration.mode === Mode.IDLE || configuration.mode === Mode.NONE) {
+        } else if (config.mode === Mode.IDLE || config.mode === Mode.NONE) {
             await this.setAndListen(server);
         }
 
-        await Configuration.setMode(Mode.LISTEN);
-
-        console.log("--> [Listen]", server);
+        await this.configuration.setMode(Mode.LISTEN);
     }
 
-    public async stream(configuration: ConfigurationData, stream: Stream) {
-        console.log("<-- [Stream]", stream);
+    public async stream(stream: Stream) {
+        const config = await this.configuration.load();
 
-        if (configuration.mode === Mode.LISTEN) { // Stop listen if listen
+        if (config.mode === Mode.LISTEN) {
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
-        } else if (configuration.mode === Mode.SINGLE) { // If single
-            if (configuration.stream === Stream.BLUETOOTH) {
+        } else if (config.mode === Mode.SINGLE) {
+            if (config.stream === Stream.BLUETOOTH) {
                 await this.stopSingleBluetooth();
-            } else if (configuration.stream === Stream.AIRPLAY) {
+            } else if (config.stream === Stream.AIRPLAY) {
                 await this.airplayService.stop();
             }
 
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
-        } else if (configuration.mode === Mode.STREAM) { // If already streaming
-            if (configuration.stream !== stream) { // If stream type is another
-                // If current was bluetooth, stop bluetooth
-                if (configuration.stream === Stream.BLUETOOTH) {
+        } else if (config.mode === Mode.STREAM) {
+            if (config.stream !== stream) {
+                if (config.stream === Stream.BLUETOOTH) {
                     await this.disableMultipleBluetooth();
                 }
 
@@ -93,44 +92,41 @@ export class SoundService {
 
                 await this.setAndStart(stream);
             }
-        } else if (configuration.mode === Mode.IDLE || configuration.mode === Mode.NONE) {
+        } else if (config.mode === Mode.IDLE || config.mode === Mode.NONE) {
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
         }
 
-        await Configuration.setMode(Mode.STREAM);
-
-        console.log("--> [Stream]", stream);
+        await this.configuration.setMode(Mode.STREAM);
     }
 
-    public async idle(configuration: ConfigurationData) {
-        console.log("<-- [Idle]");
+    public async idle() {
+        const config = await this.configuration.load();
 
-        if (configuration.mode !== Mode.IDLE) {
-            if (configuration.mode === Mode.LISTEN) {
+        if (config.mode !== Mode.IDLE) {
+            if (config.mode === Mode.LISTEN) {
                 await this.snapclientService.stop();
-                await Configuration.setServer("");
-            } else if (configuration.mode === Mode.SINGLE) {
-                if (configuration.stream === Stream.AIRPLAY) {
+                await this.configuration.setServer("");
+            } else if (config.mode === Mode.SINGLE) {
+                if (config.stream === Stream.AIRPLAY) {
                     await this.airplayService.stop();
-                } else if (configuration.stream === Stream.BLUETOOTH) {
+                } else if (config.stream === Stream.BLUETOOTH) {
                     await this.stopSingleBluetooth();
                 }
-            } else if (configuration.mode === Mode.STREAM) {
+            } else if (config.mode === Mode.STREAM) {
                 await this.snapclientService.stop();
                 await this.snapserverService.stop();
-                await Configuration.setServer("");
-                await Configuration.setStream(Stream.NONE);
 
-                if (configuration.stream === Stream.BLUETOOTH) {
+                if (config.stream === Stream.BLUETOOTH) {
                     await this.disableMultipleBluetooth();
                 }
+
+                await this.configuration.setServer("");
+                await this.configuration.setStream(Stream.NONE);
             }
         }
 
-        await Configuration.setMode(Mode.IDLE);
-
-        console.log("--> [Idle]");
+        await this.configuration.setMode(Mode.IDLE);
     }
 
     public async disableMultipleBluetooth() {
@@ -149,48 +145,48 @@ export class SoundService {
         await this.snapserverService.setStream(`airplay:///shairport-sync?name=Airplay&devicename=${HOSTNAME}`);
     }
 
-    public async setMuted(previousMuted: boolean, muted: boolean): Promise<void> {
-        console.log("--> [Muted]", muted);
-        if (previousMuted !== muted) {
+    public async setMuted(muted: boolean): Promise<void> {
+        const config = await this.configuration.load();
+
+        if (config.muted !== muted) {
             if (muted) {
                 await this.alsaService.mute(DEVICE());
             } else {
                 await this.alsaService.unmute(DEVICE());
             }
 
-            await Configuration.setMuted(muted);
+            await this.configuration.setMuted(muted);
         }
-        console.log("<-- [Muted]", muted);
     }
 
-    public async setVolume(previousVolume: number, volume: number): Promise<void> {
-        console.log("<-- [Volume]", volume);
-        if (previousVolume !== volume) {
+    public async setVolume(volume: number): Promise<void> {
+        const config = await this.configuration.load();
+
+        if (config.volume !== volume) {
             await this.alsaService.setVolume(volume, DEVICE());
-            await Configuration.setVolume(volume);
+            await this.configuration.setVolume(volume);
         }
-        console.log("--> [Volume]", volume);
     }
 
-    public async single(configuration: ConfigurationData, stream: Stream): Promise<void> {
-        console.log("<-- [Single]", stream);
+    public async single(stream: Stream): Promise<void> {
+        const config = await this.configuration.load();
 
-        if (configuration.mode === Mode.LISTEN) {
+        if (config.mode === Mode.LISTEN) {
             await this.snapclientService.stop();
 
             await this.setAndStartSingle(stream);
-        } else if (configuration.mode === Mode.SINGLE) {
-            if (configuration.stream !== stream) {
-                if (configuration.stream === Stream.AIRPLAY) {
+        } else if (config.mode === Mode.SINGLE) {
+            if (config.stream !== stream) {
+                if (config.stream === Stream.AIRPLAY) {
                     await this.airplayService.stop();
-                } else if (configuration.stream === Stream.BLUETOOTH) {
+                } else if (config.stream === Stream.BLUETOOTH) {
                     await this.stopSingleBluetooth();
                 }
 
                 await this.setAndStartSingle(stream);
             }
-        } else if (configuration.mode === Mode.STREAM) {
-            if (configuration.stream === Stream.BLUETOOTH) {
+        } else if (config.mode === Mode.STREAM) {
+            if (config.stream === Stream.BLUETOOTH) {
                 await this.disableMultipleBluetooth();
             }
 
@@ -198,20 +194,18 @@ export class SoundService {
             await this.snapserverService.stop();
 
             await this.setAndStartSingle(stream);
-        } else if (configuration.mode === Mode.IDLE || configuration.mode === Mode.NONE) {
+        } else if (config.mode === Mode.IDLE || config.mode === Mode.NONE) {
             await this.setAndStartSingle(stream);
         }
 
-        await Configuration.setMode(Mode.SINGLE);
-
-        console.log("--> [Single]", stream);
+        await this.configuration.setMode(Mode.SINGLE);
     }
 
     protected async setAndListen(server: string): Promise<void> {
         await this.snapclientService.stop();
         await this.snapclientService.setServer(server);
         await this.snapclientService.start();
-        await Configuration.setServer(server);
+        await this.configuration.setServer(server);
     }
 
     protected async setAndStart(stream: Stream): Promise<void> {
@@ -221,9 +215,10 @@ export class SoundService {
         } else if (stream === Stream.BLUETOOTH) {
             await this.startStreamBluetooth();
         }
-        await Configuration.setStream(stream);
 
         await this.snapserverService.start();
+
+        await this.configuration.setStream(stream);
     }
 
     protected async stopSingleBluetooth(): Promise<void> {
@@ -239,7 +234,7 @@ export class SoundService {
             await this.bluetoothService.startSingle();
         }
 
-        await Configuration.setStream(stream);
+        await this.configuration.setStream(stream);
     }
 
 }

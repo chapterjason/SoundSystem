@@ -13428,6 +13428,219 @@ exports.default = parseProxyResponse;
 
 /***/ }),
 
+/***/ 9647:
+/***/ ((module) => {
+
+const { hasOwnProperty } = Object.prototype
+
+const eol = typeof process !== 'undefined' &&
+  process.platform === 'win32' ? '\r\n' : '\n'
+
+const encode = (obj, opt) => {
+  const children = []
+  let out = ''
+
+  if (typeof opt === 'string') {
+    opt = {
+      section: opt,
+      whitespace: false,
+    }
+  } else {
+    opt = opt || Object.create(null)
+    opt.whitespace = opt.whitespace === true
+  }
+
+  const separator = opt.whitespace ? ' = ' : '='
+
+  for (const k of Object.keys(obj)) {
+    const val = obj[k]
+    if (val && Array.isArray(val)) {
+      for (const item of val)
+        out += safe(k + '[]') + separator + safe(item) + '\n'
+    } else if (val && typeof val === 'object')
+      children.push(k)
+    else
+      out += safe(k) + separator + safe(val) + eol
+  }
+
+  if (opt.section && out.length)
+    out = '[' + safe(opt.section) + ']' + eol + out
+
+  for (const k of children) {
+    const nk = dotSplit(k).join('\\.')
+    const section = (opt.section ? opt.section + '.' : '') + nk
+    const { whitespace } = opt
+    const child = encode(obj[k], {
+      section,
+      whitespace,
+    })
+    if (out.length && child.length)
+      out += eol
+
+    out += child
+  }
+
+  return out
+}
+
+const dotSplit = str =>
+  str.replace(/\1/g, '\u0002LITERAL\\1LITERAL\u0002')
+    .replace(/\\\./g, '\u0001')
+    .split(/\./)
+    .map(part =>
+      part.replace(/\1/g, '\\.')
+        .replace(/\2LITERAL\\1LITERAL\2/g, '\u0001'))
+
+const decode = str => {
+  const out = Object.create(null)
+  let p = out
+  let section = null
+  //          section     |key      = value
+  const re = /^\[([^\]]*)\]$|^([^=]+)(=(.*))?$/i
+  const lines = str.split(/[\r\n]+/g)
+
+  for (const line of lines) {
+    if (!line || line.match(/^\s*[;#]/))
+      continue
+    const match = line.match(re)
+    if (!match)
+      continue
+    if (match[1] !== undefined) {
+      section = unsafe(match[1])
+      if (section === '__proto__') {
+        // not allowed
+        // keep parsing the section, but don't attach it.
+        p = Object.create(null)
+        continue
+      }
+      p = out[section] = out[section] || Object.create(null)
+      continue
+    }
+    const keyRaw = unsafe(match[2])
+    const isArray = keyRaw.length > 2 && keyRaw.slice(-2) === '[]'
+    const key = isArray ? keyRaw.slice(0, -2) : keyRaw
+    if (key === '__proto__')
+      continue
+    const valueRaw = match[3] ? unsafe(match[4]) : true
+    const value = valueRaw === 'true' ||
+      valueRaw === 'false' ||
+      valueRaw === 'null' ? JSON.parse(valueRaw)
+      : valueRaw
+
+    // Convert keys with '[]' suffix to an array
+    if (isArray) {
+      if (!hasOwnProperty.call(p, key))
+        p[key] = []
+      else if (!Array.isArray(p[key]))
+        p[key] = [p[key]]
+    }
+
+    // safeguard against resetting a previously defined
+    // array by accidentally forgetting the brackets
+    if (Array.isArray(p[key]))
+      p[key].push(value)
+    else
+      p[key] = value
+  }
+
+  // {a:{y:1},"a.b":{x:2}} --> {a:{y:1,b:{x:2}}}
+  // use a filter to return the keys that have to be deleted.
+  const remove = []
+  for (const k of Object.keys(out)) {
+    if (!hasOwnProperty.call(out, k) ||
+        typeof out[k] !== 'object' ||
+        Array.isArray(out[k]))
+      continue
+
+    // see if the parent section is also an object.
+    // if so, add it to that, and mark this one for deletion
+    const parts = dotSplit(k)
+    let p = out
+    const l = parts.pop()
+    const nl = l.replace(/\\\./g, '.')
+    for (const part of parts) {
+      if (part === '__proto__')
+        continue
+      if (!hasOwnProperty.call(p, part) || typeof p[part] !== 'object')
+        p[part] = Object.create(null)
+      p = p[part]
+    }
+    if (p === out && nl === l)
+      continue
+
+    p[nl] = out[k]
+    remove.push(k)
+  }
+  for (const del of remove)
+    delete out[del]
+
+  return out
+}
+
+const isQuoted = val =>
+  (val.charAt(0) === '"' && val.slice(-1) === '"') ||
+    (val.charAt(0) === "'" && val.slice(-1) === "'")
+
+const safe = val =>
+  (typeof val !== 'string' ||
+    val.match(/[=\r\n]/) ||
+    val.match(/^\[/) ||
+    (val.length > 1 &&
+     isQuoted(val)) ||
+    val !== val.trim())
+    ? JSON.stringify(val)
+    : val.replace(/;/g, '\\;').replace(/#/g, '\\#')
+
+const unsafe = (val, doUnesc) => {
+  val = (val || '').trim()
+  if (isQuoted(val)) {
+    // remove the single quotes before calling JSON.parse
+    if (val.charAt(0) === "'")
+      val = val.substr(1, val.length - 2)
+
+    try {
+      val = JSON.parse(val)
+    } catch (_) {}
+  } else {
+    // walk the val to find the first not-escaped ; character
+    let esc = false
+    let unesc = ''
+    for (let i = 0, l = val.length; i < l; i++) {
+      const c = val.charAt(i)
+      if (esc) {
+        if ('\\;#'.indexOf(c) !== -1)
+          unesc += c
+        else
+          unesc += '\\' + c
+
+        esc = false
+      } else if (';#'.indexOf(c) !== -1)
+        break
+      else if (c === '\\')
+        esc = true
+      else
+        unesc += c
+    }
+    if (esc)
+      unesc += '\\'
+
+    return unesc.trim()
+  }
+  return val
+}
+
+module.exports = {
+  parse: decode,
+  decode,
+  stringify: encode,
+  encode,
+  safe,
+  unsafe,
+}
+
+
+/***/ }),
+
 /***/ 927:
 /***/ ((module) => {
 
@@ -16875,49 +17088,129 @@ const tslib_1 = __webpack_require__(655);
 const path_1 = tslib_1.__importDefault(__webpack_require__(5622));
 const fs_1 = __webpack_require__(5747);
 const common_1 = __webpack_require__(194);
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class Configuration {
-    static async reset() {
-        await this.save(this.empty);
+    constructor(tracing) {
+        this.tracing = tracing;
     }
-    static async load() {
-        if (!fs_1.existsSync(this.file)) {
-            await this.reset();
+    async reset() {
+        const child = this.tracing.startChild({ op: "configuration:reset" });
+        try {
+            return await this.save(Configuration.empty);
         }
-        const buffer = await fs_1.promises.readFile(this.file);
-        return JSON.parse(buffer.toString());
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
-    static async save(config) {
-        await fs_1.promises.writeFile(this.file, JSON.stringify(config, null, "  "));
-        await this.afterSave({ ...config });
+    async load() {
+        const child = this.tracing.startChild({ op: "configuration:load" });
+        try {
+            if (!fs_1.existsSync(Configuration.file)) {
+                await this.reset();
+            }
+            const buffer = await fs_1.promises.readFile(Configuration.file);
+            const text = buffer.toString();
+            return JSON.parse(text);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+            throw error;
+        }
+        finally {
+            child.finish();
+        }
     }
-    static async setMode(mode) {
-        const config = await this.load();
-        config.mode = mode;
-        await this.save(config);
+    async save(config) {
+        const child = this.tracing.startChild({ op: "configuration:save" });
+        try {
+            const text = JSON.stringify(config, null, "  ");
+            await fs_1.promises.writeFile(Configuration.file, text);
+            await Configuration.afterSave({ ...config });
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
-    static async setStream(stream) {
-        const config = await this.load();
-        config.stream = stream;
-        await this.save(config);
+    async setMode(mode) {
+        const child = this.tracing.startChild({ op: "configuration:set:mode" });
+        child.setData("mode", mode);
+        try {
+            const config = await this.load();
+            config.mode = mode;
+            await this.save(config);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
-    static async getVolume() {
-        const config = await this.load();
-        return config.volume;
+    async setStream(stream) {
+        const child = this.tracing.startChild({ op: "configuration:set:stream" });
+        child.setData("stream", stream);
+        try {
+            const config = await this.load();
+            config.stream = stream;
+            await this.save(config);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
-    static async setVolume(volume) {
-        const config = await this.load();
-        config.volume = volume;
-        await this.save(config);
+    async setVolume(volume) {
+        const child = this.tracing.startChild({ op: "configuration:set:volume" });
+        child.setData("volume", volume);
+        try {
+            const config = await this.load();
+            config.volume = volume;
+            await this.save(config);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
-    static async setServer(server) {
-        const config = await this.load();
-        config.server = server;
-        await this.save(config);
+    async setServer(server) {
+        const child = this.tracing.startChild({ op: "configuration:set:server" });
+        child.setData("server", server);
+        try {
+            const config = await this.load();
+            config.server = server;
+            await this.save(config);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
-    static async setMuted(muted) {
-        const config = await this.load();
-        config.muted = muted;
-        await this.save(config);
+    async setMuted(muted) {
+        const child = this.tracing.startChild({ op: "configuration:set:muted" });
+        child.setData("muted", muted);
+        try {
+            const config = await this.load();
+            config.muted = muted;
+            await this.save(config);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
 }
 exports.Configuration = Configuration;
@@ -16944,7 +17237,6 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SoundController = void 0;
 const tslib_1 = __webpack_require__(655);
 const network_1 = __webpack_require__(8152);
-const Configuration_1 = __webpack_require__(991);
 const Update_1 = __webpack_require__(5133);
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 const SoundService_1 = __webpack_require__(1096);
@@ -16962,7 +17254,7 @@ class SoundController extends network_1.CommandController {
     }
     wrap(context, callback) {
         return async (data, command, socket) => {
-            const transaction = Sentry.startTransaction({
+            const tracing = Sentry.startTransaction({
                 ...context,
                 data: {
                     command: {
@@ -16973,50 +17265,43 @@ class SoundController extends network_1.CommandController {
                 },
             });
             try {
-                await callback(transaction, data, command, socket);
+                await callback(tracing, data, command, socket);
             }
             catch (error) {
                 Sentry.captureException(error);
             }
             finally {
-                transaction.finish();
+                tracing.finish();
             }
         };
     }
-    async idle(transaction) {
-        const service = new SoundService_1.SoundService(transaction);
-        const configuration = await Configuration_1.Configuration.load();
-        await service.idle(configuration);
+    async idle(tracing) {
+        const service = new SoundService_1.SoundService(tracing);
+        await service.idle();
     }
-    async listen(transaction, server) {
-        const service = new SoundService_1.SoundService(transaction);
-        const configuration = await Configuration_1.Configuration.load();
-        await service.listen(configuration, server);
+    async listen(tracing, server) {
+        const service = new SoundService_1.SoundService(tracing);
+        await service.listen(server);
     }
-    async mute(transaction) {
-        const service = new SoundService_1.SoundService(transaction);
-        const configuration = await Configuration_1.Configuration.load();
-        await service.setMuted(configuration.muted, true);
+    async mute(tracing) {
+        const service = new SoundService_1.SoundService(tracing);
+        await service.setMuted(true);
     }
-    async single(transaction, stream) {
-        const service = new SoundService_1.SoundService(transaction);
-        const configuration = await Configuration_1.Configuration.load();
-        await service.single(configuration, stream);
+    async single(tracing, stream) {
+        const service = new SoundService_1.SoundService(tracing);
+        await service.single(stream);
     }
-    async stream(transaction, stream) {
-        const service = new SoundService_1.SoundService(transaction);
-        const configuration = await Configuration_1.Configuration.load();
-        await service.stream(configuration, stream);
+    async stream(tracing, stream) {
+        const service = new SoundService_1.SoundService(tracing);
+        await service.stream(stream);
     }
-    async unmute(transaction) {
-        const service = new SoundService_1.SoundService(transaction);
-        const configuration = await Configuration_1.Configuration.load();
-        await service.setMuted(configuration.muted, false);
+    async unmute(tracing) {
+        const service = new SoundService_1.SoundService(tracing);
+        await service.setMuted(false);
     }
-    async volume(transaction, volume) {
-        const service = new SoundService_1.SoundService(transaction);
-        const configuration = await Configuration_1.Configuration.load();
-        await service.setVolume(configuration.volume, volume);
+    async volume(tracing, volume) {
+        const service = new SoundService_1.SoundService(tracing);
+        await service.setVolume(volume);
     }
     async update() {
         console.log("Update...", (new Date()).toISOString());
@@ -17049,34 +17334,32 @@ class SoundClient extends network_1.Client {
         this.queue.register(new SoundController_1.SoundController());
     }
     async init() {
-        const transaction = Sentry.startTransaction({
+        const trace = Sentry.startTransaction({
             op: "init",
             name: "Do init",
         });
-        console.log("---- Initialize ----");
-        const service = new SoundService_1.SoundService(transaction);
-        const configurationData = await Configuration_1.Configuration.load();
-        const { mode, server, stream, volume, muted } = configurationData;
-        transaction.setData("configuration", configurationData);
+        const service = new SoundService_1.SoundService(trace);
+        const configuration = new Configuration_1.Configuration(trace);
+        const config = await configuration.load();
+        const { mode, server, stream, volume, muted } = config;
+        trace.setData("configuration", config);
         if (mode === common_1.Mode.IDLE) {
-            await service.idle(Configuration_1.Configuration.empty);
+            await service.idle();
         }
         else if (mode === common_1.Mode.SINGLE) {
-            await service.single(Configuration_1.Configuration.empty, stream);
+            await service.single(stream);
         }
         else if (mode === common_1.Mode.STREAM) {
-            await service.stream(Configuration_1.Configuration.empty, stream);
+            await service.stream(stream);
         }
         else if (mode === common_1.Mode.LISTEN) {
-            await service.listen(Configuration_1.Configuration.empty, server);
+            await service.listen(server);
         }
         else if (mode === common_1.Mode.NONE) {
-            await service.idle(Configuration_1.Configuration.empty);
+            await service.idle();
         }
-        await service.setMuted(Configuration_1.Configuration.empty.muted, muted);
-        await service.setVolume(Configuration_1.Configuration.empty.volume, volume);
-        console.log(await Configuration_1.Configuration.load());
-        console.log("---- Initialized ----");
+        await service.setMuted(muted);
+        await service.setVolume(volume);
     }
 }
 exports.SoundClient = SoundClient;
@@ -17101,104 +17384,100 @@ const Configuration_1 = __webpack_require__(991);
 const constants_1 = __webpack_require__(4780);
 const settings_1 = __webpack_require__(923);
 class SoundService {
-    constructor(transaction) {
-        this.transaction = transaction;
-        this.snapclientService = new SnapclientService_1.SnapclientService(this.transaction);
-        this.snapserverService = new SnapserverService_1.SnapserverService(this.transaction);
-        this.bluetoothService = new BluetoothService_1.BluetoothService(this.transaction);
-        this.airplayService = new AirplayService_1.AirplayService(this.transaction);
-        this.alsaService = new AlsaService_1.AlsaService();
+    constructor(tracing) {
+        this.tracing = tracing;
+        this.snapclientService = new SnapclientService_1.SnapclientService(this.tracing);
+        this.snapserverService = new SnapserverService_1.SnapserverService(this.tracing);
+        this.bluetoothService = new BluetoothService_1.BluetoothService(this.tracing);
+        this.airplayService = new AirplayService_1.AirplayService(this.tracing);
+        this.alsaService = new AlsaService_1.AlsaService(this.tracing);
+        this.configuration = new Configuration_1.Configuration(this.tracing);
     }
-    async listen(configuration, server) {
-        console.log("<-- [Listen]", server);
-        // Stop stream
-        if (configuration.mode === common_1.Mode.STREAM) {
-            if (configuration.stream === common_1.Stream.BLUETOOTH) {
+    async listen(server) {
+        const config = await this.configuration.load();
+        if (config.mode === common_1.Mode.STREAM) {
+            if (config.stream === common_1.Stream.BLUETOOTH) {
                 await this.disableMultipleBluetooth();
             }
             await this.snapserverService.stop();
             await this.setAndListen(server);
         }
-        else if (configuration.mode === common_1.Mode.SINGLE) {
-            if (configuration.stream === common_1.Stream.BLUETOOTH) {
+        else if (config.mode === common_1.Mode.SINGLE) {
+            if (config.stream === common_1.Stream.BLUETOOTH) {
                 await this.stopSingleBluetooth();
             }
-            else if (configuration.stream === common_1.Stream.AIRPLAY) {
+            else if (config.stream === common_1.Stream.AIRPLAY) {
                 await this.airplayService.stop();
             }
             await this.setAndListen(server);
         }
-        else if (configuration.mode === common_1.Mode.LISTEN) {
-            if (configuration.server !== server) {
+        else if (config.mode === common_1.Mode.LISTEN) {
+            if (config.server !== server) {
                 await this.setAndListen(server);
             }
         }
-        else if (configuration.mode === common_1.Mode.IDLE || configuration.mode === common_1.Mode.NONE) {
+        else if (config.mode === common_1.Mode.IDLE || config.mode === common_1.Mode.NONE) {
             await this.setAndListen(server);
         }
-        await Configuration_1.Configuration.setMode(common_1.Mode.LISTEN);
-        console.log("--> [Listen]", server);
+        await this.configuration.setMode(common_1.Mode.LISTEN);
     }
-    async stream(configuration, stream) {
-        console.log("<-- [Stream]", stream);
-        if (configuration.mode === common_1.Mode.LISTEN) { // Stop listen if listen
+    async stream(stream) {
+        const config = await this.configuration.load();
+        if (config.mode === common_1.Mode.LISTEN) {
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
         }
-        else if (configuration.mode === common_1.Mode.SINGLE) { // If single
-            if (configuration.stream === common_1.Stream.BLUETOOTH) {
+        else if (config.mode === common_1.Mode.SINGLE) {
+            if (config.stream === common_1.Stream.BLUETOOTH) {
                 await this.stopSingleBluetooth();
             }
-            else if (configuration.stream === common_1.Stream.AIRPLAY) {
+            else if (config.stream === common_1.Stream.AIRPLAY) {
                 await this.airplayService.stop();
             }
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
         }
-        else if (configuration.mode === common_1.Mode.STREAM) { // If already streaming
-            if (configuration.stream !== stream) { // If stream type is another
-                // If current was bluetooth, stop bluetooth
-                if (configuration.stream === common_1.Stream.BLUETOOTH) {
+        else if (config.mode === common_1.Mode.STREAM) {
+            if (config.stream !== stream) {
+                if (config.stream === common_1.Stream.BLUETOOTH) {
                     await this.disableMultipleBluetooth();
                 }
                 await this.snapserverService.stop();
                 await this.setAndStart(stream);
             }
         }
-        else if (configuration.mode === common_1.Mode.IDLE || configuration.mode === common_1.Mode.NONE) {
+        else if (config.mode === common_1.Mode.IDLE || config.mode === common_1.Mode.NONE) {
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
         }
-        await Configuration_1.Configuration.setMode(common_1.Mode.STREAM);
-        console.log("--> [Stream]", stream);
+        await this.configuration.setMode(common_1.Mode.STREAM);
     }
-    async idle(configuration) {
-        console.log("<-- [Idle]");
-        if (configuration.mode !== common_1.Mode.IDLE) {
-            if (configuration.mode === common_1.Mode.LISTEN) {
+    async idle() {
+        const config = await this.configuration.load();
+        if (config.mode !== common_1.Mode.IDLE) {
+            if (config.mode === common_1.Mode.LISTEN) {
                 await this.snapclientService.stop();
-                await Configuration_1.Configuration.setServer("");
+                await this.configuration.setServer("");
             }
-            else if (configuration.mode === common_1.Mode.SINGLE) {
-                if (configuration.stream === common_1.Stream.AIRPLAY) {
+            else if (config.mode === common_1.Mode.SINGLE) {
+                if (config.stream === common_1.Stream.AIRPLAY) {
                     await this.airplayService.stop();
                 }
-                else if (configuration.stream === common_1.Stream.BLUETOOTH) {
+                else if (config.stream === common_1.Stream.BLUETOOTH) {
                     await this.stopSingleBluetooth();
                 }
             }
-            else if (configuration.mode === common_1.Mode.STREAM) {
+            else if (config.mode === common_1.Mode.STREAM) {
                 await this.snapclientService.stop();
                 await this.snapserverService.stop();
-                await Configuration_1.Configuration.setServer("");
-                await Configuration_1.Configuration.setStream(common_1.Stream.NONE);
-                if (configuration.stream === common_1.Stream.BLUETOOTH) {
+                if (config.stream === common_1.Stream.BLUETOOTH) {
                     await this.disableMultipleBluetooth();
                 }
+                await this.configuration.setServer("");
+                await this.configuration.setStream(common_1.Stream.NONE);
             }
         }
-        await Configuration_1.Configuration.setMode(common_1.Mode.IDLE);
-        console.log("--> [Idle]");
+        await this.configuration.setMode(common_1.Mode.IDLE);
     }
     async disableMultipleBluetooth() {
         await this.bluetoothService.stop();
@@ -17212,63 +17491,60 @@ class SoundService {
     async startStreamAirplayAirplay() {
         await this.snapserverService.setStream(`airplay:///shairport-sync?name=Airplay&devicename=${constants_1.HOSTNAME}`);
     }
-    async setMuted(previousMuted, muted) {
-        console.log("--> [Muted]", muted);
-        if (previousMuted !== muted) {
+    async setMuted(muted) {
+        const config = await this.configuration.load();
+        if (config.muted !== muted) {
             if (muted) {
                 await this.alsaService.mute(settings_1.DEVICE());
             }
             else {
                 await this.alsaService.unmute(settings_1.DEVICE());
             }
-            await Configuration_1.Configuration.setMuted(muted);
+            await this.configuration.setMuted(muted);
         }
-        console.log("<-- [Muted]", muted);
     }
-    async setVolume(previousVolume, volume) {
-        console.log("<-- [Volume]", volume);
-        if (previousVolume !== volume) {
+    async setVolume(volume) {
+        const config = await this.configuration.load();
+        if (config.volume !== volume) {
             await this.alsaService.setVolume(volume, settings_1.DEVICE());
-            await Configuration_1.Configuration.setVolume(volume);
+            await this.configuration.setVolume(volume);
         }
-        console.log("--> [Volume]", volume);
     }
-    async single(configuration, stream) {
-        console.log("<-- [Single]", stream);
-        if (configuration.mode === common_1.Mode.LISTEN) {
+    async single(stream) {
+        const config = await this.configuration.load();
+        if (config.mode === common_1.Mode.LISTEN) {
             await this.snapclientService.stop();
             await this.setAndStartSingle(stream);
         }
-        else if (configuration.mode === common_1.Mode.SINGLE) {
-            if (configuration.stream !== stream) {
-                if (configuration.stream === common_1.Stream.AIRPLAY) {
+        else if (config.mode === common_1.Mode.SINGLE) {
+            if (config.stream !== stream) {
+                if (config.stream === common_1.Stream.AIRPLAY) {
                     await this.airplayService.stop();
                 }
-                else if (configuration.stream === common_1.Stream.BLUETOOTH) {
+                else if (config.stream === common_1.Stream.BLUETOOTH) {
                     await this.stopSingleBluetooth();
                 }
                 await this.setAndStartSingle(stream);
             }
         }
-        else if (configuration.mode === common_1.Mode.STREAM) {
-            if (configuration.stream === common_1.Stream.BLUETOOTH) {
+        else if (config.mode === common_1.Mode.STREAM) {
+            if (config.stream === common_1.Stream.BLUETOOTH) {
                 await this.disableMultipleBluetooth();
             }
             await this.snapclientService.stop();
             await this.snapserverService.stop();
             await this.setAndStartSingle(stream);
         }
-        else if (configuration.mode === common_1.Mode.IDLE || configuration.mode === common_1.Mode.NONE) {
+        else if (config.mode === common_1.Mode.IDLE || config.mode === common_1.Mode.NONE) {
             await this.setAndStartSingle(stream);
         }
-        await Configuration_1.Configuration.setMode(common_1.Mode.SINGLE);
-        console.log("--> [Single]", stream);
+        await this.configuration.setMode(common_1.Mode.SINGLE);
     }
     async setAndListen(server) {
         await this.snapclientService.stop();
         await this.snapclientService.setServer(server);
         await this.snapclientService.start();
-        await Configuration_1.Configuration.setServer(server);
+        await this.configuration.setServer(server);
     }
     async setAndStart(stream) {
         // Set config for corresponding stream
@@ -17278,8 +17554,8 @@ class SoundService {
         else if (stream === common_1.Stream.BLUETOOTH) {
             await this.startStreamBluetooth();
         }
-        await Configuration_1.Configuration.setStream(stream);
         await this.snapserverService.start();
+        await this.configuration.setStream(stream);
     }
     async stopSingleBluetooth() {
         await this.bluetoothService.stopSingle();
@@ -17293,7 +17569,7 @@ class SoundService {
             await this.bluetoothService.start();
             await this.bluetoothService.startSingle();
         }
-        await Configuration_1.Configuration.setStream(stream);
+        await this.configuration.setStream(stream);
     }
 }
 exports.SoundService = SoundService;
@@ -17336,8 +17612,8 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AirplayService = void 0;
 const SystemService_1 = __webpack_require__(3707);
 class AirplayService extends SystemService_1.SystemService {
-    constructor(transaction) {
-        super("airplay-playback", transaction);
+    constructor(tracing) {
+        super("airplay-playback", tracing);
     }
 }
 exports.AirplayService = AirplayService;
@@ -17352,20 +17628,54 @@ exports.AirplayService = AirplayService;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AlsaService = void 0;
+const tslib_1 = __webpack_require__(655);
 const MustRun_1 = __webpack_require__(4704);
 const events_1 = __webpack_require__(8614);
-/**
- * @todo reporting
- */
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class AlsaService extends events_1.EventEmitter {
+    constructor(tracing) {
+        super();
+        this.tracing = tracing;
+    }
     async setVolume(volume, device = "Headphone") {
-        return await MustRun_1.mustRun(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
+        const child = this.tracing.startChild({ op: "alsa:volume" });
+        child.setData("volume", volume);
+        child.setData("device", device);
+        try {
+            return await MustRun_1.mustRun(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
     async mute(device = "Headphone") {
-        return await MustRun_1.mustRun(["amixer", "set", `'${device}'`, "mute"]);
+        const child = this.tracing.startChild({ op: "alsa:mute" });
+        child.setData("device", device);
+        try {
+            return await MustRun_1.mustRun(["amixer", "set", `'${device}'`, "mute"]);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
     async unmute(device = "Headphone") {
-        return await MustRun_1.mustRun(["amixer", "set", `'${device}'`, "unmute"]);
+        const child = this.tracing.startChild({ op: "alsa:unmute" });
+        child.setData("device", device);
+        try {
+            return await MustRun_1.mustRun(["amixer", "set", `'${device}'`, "unmute"]);
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
 }
 exports.AlsaService = AlsaService;
@@ -17380,54 +17690,66 @@ exports.AlsaService = AlsaService;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.BluetoothService = void 0;
+const tslib_1 = __webpack_require__(655);
 const SystemService_1 = __webpack_require__(3707);
-const events_1 = __webpack_require__(8614);
-class BluetoothService extends events_1.EventEmitter {
-    constructor(transaction) {
-        super();
-        this.services = [];
-        this.services.push(...[
-            new SystemService_1.SystemService("bthelper@hci0", transaction),
-            new SystemService_1.SystemService("bt-agent", transaction),
-            new SystemService_1.SystemService("bluetooth", transaction),
-            new SystemService_1.SystemService("bluealsa", transaction),
-        ]);
-        this.stream = new SystemService_1.SystemService("bluemusic-playback", transaction);
-        this.single = new SystemService_1.SystemService("bluetooth-playback", transaction);
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
+class BluetoothService {
+    constructor(tracing) {
+        this.tracing = tracing;
+        this.stream = new SystemService_1.SystemService("bluemusic-playback", tracing);
+        this.single = new SystemService_1.SystemService("bluetooth-playback", tracing);
     }
     async start() {
-        for await (const service of this.services) {
-            this.emit("beforeStart", service.getServiceName());
-            await service.start();
-            this.emit("afterStart", service.getServiceName());
+        const child = this.tracing.startChild({ op: `services:start:bluetooth` });
+        try {
+            const services = this.getServices(child);
+            child.setData("services", services.map(service => service.getServiceName()));
+            for await (const service of services) {
+                await service.start();
+            }
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
         }
     }
     async stop() {
-        for await (const service of this.services) {
-            this.emit("beforeStop", service.getServiceName());
-            await service.stop();
-            this.emit("afterStop", service.getServiceName());
+        const child = this.tracing.startChild({ op: `services:stop:bluetooth` });
+        try {
+            const services = this.getServices(child);
+            child.setData("services", services.map(service => service.getServiceName()));
+            for await (const service of services) {
+                await service.stop();
+            }
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
         }
     }
     async startStream() {
-        this.emit("beforeStart", this.stream.getServiceName());
         await this.stream.start();
-        this.emit("afterStart", this.stream.getServiceName());
     }
     async startSingle() {
-        this.emit("beforeStart", this.single.getServiceName());
         await this.single.start();
-        this.emit("afterStart", this.single.getServiceName());
     }
     async stopStream() {
-        this.emit("beforeStop", this.stream.getServiceName());
         await this.stream.stop();
-        this.emit("afterStop", this.stream.getServiceName());
     }
     async stopSingle() {
-        this.emit("beforeStop", this.single.getServiceName());
         await this.single.stop();
-        this.emit("afterStop", this.single.getServiceName());
+    }
+    getServices(tracing) {
+        return [
+            new SystemService_1.SystemService("bthelper@hci0", tracing),
+            new SystemService_1.SystemService("bt-agent", tracing),
+            new SystemService_1.SystemService("bluetooth", tracing),
+            new SystemService_1.SystemService("bluealsa", tracing),
+        ];
     }
 }
 exports.BluetoothService = BluetoothService;
@@ -17442,15 +17764,32 @@ exports.BluetoothService = BluetoothService;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SnapclientService = void 0;
+const tslib_1 = __webpack_require__(655);
 const fs_1 = __webpack_require__(5747);
 const SystemService_1 = __webpack_require__(3707);
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
+const ini = tslib_1.__importStar(__webpack_require__(9647));
 class SnapclientService extends SystemService_1.SystemService {
-    constructor(transaction) {
-        super("snapclient", transaction);
+    constructor(tracing) {
+        super("snapclient", tracing);
     }
     async setServer(server) {
-        await fs_1.promises.writeFile("/etc/default/snapclient", `START_SNAPCLIENT=true
-SNAPCLIENT_OPTS="-h ${server}"`);
+        const child = this.tracing.startChild({ op: "snapclient:set:server" });
+        child.setData("server", server);
+        try {
+            const config = {
+                START_SNAPCLIENT: true,
+                SNAPCLIENT_OPTS: `-h ${server}`,
+            };
+            child.setData("config", config);
+            return await fs_1.promises.writeFile("/etc/default/snapclient", ini.encode(config));
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
 }
 exports.SnapclientService = SnapclientService;
@@ -17465,28 +17804,46 @@ exports.SnapclientService = SnapclientService;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SnapserverService = void 0;
+const tslib_1 = __webpack_require__(655);
 const fs_1 = __webpack_require__(5747);
 const SystemService_1 = __webpack_require__(3707);
+const Sentry = tslib_1.__importStar(__webpack_require__(3259));
+const ini = tslib_1.__importStar(__webpack_require__(9647));
 class SnapserverService extends SystemService_1.SystemService {
-    constructor(transaction) {
-        super("snapserver", transaction);
+    constructor(tracing) {
+        super("snapserver", tracing);
     }
     async setStream(stream) {
-        const configuration = `${SnapserverService.commonConfiguration}
-stream = ${stream}`;
-        await fs_1.promises.writeFile("/etc/snapserver.conf", configuration);
+        const child = this.tracing.startChild({ op: "snapserver:set:stream" });
+        child.setData("stream", stream);
+        try {
+            const config = {
+                http: {
+                    enabled: true,
+                },
+                tcp: {
+                    enabled: true,
+                },
+                stream: {
+                    bind_to_address: "0.0.0.0",
+                    port: 1704,
+                    chunk_ms: 20,
+                    buffer: 1000,
+                    stream,
+                },
+            };
+            child.setData("config", config);
+            await fs_1.promises.writeFile("/etc/snapserver.conf", ini.encode(config));
+        }
+        catch (error) {
+            Sentry.captureException(error);
+        }
+        finally {
+            child.finish();
+        }
     }
 }
 exports.SnapserverService = SnapserverService;
-SnapserverService.commonConfiguration = `[http]
-enabled = false
-[tcp]
-enabled = false
-[stream]
-bind_to_address = 0.0.0.0
-port = 1704
-chunk_ms = 20
-buffer = 1000`;
 
 
 /***/ }),
@@ -17502,21 +17859,18 @@ const tslib_1 = __webpack_require__(655);
 const MustRun_1 = __webpack_require__(4704);
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class SystemService {
-    constructor(serviceName, transaction) {
+    constructor(serviceName, tracing) {
         this.serviceName = serviceName;
-        this.transaction = transaction;
+        this.tracing = tracing;
     }
     getServiceName() {
         return this.serviceName;
     }
     async start() {
-        const child = this.transaction.startChild({ op: "service:start" });
+        const child = this.tracing.startChild({ op: `service:start:${this.serviceName}` });
         child.setData("service", this.serviceName);
         try {
-            console.log(`[Service][${this.serviceName}][Start]: ${this.serviceName}`);
-            const process = await MustRun_1.mustRun(["sudo", "systemctl", "start", this.serviceName]);
-            console.log(`[Service][${this.serviceName}][Started]: ${this.serviceName}`);
-            return process;
+            return await MustRun_1.mustRun(["sudo", "systemctl", "start", this.serviceName]);
         }
         catch (error) {
             Sentry.captureException(error);
@@ -17526,18 +17880,15 @@ class SystemService {
         }
     }
     async stop() {
-        const child = this.transaction.startChild({ op: "service:stop" });
+        const child = this.tracing.startChild({ op: `service:stop:${this.serviceName}` });
         child.setData("service", this.serviceName);
         try {
-            console.log(`[Service][${this.serviceName}][Stop]: ${this.serviceName}`);
-            const result = await Promise.race([
+            return await Promise.race([
                 MustRun_1.mustRun(["sudo", "systemctl", "stop", this.serviceName]),
                 new Promise((resolve) => {
                     setTimeout(resolve, 5000);
                 }),
             ]);
-            console.log(`[Service][${this.serviceName}][Stopped]: ${this.serviceName}`);
-            return result;
         }
         catch (error) {
             Sentry.captureException(error);
