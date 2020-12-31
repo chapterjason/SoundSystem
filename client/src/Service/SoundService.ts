@@ -46,6 +46,7 @@ export class SoundService {
             }
 
             await this.snapserverService.stop();
+            await this.snapclientService.stop();
 
             await this.setAndListen(server);
         } else if (config.mode === Mode.SINGLE) {
@@ -58,6 +59,7 @@ export class SoundService {
             await this.setAndListen(server);
         } else if (config.mode === Mode.LISTEN) {
             if (config.server !== server) {
+                await this.snapclientService.stop();
                 await this.setAndListen(server);
             }
         } else if (config.mode === Mode.IDLE || config.mode === Mode.NONE) {
@@ -73,6 +75,7 @@ export class SoundService {
 
         if (config.mode === Mode.LISTEN) {
             await this.setAndStart(stream);
+            await this.snapclientService.stop();
             await this.setAndListen("127.0.0.1");
         } else if (config.mode === Mode.SINGLE) {
             if (config.stream === Stream.BLUETOOTH) {
@@ -210,7 +213,6 @@ export class SoundService {
     }
 
     protected async setAndListen(server: string): Promise<void> {
-        await this.snapclientService.stop();
         await this.snapclientService.setServer(server);
         await this.snapclientService.start();
         await this.configuration.setServer(server);

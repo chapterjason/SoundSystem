@@ -17343,6 +17343,7 @@ class SoundService {
                 await this.disableMultipleBluetooth();
             }
             await this.snapserverService.stop();
+            await this.snapclientService.stop();
             await this.setAndListen(server);
         }
         else if (config.mode === common_1.Mode.SINGLE) {
@@ -17356,6 +17357,7 @@ class SoundService {
         }
         else if (config.mode === common_1.Mode.LISTEN) {
             if (config.server !== server) {
+                await this.snapclientService.stop();
                 await this.setAndListen(server);
             }
         }
@@ -17369,6 +17371,7 @@ class SoundService {
         const config = await this.configuration.get();
         if (config.mode === common_1.Mode.LISTEN) {
             await this.setAndStart(stream);
+            await this.snapclientService.stop();
             await this.setAndListen("127.0.0.1");
         }
         else if (config.mode === common_1.Mode.SINGLE) {
@@ -17490,7 +17493,6 @@ class SoundService {
         await this.configuration.save();
     }
     async setAndListen(server) {
-        await this.snapclientService.stop();
         await this.snapclientService.setServer(server);
         await this.snapclientService.start();
         await this.configuration.setServer(server);
