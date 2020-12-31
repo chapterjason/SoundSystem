@@ -1,4 +1,4 @@
-import { mustRun } from "../Utils/MustRun";
+import { execute } from "../Utils/Execute";
 import { Span } from "@sentry/types";
 import * as Sentry from "@sentry/node";
 
@@ -22,7 +22,7 @@ export class SystemService {
         child.setData("service", this.serviceName);
 
         try {
-            return await mustRun(["sudo", "systemctl", "start", this.serviceName]);
+            return await execute(["sudo", "systemctl", "start", this.serviceName]);
         } catch (error) {
             Sentry.captureException(error);
         } finally {
@@ -36,7 +36,7 @@ export class SystemService {
 
         try {
             return await Promise.race([
-                mustRun(["sudo", "systemctl", "stop", this.serviceName]),
+                execute(["sudo", "systemctl", "stop", this.serviceName]),
                 new Promise((resolve) => {
                     setTimeout(resolve, 5000);
                 }),

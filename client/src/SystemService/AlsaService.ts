@@ -1,4 +1,4 @@
-import { mustRun } from "../Utils/MustRun";
+import { execute } from "../Utils/Execute";
 import { EventEmitter } from "events";
 import { Span, Transaction } from "@sentry/types";
 import * as Sentry from "@sentry/node";
@@ -19,7 +19,7 @@ export class AlsaService extends EventEmitter {
         child.setData("device", device);
 
         try {
-            return await mustRun(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
+            return await execute(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
         } catch (error) {
             Sentry.captureException(error);
         } finally {
@@ -32,7 +32,7 @@ export class AlsaService extends EventEmitter {
         child.setData("device", device);
 
         try {
-            return await mustRun(["amixer", "set", `'${device}'`, "mute"]);
+            return await execute(["amixer", "set", `'${device}'`, "mute"]);
         } catch (error) {
             Sentry.captureException(error);
         } finally {
@@ -45,7 +45,7 @@ export class AlsaService extends EventEmitter {
         child.setData("device", device);
 
         try {
-            return await mustRun(["amixer", "set", `'${device}'`, "unmute"]);
+            return await execute(["amixer", "set", `'${device}'`, "unmute"]);
         } catch (error) {
             Sentry.captureException(error);
         } finally {

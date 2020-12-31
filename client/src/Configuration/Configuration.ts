@@ -64,10 +64,11 @@ export class Configuration {
         const child = this.tracing.startChild({ op: "configuration:save" });
 
         try {
-            const text = JSON.stringify(this.config, null, "  ");
+            const config = await this.get();
+            const text = JSON.stringify(config, null, "  ");
 
             await fs.writeFile(Configuration.file, text);
-            await Configuration.afterSave(this.config as ConfigurationData);
+            await Configuration.afterSave(config);
         } catch (error) {
             Sentry.captureException(error);
         } finally {

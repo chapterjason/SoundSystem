@@ -29,7 +29,6 @@
   },
   "dependencies": {
     "@mscs/environment": "^0.1.0",
-    "@mscs/process": "^0.4.0",
     "@sentry/integrations": "^5.29.2",
     "@sentry/node": "^5.29.2",
     "@sentry/tracing": "^5.29.2",

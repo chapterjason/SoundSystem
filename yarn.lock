@@ -1119,11 +1119,6 @@
   resolved "https://registry.yarnpkg.com/@mscs/environment/-/environment-0.1.0.tgz#48b41feb4bbba1a8fedbebe598e8e47ace2e71e6"
   integrity sha512-5grIH3VYNCt8C41QHOW11m3OeABjI48sOj5RaPtSUY30OxrmHLvXEbWtEOWzQRA0gC9PXq3le57vmURo7nRGWg==
 
-"@mscs/process@^0.4.0":
-  version "0.4.0"
-  resolved "https://registry.yarnpkg.com/@mscs/process/-/process-0.4.0.tgz#81f1e955dc1b66ef2043c646b41592698739c201"
-  integrity sha512-OJ0lC/oWQCy+1PQT1ZQ24qBjQw+HUDv9iQr1FfdVpv6gHuluCYkf8jqUReejP9+IVVP73K7gIfECmMDRaRz2HA==
-
 "@nestjs/common@^7.5.5":
   version "7.6.5"
   resolved "https://registry.yarnpkg.com/@nestjs/common/-/common-7.6.5.tgz#d6e9435453eef2d1b492384ca27fa23358744949"

@@ -1,6 +1,5 @@
-import { Process } from "@mscs/process";
+import { execute } from "./Execute";
 
-export async function update(){
-    const updateProcess = new Process(["/home/pi/scripts/client/client_update.sh"]);
-    await updateProcess.run();
+export async function update() {
+    await execute(["/home/pi/scripts/client/client_update.sh"]);
 }

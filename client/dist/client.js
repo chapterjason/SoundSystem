@@ -846,14 +846,6 @@ module.exports=function(t){var e={};function s(r){if(e[r])return e[r].exports;va
 
 /***/ }),
 
-/***/ 5527:
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-module.exports=function(t){var e={};function s(r){if(e[r])return e[r].exports;var i=e[r]={i:r,l:!1,exports:{}};return t[r].call(i.exports,i,i.exports,s),i.l=!0,i.exports}return s.m=t,s.c=e,s.d=function(t,e,r){s.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:r})},s.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},s.t=function(t,e){if(1&e&&(t=s(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var r=Object.create(null);if(s.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var i in t)s.d(r,i,function(e){return t[e]}.bind(null,i));return r},s.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return s.d(e,"a",e),e},s.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},s.p="",s(s.s=9)}([function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.ProcessException=void 0;class r extends Error{}e.ProcessException=r},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.RuntimeException=void 0;const r=s(0);class i extends r.ProcessException{}e.RuntimeException=i},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.ProcessFailedException=void 0;const r=s(10),i=s(3),n=s(1);class o extends n.RuntimeException{constructor(t){if(super(),t.isSuccessful())throw new i.ArgumentException("Expected a failed process, but the given process was successful.");this.message=r.format('The command "%s" failed.\n\nExit Code: %s\n\nWorking directory: %s\n\nError Output: %s',t.getCommand(),t.getExitCode(),t.getWorkingDirectory(),t.getErrorOutput(!0)),this.process=t}getProcess(){return this.process}}e.ProcessFailedException=o},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.ArgumentException=void 0;const r=s(0);class i extends r.ProcessException{}e.ArgumentException=i},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.LogicException=void 0;const r=s(0);class i extends r.ProcessException{}e.LogicException=i},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.InputStream=void 0;const r=s(6);class i extends r.Readable{constructor(t,e){super(e),this.contents=Buffer.from(t)}_read(t){if(this.contents.length){const e=this.contents.slice(0,t);this.contents=this.contents.slice(t),this.push(e)}else this.push(null)}}e.InputStream=i},function(t,e){t.exports=__webpack_require__(2413)},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.OutputStream=void 0;const r=s(6);class i extends r.Transform{constructor(t){super(t),this.contents=Buffer.from("")}_transform(t,e,s){this.contents=Buffer.concat([this.contents,t]),this.push(t),s()}toBuffer(){return Buffer.from(this.contents)}toString(){return this.contents.toString()}}e.OutputStream=i},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.ProcessStatus=void 0,function(t){t[t.READY=0]="READY",t[t.STARTED=1]="STARTED",t[t.TERMINATED=2]="TERMINATED",t[t.DETACHED=3]="DETACHED"}(e.ProcessStatus||(e.ProcessStatus={}))},function(t,e,s){"use strict";var r=this&&this.__createBinding||(Object.create?function(t,e,s,r){void 0===r&&(r=s),Object.defineProperty(t,r,{enumerable:!0,get:function(){return e[s]}})}:function(t,e,s,r){void 0===r&&(r=s),t[r]=e[s]}),i=this&&this.__exportStar||function(t,e){for(var s in t)"default"===s||e.hasOwnProperty(s)||r(e,t,s)};Object.defineProperty(e,"__esModule",{value:!0}),i(s(0),e),i(s(2),e),i(s(4),e),i(s(1),e),i(s(5),e),i(s(7),e),i(s(8),e),i(s(11),e),i(s(12),e)},function(t,e){t.exports=__webpack_require__(1669)},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0})},function(t,e,s){"use strict";Object.defineProperty(e,"__esModule",{value:!0}),e.Process=void 0;const r=s(13),i=s(14),n=s(3),o=s(4),u=s(2),c=s(1),a=s(5),d=s(7),h=s(8);class l{constructor(t,e={}){if(this.status=h.ProcessStatus.READY,0===t.length)throw new n.ArgumentException("Missing command.");[this.command,...this.args]=t,this.args=this.escapeShellArguments(this.args),this.options={directory:process.cwd(),input:null,environment:null,detached:!1,...e},this.resetProcessData()}static async getShell(){if(!this.shell){const t="win32"===i.platform()?"where":"which";this.shell=await new Promise((e,s)=>{r.exec(t+" bash",(t,r)=>{if(null!==t)s(t);else{const[t]=r.replace(/\r?\n/g,"\n").split("\n").filter(t=>t.length);e(t)}})})}return this.shell}getCommand(){return this.command}getArguments(){return this.args}toString(){return this.getCommand()+" "+this.getArguments().join(" ")}async start(){if(this.isRunning())throw new c.RuntimeException("Process is already running");this.resetProcessData();const t=await l.getShell(),e={cwd:this.options.directory,detached:this.options.detached,stdio:this.options.detached?"ignore":"pipe",shell:t};if(null!==this.options.environment&&(e.env=this.options.environment),this.process=r.spawn(this.command,this.args,e),this.status=h.ProcessStatus.STARTED,this.options.detached&&(this.process.unref(),this.status=h.ProcessStatus.DETACHED),this.options.input&&this.process.stdin){new a.InputStream(this.options.input).pipe(this.process.stdin)}this.process.stdout&&this.process.stdout.pipe(this.stdout),this.process.stderr&&this.process.stderr.pipe(this.stderr)}async wait(){if(!this.isStarted())throw new o.LogicException('Process must be started before calling "wait".');return this.isDetached()?(this.exitCode=0,0):new Promise((t,e)=>{this.process.on("error",t=>{e(t)}),this.process.on("exit",(e,s)=>{this.exitCode=null!==e?e:null!==s?1:0,this.status=h.ProcessStatus.TERMINATED,t(this.exitCode)}),this.process.on("close",e=>{this.exitCode=null!==e?e:null!==this.exitCode?this.exitCode:1,this.status=h.ProcessStatus.TERMINATED,t(this.exitCode)})})}isRunning(){return h.ProcessStatus.STARTED===this.status&&null===this.exitCode}async run(){return await this.start(),this.wait()}async mustRun(){if(0!==await this.run())throw new u.ProcessFailedException(this);return this}getOutput(t=!0){let e=this.stdout.toString();return t&&(e=e.replace(/\r?\n/g,"\n")),e}getErrorOutput(t=!0){let e=this.stderr.toString();return t&&(e=e.replace(/\r?\n/g,"\n")),e}isSuccessful(){return 0===this.exitCode}getExitCode(){if(null===this.exitCode)throw new c.RuntimeException("Missing exit code.");return this.exitCode}isTerminated(){return h.ProcessStatus.TERMINATED===this.status}isDetached(){return h.ProcessStatus.DETACHED===this.status}isStarted(){return h.ProcessStatus.READY!==this.status}getWorkingDirectory(){return this.options.directory}stop(t="SIGINT"){this.status=h.ProcessStatus.TERMINATED,this.process.kill(t)}getStdout(){return this.stdout}getStderr(){return this.stderr}escapeShellArguments(t){return t.map(t=>/[^A-Za-z0-9_=:-]/.test(t)?"'"+t.replace(/'/g,"'\\''")+"'":t)}resetProcessData(){this.status=h.ProcessStatus.READY,this.exitCode=null,this.stdout=new d.OutputStream,this.stderr=new d.OutputStream}}e.Process=l},function(t,e){t.exports=__webpack_require__(3129)},function(t,e){t.exports=__webpack_require__(2087)}]);
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
 /***/ 7546:
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
@@ -17124,9 +17116,10 @@ class Configuration {
     async save() {
         const child = this.tracing.startChild({ op: "configuration:save" });
         try {
-            const text = JSON.stringify(this.config, null, "  ");
+            const config = await this.get();
+            const text = JSON.stringify(config, null, "  ");
             await fs_1.promises.writeFile(Configuration.file, text);
-            await Configuration.afterSave(this.config);
+            await Configuration.afterSave(config);
         }
         catch (error) {
             Sentry.captureException(error);
@@ -17580,7 +17573,7 @@ exports.AirplayService = AirplayService;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.AlsaService = void 0;
 const tslib_1 = __webpack_require__(655);
-const MustRun_1 = __webpack_require__(4704);
+const Execute_1 = __webpack_require__(1269);
 const events_1 = __webpack_require__(8614);
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class AlsaService extends events_1.EventEmitter {
@@ -17593,7 +17586,7 @@ class AlsaService extends events_1.EventEmitter {
         child.setData("volume", volume);
         child.setData("device", device);
         try {
-            return await MustRun_1.mustRun(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
+            return await Execute_1.execute(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
         }
         catch (error) {
             Sentry.captureException(error);
@@ -17606,7 +17599,7 @@ class AlsaService extends events_1.EventEmitter {
         const child = this.tracing.startChild({ op: "alsa:mute" });
         child.setData("device", device);
         try {
-            return await MustRun_1.mustRun(["amixer", "set", `'${device}'`, "mute"]);
+            return await Execute_1.execute(["amixer", "set", `'${device}'`, "mute"]);
         }
         catch (error) {
             Sentry.captureException(error);
@@ -17619,7 +17612,7 @@ class AlsaService extends events_1.EventEmitter {
         const child = this.tracing.startChild({ op: "alsa:unmute" });
         child.setData("device", device);
         try {
-            return await MustRun_1.mustRun(["amixer", "set", `'${device}'`, "unmute"]);
+            return await Execute_1.execute(["amixer", "set", `'${device}'`, "unmute"]);
         }
         catch (error) {
             Sentry.captureException(error);
@@ -17807,7 +17800,7 @@ exports.SnapserverService = SnapserverService;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.SystemService = void 0;
 const tslib_1 = __webpack_require__(655);
-const MustRun_1 = __webpack_require__(4704);
+const Execute_1 = __webpack_require__(1269);
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class SystemService {
     constructor(serviceName, tracing) {
@@ -17821,7 +17814,7 @@ class SystemService {
         const child = this.tracing.startChild({ op: `service:start:${this.serviceName}` });
         child.setData("service", this.serviceName);
         try {
-            return await MustRun_1.mustRun(["sudo", "systemctl", "start", this.serviceName]);
+            return await Execute_1.execute(["sudo", "systemctl", "start", this.serviceName]);
         }
         catch (error) {
             Sentry.captureException(error);
@@ -17835,7 +17828,7 @@ class SystemService {
         child.setData("service", this.serviceName);
         try {
             return await Promise.race([
-                MustRun_1.mustRun(["sudo", "systemctl", "stop", this.serviceName]),
+                Execute_1.execute(["sudo", "systemctl", "stop", this.serviceName]),
                 new Promise((resolve) => {
                     setTimeout(resolve, 5000);
                 }),
@@ -17854,19 +17847,36 @@ exports.SystemService = SystemService;
 
 /***/ }),
 
-/***/ 4704:
+/***/ 1269:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.mustRun = void 0;
-const process_1 = __webpack_require__(5527);
-async function mustRun(command, options = {}) {
-    const commandProcess = new process_1.Process(command, options);
-    return await commandProcess.mustRun();
+exports.execute = exports.escapeShellArguments = void 0;
+const child_process_1 = __webpack_require__(3129);
+function escapeShellArguments(args) {
+    return args.map((item) => {
+        if (/[^A-Za-z0-9_=:-]/.test(item)) {
+            return "'" + item.replace(/'/g, "'\\''") + "'";
+        }
+        return item;
+    });
 }
-exports.mustRun = mustRun;
+exports.escapeShellArguments = escapeShellArguments;
+async function execute(command) {
+    const args = escapeShellArguments(command);
+    return new Promise((resolve, reject) => {
+        child_process_1.exec(args.join(" "), (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            resolve({ stdout, stderr });
+        });
+    });
+}
+exports.execute = execute;
 
 
 /***/ }),
@@ -17878,10 +17888,9 @@ exports.mustRun = mustRun;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.update = void 0;
-const process_1 = __webpack_require__(5527);
+const Execute_1 = __webpack_require__(1269);
 async function update() {
-    const updateProcess = new process_1.Process(["/home/pi/scripts/client/client_update.sh"]);
-    await updateProcess.run();
+    await Execute_1.execute(["/home/pi/scripts/client/client_update.sh"]);
 }
 exports.update = update;
 
@@ -18745,14 +18754,6 @@ module.exports = require("os");;
 
 "use strict";
 module.exports = require("path");;
-
-/***/ }),
-
-/***/ 2413:
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("stream");;
 
 /***/ }),
 
