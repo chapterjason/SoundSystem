@@ -17077,7 +17077,7 @@ module.exports = {
 
 /***/ }),
 
-/***/ 991:
+/***/ 6688:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 "use strict";
@@ -17091,19 +17091,17 @@ const common_1 = __webpack_require__(194);
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 class Configuration {
     constructor(tracing) {
+        this.config = null;
         this.tracing = tracing;
     }
+    async get() {
+        if (!this.config) {
+            this.config = await this.load();
+        }
+        return this.config;
+    }
     async reset() {
-        const child = this.tracing.startChild({ op: "configuration:reset" });
-        try {
-            return await this.save(Configuration.empty);
-        }
-        catch (error) {
-            Sentry.captureException(error);
-        }
-        finally {
-            child.finish();
-        }
+        this.config = Configuration.empty;
     }
     async load() {
         const child = this.tracing.startChild({ op: "configuration:load" });
@@ -17123,12 +17121,12 @@ class Configuration {
             child.finish();
         }
     }
-    async save(config) {
+    async save() {
         const child = this.tracing.startChild({ op: "configuration:save" });
         try {
-            const text = JSON.stringify(config, null, "  ");
+            const text = JSON.stringify(this.config, null, "  ");
             await fs_1.promises.writeFile(Configuration.file, text);
-            await Configuration.afterSave({ ...config });
+            await Configuration.afterSave(this.config);
         }
         catch (error) {
             Sentry.captureException(error);
@@ -17138,79 +17136,24 @@ class Configuration {
         }
     }
     async setMode(mode) {
-        const child = this.tracing.startChild({ op: "configuration:set:mode" });
-        child.setData("mode", mode);
-        try {
-            const config = await this.load();
-            config.mode = mode;
-            await this.save(config);
-        }
-        catch (error) {
-            Sentry.captureException(error);
-        }
-        finally {
-            child.finish();
-        }
+        const config = await this.get();
+        config.mode = mode;
     }
     async setStream(stream) {
-        const child = this.tracing.startChild({ op: "configuration:set:stream" });
-        child.setData("stream", stream);
-        try {
-            const config = await this.load();
-            config.stream = stream;
-            await this.save(config);
-        }
-        catch (error) {
-            Sentry.captureException(error);
-        }
-        finally {
-            child.finish();
-        }
+        const config = await this.get();
+        config.stream = stream;
     }
     async setVolume(volume) {
-        const child = this.tracing.startChild({ op: "configuration:set:volume" });
-        child.setData("volume", volume);
-        try {
-            const config = await this.load();
-            config.volume = volume;
-            await this.save(config);
-        }
-        catch (error) {
-            Sentry.captureException(error);
-        }
-        finally {
-            child.finish();
-        }
+        const config = await this.get();
+        config.volume = volume;
     }
     async setServer(server) {
-        const child = this.tracing.startChild({ op: "configuration:set:server" });
-        child.setData("server", server);
-        try {
-            const config = await this.load();
-            config.server = server;
-            await this.save(config);
-        }
-        catch (error) {
-            Sentry.captureException(error);
-        }
-        finally {
-            child.finish();
-        }
+        const config = await this.get();
+        config.server = server;
     }
     async setMuted(muted) {
-        const child = this.tracing.startChild({ op: "configuration:set:muted" });
-        child.setData("muted", muted);
-        try {
-            const config = await this.load();
-            config.muted = muted;
-            await this.save(config);
-        }
-        catch (error) {
-            Sentry.captureException(error);
-        }
-        finally {
-            child.finish();
-        }
+        const config = await this.get();
+        config.muted = muted;
     }
 }
 exports.Configuration = Configuration;
@@ -17323,7 +17266,7 @@ exports.SoundClient = void 0;
 const tslib_1 = __webpack_require__(655);
 const network_1 = __webpack_require__(8152);
 const SoundController_1 = __webpack_require__(7477);
-const Configuration_1 = __webpack_require__(991);
+const Configuration_1 = __webpack_require__(6688);
 const common_1 = __webpack_require__(194);
 const Sentry = tslib_1.__importStar(__webpack_require__(3259));
 const SoundService_1 = __webpack_require__(1096);
@@ -17340,7 +17283,7 @@ class SoundClient extends network_1.Client {
         });
         const service = new SoundService_1.SoundService(trace);
         const configuration = new Configuration_1.Configuration(trace);
-        const config = await configuration.load();
+        const config = await configuration.get();
         const { mode, server, stream, volume, muted } = config;
         trace.setData("configuration", config);
         if (mode === common_1.Mode.IDLE) {
@@ -17380,7 +17323,7 @@ const BluetoothService_1 = __webpack_require__(2054);
 const AirplayService_1 = __webpack_require__(5272);
 const AlsaService_1 = __webpack_require__(7505);
 const common_1 = __webpack_require__(194);
-const Configuration_1 = __webpack_require__(991);
+const Configuration_1 = __webpack_require__(6688);
 const constants_1 = __webpack_require__(4780);
 const settings_1 = __webpack_require__(923);
 class SoundService {
@@ -17394,7 +17337,7 @@ class SoundService {
         this.configuration = new Configuration_1.Configuration(this.tracing);
     }
     async listen(server) {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
         if (config.mode === common_1.Mode.STREAM) {
             if (config.stream === common_1.Stream.BLUETOOTH) {
                 await this.disableMultipleBluetooth();
@@ -17420,9 +17363,10 @@ class SoundService {
             await this.setAndListen(server);
         }
         await this.configuration.setMode(common_1.Mode.LISTEN);
+        await this.configuration.save();
     }
     async stream(stream) {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
         if (config.mode === common_1.Mode.LISTEN) {
             await this.setAndStart(stream);
             await this.setAndListen("127.0.0.1");
@@ -17451,9 +17395,10 @@ class SoundService {
             await this.setAndListen("127.0.0.1");
         }
         await this.configuration.setMode(common_1.Mode.STREAM);
+        await this.configuration.save();
     }
     async idle() {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
         if (config.mode !== common_1.Mode.IDLE) {
             if (config.mode === common_1.Mode.LISTEN) {
                 await this.snapclientService.stop();
@@ -17478,6 +17423,7 @@ class SoundService {
             }
         }
         await this.configuration.setMode(common_1.Mode.IDLE);
+        await this.configuration.save();
     }
     async disableMultipleBluetooth() {
         await this.bluetoothService.stop();
@@ -17492,7 +17438,7 @@ class SoundService {
         await this.snapserverService.setStream(`airplay:///shairport-sync?name=Airplay&devicename=${constants_1.HOSTNAME}`);
     }
     async setMuted(muted) {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
         if (config.muted !== muted) {
             if (muted) {
                 await this.alsaService.mute(settings_1.DEVICE());
@@ -17502,16 +17448,18 @@ class SoundService {
             }
             await this.configuration.setMuted(muted);
         }
+        await this.configuration.save();
     }
     async setVolume(volume) {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
         if (config.volume !== volume) {
             await this.alsaService.setVolume(volume, settings_1.DEVICE());
             await this.configuration.setVolume(volume);
         }
+        await this.configuration.save();
     }
     async single(stream) {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
         if (config.mode === common_1.Mode.LISTEN) {
             await this.snapclientService.stop();
             await this.setAndStartSingle(stream);
@@ -17539,6 +17487,7 @@ class SoundService {
             await this.setAndStartSingle(stream);
         }
         await this.configuration.setMode(common_1.Mode.SINGLE);
+        await this.configuration.save();
     }
     async setAndListen(server) {
         await this.snapclientService.stop();
@@ -18036,7 +17985,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.runtime = void 0;
 const Client_1 = __webpack_require__(1584);
 const Environment_1 = __webpack_require__(6814);
-const Configuration_1 = __webpack_require__(991);
+const Configuration_1 = __webpack_require__(6688);
 const network_1 = __webpack_require__(8152);
 const constants_1 = __webpack_require__(4780);
 const settings_1 = __webpack_require__(923);

@@ -1,6 +1,6 @@
 import { Client, CommandQueue } from "@soundsystem/network";
 import { SoundController } from "../Controller/SoundController";
-import { Configuration } from "../Configuration";
+import { Configuration } from "../Configuration/Configuration";
 import { Mode } from "@soundsystem/common";
 import * as Sentry from "@sentry/node";
 import { SoundService } from "./SoundService";
@@ -23,7 +23,7 @@ export class SoundClient extends Client {
 
         const service = new SoundService(trace);
         const configuration = new Configuration(trace);
-        const config = await configuration.load();
+        const config = await configuration.get();
 
         const { mode, server, stream, volume, muted } = config;
 

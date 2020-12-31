@@ -4,8 +4,8 @@ import { BluetoothService } from "../SystemService/BluetoothService";
 import { AirplayService } from "../SystemService/AirplayService";
 import { AlsaService } from "../SystemService/AlsaService";
 import { Mode, Stream } from "@soundsystem/common";
-import { Configuration } from "../Configuration";
-import { ConfigurationData } from "../ConfigurationData";
+import { Configuration } from "../Configuration/Configuration";
+import { ConfigurationData } from "../Configuration/ConfigurationData";
 import { HOSTNAME } from "../constants";
 import { DEVICE } from "../settings";
 import { Span } from "@sentry/types";
@@ -38,7 +38,7 @@ export class SoundService {
     }
 
     public async listen(server: string) {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
 
         if (config.mode === Mode.STREAM) {
             if (config.stream === Stream.BLUETOOTH) {
@@ -65,10 +65,11 @@ export class SoundService {
         }
 
         await this.configuration.setMode(Mode.LISTEN);
+        await this.configuration.save();
     }
 
     public async stream(stream: Stream) {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
 
         if (config.mode === Mode.LISTEN) {
             await this.setAndStart(stream);
@@ -98,10 +99,11 @@ export class SoundService {
         }
 
         await this.configuration.setMode(Mode.STREAM);
+        await this.configuration.save();
     }
 
     public async idle() {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
 
         if (config.mode !== Mode.IDLE) {
             if (config.mode === Mode.LISTEN) {
@@ -127,6 +129,7 @@ export class SoundService {
         }
 
         await this.configuration.setMode(Mode.IDLE);
+        await this.configuration.save();
     }
 
     public async disableMultipleBluetooth() {
@@ -146,7 +149,7 @@ export class SoundService {
     }
 
     public async setMuted(muted: boolean): Promise<void> {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
 
         if (config.muted !== muted) {
             if (muted) {
@@ -157,19 +160,23 @@ export class SoundService {
 
             await this.configuration.setMuted(muted);
         }
+
+        await this.configuration.save();
     }
 
     public async setVolume(volume: number): Promise<void> {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
 
         if (config.volume !== volume) {
             await this.alsaService.setVolume(volume, DEVICE());
             await this.configuration.setVolume(volume);
         }
+
+        await this.configuration.save();
     }
 
     public async single(stream: Stream): Promise<void> {
-        const config = await this.configuration.load();
+        const config = await this.configuration.get();
 
         if (config.mode === Mode.LISTEN) {
             await this.snapclientService.stop();
@@ -199,6 +206,7 @@ export class SoundService {
         }
 
         await this.configuration.setMode(Mode.SINGLE);
+        await this.configuration.save();
     }
 
     protected async setAndListen(server: string): Promise<void> {

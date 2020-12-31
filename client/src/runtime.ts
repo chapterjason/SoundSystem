@@ -1,6 +1,6 @@
 import { CLIENT } from "./Singleton/Client";
 import { ENVIRONMENT } from "./Singleton/Environment";
-import { Configuration } from "./Configuration";
+import { Configuration } from "./Configuration/Configuration";
 import { Command } from "@soundsystem/network";
 import { HOSTNAME } from "./constants";
 import { ID } from "./settings";

@@ -1,5 +1,5 @@
 import { BidirectionalSocket, Command, CommandController, DataType } from "@soundsystem/network";
-import { Configuration } from "../Configuration";
+import { Configuration } from "../Configuration/Configuration";
 import { Stream } from "@soundsystem/common";
 import { update } from "../Utils/Update";
 import * as Sentry from "@sentry/node";
