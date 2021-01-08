@@ -1,0 +1,1 @@
+{"version":3,"file":"UnknownMigrationVersion.js","sourceRoot":"","sources":["../../src/Exception/UnknownMigrationVersion.ts"],"names":[],"mappings":";;;AAAA,yDAAsD;AAEtD,MAAa,uBAAwB,SAAQ,mCAAgB;IAClD,MAAM,CAAC,GAAG,CAAC,OAAe;QAC7B,OAAO,IAAI,IAAI,CAAC,oCAAoC,OAAO,EAAE,CAAC,CAAC;IACnE,CAAC;CACJ;AAJD,0DAIC"}

@@ -6,7 +6,8 @@
       "network",
       "server",
       "ui",
-      "client"
+      "client",
+      "migration"
     ],
     "nohoist": [
       "**/typeorm",

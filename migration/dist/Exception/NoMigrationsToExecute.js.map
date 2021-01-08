@@ -1,0 +1,1 @@
+{"version":3,"file":"NoMigrationsToExecute.js","sourceRoot":"","sources":["../../src/Exception/NoMigrationsToExecute.ts"],"names":[],"mappings":";;;AAAA,yDAAsD;AAEtD,MAAa,qBAAsB,SAAQ,mCAAgB;IAChD,MAAM,CAAC,GAAG,CAAC,KAAY;QAC1B,OAAO,IAAI,IAAI,CAAC,2CAA2C,EAAE,KAAK,CAAC,CAAC;IACxE,CAAC;CACJ;AAJD,sDAIC"}

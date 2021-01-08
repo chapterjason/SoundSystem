@@ -1,0 +1,1 @@
+{"version":3,"file":"MigrationStorage.js","sourceRoot":"","sources":["../../src/Storage/MigrationStorage.ts"],"names":[],"mappings":";;;AAEA,yDAAsD;AAEtD,MAAa,gBAAgB;IAA7B;QAEY,eAAU,GAAyB,EAAE,CAAC;IAUlD,CAAC;IARU,GAAG,CAAC,SAA6B;QACpC,IAAI,CAAC,UAAU,CAAC,IAAI,CAAC,SAAS,CAAC,CAAC;IACpC,CAAC;IAEM,MAAM;QACT,OAAO,IAAI,6BAAa,CAAC,IAAI,CAAC,UAAU,CAAC,CAAC;IAC9C,CAAC;CAEJ;AAZD,4CAYC"}

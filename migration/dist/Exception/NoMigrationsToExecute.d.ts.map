@@ -1,0 +1,1 @@
+{"version":3,"file":"NoMigrationsToExecute.d.ts","sourceRoot":"","sources":["../../src/Exception/NoMigrationsToExecute.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,oBAAoB,CAAC;AAEtD,qBAAa,qBAAsB,SAAQ,gBAAgB;WACzC,GAAG,CAAC,KAAK,EAAE,KAAK;CAGjC"}
