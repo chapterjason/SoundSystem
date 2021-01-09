@@ -28,6 +28,16 @@ export class Executor {
             results.push(result);
 
             if (result.hasError()) {
+                if(result.getState() === State.EXECUTE) {
+                    const otherDirection = migrationPlan.getDirection() === Direction.UP ? Direction.DOWN : Direction.UP;
+                    const migration = migrationPlan.getMigration();
+                    const revertPlan = new MigrationPlan(migration, otherDirection);
+
+                    const result = await this.execute(revertPlan);
+
+                    results.push(result);
+                }
+
                 break;
             }
         }
