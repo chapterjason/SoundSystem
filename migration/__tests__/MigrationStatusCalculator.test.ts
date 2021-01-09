@@ -1,9 +1,9 @@
-import { ExecutedMigrationMemoryStorage, ExecutionResult, MigrationStatusCalculator, MigrationStorage } from "../src";
-import { MigrationMock } from "./MigrationMock";
+import { Direction, ExecutedMigrationMemoryStorage, ExecutionResult, MigrationStatusCalculator, MigrationStorage } from "../src";
+import { MigrationMock } from "./Mock/MigrationMock";
 
 describe("MigrationStatusCalculator", () => {
 
-    describe("getNewMigrations",  () => {
+    describe("getNewMigrations", () => {
 
         it("should return new migrations", async () => {
             // Arrange
@@ -15,7 +15,7 @@ describe("MigrationStatusCalculator", () => {
             migrationStorage.add(new MigrationMock("B"));
             migrationStorage.add(new MigrationMock("C"));
 
-            await executedMigrationStorage.complete(new ExecutionResult("A", 0));
+            await executedMigrationStorage.complete(new ExecutionResult("A", 0, Direction.UP));
 
             // Act
             const actual = await migrationStatusCalculator.getNewMigrations();
@@ -37,9 +37,9 @@ describe("MigrationStatusCalculator", () => {
 
             migrationStorage.add(new MigrationMock("A"));
 
-            await executedMigrationStorage.complete(new ExecutionResult("A", 0));
-            await executedMigrationStorage.complete(new ExecutionResult("B", 0));
-            await executedMigrationStorage.complete(new ExecutionResult("C", 0));
+            await executedMigrationStorage.complete(new ExecutionResult("A", 0, Direction.UP));
+            await executedMigrationStorage.complete(new ExecutionResult("B", 0, Direction.UP));
+            await executedMigrationStorage.complete(new ExecutionResult("C", 0, Direction.UP));
 
             // Act
             const actual = await migrationStatusCalculator.getExecutedUnavailableMigrations();

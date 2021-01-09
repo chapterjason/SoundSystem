@@ -1,5 +1,5 @@
 import { Direction, MigrationNotFound, ExecutedMigrationMemoryStorage, MigrationPlanCalculator, ExecutionResult, MigrationStorage } from "../src";
-import { MigrationMock } from "./MigrationMock";
+import { MigrationMock } from "./Mock/MigrationMock";
 
 describe("MigrationPlanCalculator", () => {
 
@@ -103,8 +103,8 @@ describe("MigrationPlanCalculator", () => {
     });
 
     test("plan when migrations", async () => {
-        await executedMigrationStorage.complete(new ExecutionResult("A", 0));
-        await executedMigrationStorage.complete(new ExecutionResult("B", 1));
+        await executedMigrationStorage.complete(new ExecutionResult("A", 0, Direction.UP));
+        await executedMigrationStorage.complete(new ExecutionResult("B", 1, Direction.UP));
 
         // 0
         {

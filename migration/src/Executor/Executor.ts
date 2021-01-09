@@ -28,7 +28,7 @@ export class Executor {
             results.push(result);
 
             if (result.hasError()) {
-                if(result.getState() === State.EXECUTE) {
+                if (result.getState() === State.EXECUTE) {
                     const otherDirection = migrationPlan.getDirection() === Direction.UP ? Direction.DOWN : Direction.UP;
                     const migration = migrationPlan.getMigration();
                     const revertPlan = new MigrationPlan(migration, otherDirection);
@@ -47,7 +47,8 @@ export class Executor {
 
     public async execute(migrationPlan: MigrationPlan): Promise<ExecutionResult> {
         const version = migrationPlan.getVersion();
-        const result = new ExecutionResult(version, Date.now());
+        const direction = migrationPlan.getDirection();
+        const result = new ExecutionResult(version, Date.now(), direction);
 
         try {
             await this.executeMigration(migrationPlan, result);

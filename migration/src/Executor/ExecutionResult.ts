@@ -1,6 +1,7 @@
 import { State } from "../Migration/State";
 import { ExecutedMigration } from "../Executed/ExecutedMigration";
 import { SkipMigration } from "../Exception/SkipMigration";
+import { Direction } from "../Migration/Direction";
 
 export class ExecutionResult {
     private readonly version: string;
@@ -13,11 +14,18 @@ export class ExecutionResult {
 
     private state: State = State.NONE;
 
+    private direction: Direction;
+
     private timestamp: number;
 
-    public constructor(version: string, timestamp: number) {
+    public constructor(version: string, timestamp: number, direction: Direction) {
         this.version = version;
         this.timestamp = timestamp;
+        this.direction = direction;
+    }
+
+    public getDirection(): Direction {
+        return this.direction;
     }
 
     public getSkipped(): SkipMigration | null {

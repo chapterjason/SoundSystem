@@ -25,6 +25,7 @@ export class AliasResolver {
         const executedMigrations = await this.executedMigrationStorage.getAll();
 
         switch (alias) {
+            case "0":
             case Alias.FIRST:
                 return "0";
             case  Alias.CURRENT:

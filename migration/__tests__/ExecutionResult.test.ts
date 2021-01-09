@@ -1,4 +1,4 @@
-import { ExecutionResult, SkipMigration, State } from "../src";
+import { Direction, ExecutionResult, SkipMigration, State } from "../src";
 
 describe("ExecutionResult", () => {
 
@@ -6,7 +6,7 @@ describe("ExecutionResult", () => {
 
         it("should set and returns the version", () => {
             // Arrange
-            const result = new ExecutionResult("A", 1);
+            const result = new ExecutionResult("A", 1, Direction.UP);
 
             // Act
             result.setDuration(4);
@@ -23,7 +23,7 @@ describe("ExecutionResult", () => {
 
         it("should return false default", () => {
             // Arrange
-            const result = new ExecutionResult("A", 1);
+            const result = new ExecutionResult("A", 1, Direction.UP);
 
             // Act
             const actual = result.isSkipped();
@@ -34,7 +34,7 @@ describe("ExecutionResult", () => {
 
         it("should set and return skip", () => {
             // Arrange
-            const result = new ExecutionResult("A", 1);
+            const result = new ExecutionResult("A", 1, Direction.UP);
 
             // Act
             result.setSkipped(new SkipMigration("foo"));
@@ -50,7 +50,7 @@ describe("ExecutionResult", () => {
     describe("HasSetError", () => {
         it("should be default to false", () => {
             // Arrange
-            const result = new ExecutionResult("A", 1);
+            const result = new ExecutionResult("A", 1, Direction.UP);
 
             // Act
             const actual = result.hasError();
@@ -61,7 +61,7 @@ describe("ExecutionResult", () => {
 
         it("should set and return true", () => {
             // Arrange
-            const result = new ExecutionResult("A", 1);
+            const result = new ExecutionResult("A", 1, Direction.UP);
 
             // Act
             result.setError(new Error());
@@ -76,7 +76,7 @@ describe("ExecutionResult", () => {
     describe("SetGetState", () => {
         it("should set and get state", () => {
             // Arrange
-            const result = new ExecutionResult("A", 1);
+            const result = new ExecutionResult("A", 1, Direction.UP);
 
             // Act
             result.setState(State.EXECUTE);
@@ -90,7 +90,7 @@ describe("ExecutionResult", () => {
     describe("Version", () => {
         it("should set via constructor", () => {
             // Act
-            const result = new ExecutionResult("A", 1);
+            const result = new ExecutionResult("A", 1, Direction.UP);
 
             // Assert
             expect(result.getVersion()).toBe("A");
@@ -98,7 +98,7 @@ describe("ExecutionResult", () => {
 
         it("should return version", () => {
             // Arrange
-            const result = new ExecutionResult("B", 1);
+            const result = new ExecutionResult("B", 1, Direction.UP);
 
             // Act
             const actual = result.getVersion();
@@ -111,7 +111,7 @@ describe("ExecutionResult", () => {
     describe("Timestamp", () => {
         it("should set via constructor", () => {
             // Act
-            const result = new ExecutionResult("A", 10);
+            const result = new ExecutionResult("A", 10, Direction.UP);
 
             // Assert
             expect(result.getTimestamp()).toBe(10);
@@ -119,13 +119,34 @@ describe("ExecutionResult", () => {
 
         it("should return version", () => {
             // Arrange
-            const result = new ExecutionResult("B", 20);
+            const result = new ExecutionResult("B", 20, Direction.UP);
 
             // Act
             const actual = result.getTimestamp();
 
             // Assert
             expect(actual).toBe(20);
+        });
+    });
+
+    describe("Direction", () => {
+        it("should set via constructor", () => {
+            // Act
+            const result = new ExecutionResult("A", 0, Direction.DOWN);
+
+            // Assert
+            expect(result.getDirection()).toBe(Direction.DOWN);
+        });
+
+        it("should return direction", () => {
+            // Arrange
+            const result = new ExecutionResult("B", 20, Direction.UP);
+
+            // Act
+            const actual = result.getDirection();
+
+            // Assert
+            expect(actual).toBe(Direction.UP);
         });
     });
 

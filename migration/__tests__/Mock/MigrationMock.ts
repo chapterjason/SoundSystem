@@ -1,4 +1,4 @@
-import { AbstractMigration } from "../src";
+import { AbstractMigration } from "../../src";
 
 export class MigrationMock extends AbstractMigration {
 

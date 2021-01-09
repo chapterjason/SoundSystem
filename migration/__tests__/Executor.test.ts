@@ -1,5 +1,5 @@
 import { Direction, ExecutedMigrationMemoryStorage, State, Executor, MigrationPlan, MigrationPlanList } from "../src";
-import { MigrationMock } from "./MigrationMock";
+import { MigrationMock } from "./Mock/MigrationMock";
 
 describe("Executor", () => {
 
@@ -108,17 +108,26 @@ describe("Executor", () => {
             const actual = await executor.migrate(migrationPlanList);
 
             // Assert
-            expect(actual).toHaveLength(1);
+            expect(actual).toHaveLength(2);
             expect(actual[0].getVersion()).toBe("A");
+            expect(actual[0].getDirection()).toBe(Direction.UP);
             expect(actual[0].getState()).toBe(State.EXECUTE);
             expect(actual[0].getSkipped()).toBeNull();
             expect(actual[0].getError()?.message).toBe("foo");
             expect(actual[0].hasError()).toBeTruthy();
             expect(actual[0].isSkipped()).toBeFalsy();
 
-            expect(migrationA.preDownExecuted).toBe(0);
-            expect(migrationA.downExecuted).toBe(0);
-            expect(migrationA.postDownExecuted).toBe(0);
+            expect(actual[1].getVersion()).toBe("A");
+            expect(actual[1].getDirection()).toBe(Direction.DOWN);
+            expect(actual[1].getState()).toBe(State.NONE);
+            expect(actual[1].getSkipped()).toBeNull();
+            expect(actual[1].getError()).toBeNull();
+            expect(actual[1].hasError()).toBeFalsy();
+            expect(actual[1].isSkipped()).toBeFalsy();
+
+            expect(migrationA.preDownExecuted).toBe(1);
+            expect(migrationA.downExecuted).toBe(1);
+            expect(migrationA.postDownExecuted).toBe(1);
 
             expect(migrationA.preUpExecuted).toBe(1);
             expect(migrationA.upExecuted).toBe(0);
