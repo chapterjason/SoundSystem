@@ -1,1 +1,0 @@
-{"version":3,"file":"MigrationNotFound.js","sourceRoot":"","sources":["../../src/Exception/MigrationNotFound.ts"],"names":[],"mappings":";;;AAAA,yDAAsD;AAEtD,MAAa,iBAAkB,SAAQ,mCAAgB;IAC5C,MAAM,CAAC,GAAG,CAAC,OAAe;QAC7B,OAAO,IAAI,IAAI,CAAC,cAAc,OAAO,kBAAkB,CAAC,CAAC;IAC7D,CAAC;CACJ;AAJD,8CAIC"}

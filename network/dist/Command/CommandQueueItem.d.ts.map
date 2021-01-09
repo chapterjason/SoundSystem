@@ -1,1 +1,0 @@
-{"version":3,"file":"CommandQueueItem.d.ts","sourceRoot":"","sources":["../../src/Command/CommandQueueItem.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,mBAAmB,EAAE,MAAM,+BAA+B,CAAC;AACpE,OAAO,EAAE,OAAO,EAAE,MAAM,WAAW,CAAC;AAEpC,MAAM,WAAW,gBAAgB;IAC7B,MAAM,EAAE,mBAAmB,CAAC;IAE5B,OAAO,EAAE,OAAO,CAAC;CACpB"}

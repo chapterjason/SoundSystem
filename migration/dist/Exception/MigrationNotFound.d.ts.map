@@ -1,1 +1,0 @@
-{"version":3,"file":"MigrationNotFound.d.ts","sourceRoot":"","sources":["../../src/Exception/MigrationNotFound.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,gBAAgB,EAAE,MAAM,oBAAoB,CAAC;AAEtD,qBAAa,iBAAkB,SAAQ,gBAAgB;WACrC,GAAG,CAAC,OAAO,EAAE,MAAM;CAGpC"}
