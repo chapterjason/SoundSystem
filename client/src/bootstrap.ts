@@ -17,16 +17,20 @@ import { SnapclientService } from "./SystemService/SnapclientService";
 import { SnapserverService } from "./SystemService/SnapserverService";
 import { Configuration } from "./Configuration/Configuration";
 import { DeviceService } from "./Service/DeviceService";
+import { TestMigration } from "./Migration/1.0/TestMigration";
 
 export async function bootstrap() {
     const builder = new ContainerBuilder();
 
     builder.registerService(Application, {}, [{ serviceIdentifier: "!command", method: "addCommands" }]);
-    builder.registerService(MigrationStorage, { name: "migrations.storage" }, [{ serviceIdentifier: "!migration", method: "addMigrations" }]);
-    builder.registerService(ExecutedMigrationFileStorage, { name: "migrations.executed.storage" }, [{ serviceIdentifier: "%migrations.file%", parameterIndex: 0 }]);
-    builder.registerService(VersionAliasResolver, { name: "migrations.version.aliasResolver" }, [{ serviceIdentifier: "@migrations.storage", parameterIndex: 0 }, { serviceIdentifier: "@migrations.executed.storage", parameterIndex: 1 }]);
+    builder.registerService(MigrationStorage, { name: "migration.storage" }, [{ serviceIdentifier: "!migration", method: "addMigrations" }]);
+    builder.registerService(ExecutedMigrationFileStorage, { name: "migration.executed.storage" }, [{ serviceIdentifier: "%migration.file%", parameterIndex: 0 }]);
+    builder.registerService(VersionAliasResolver, { name: "migration.version.aliasResolver" }, [{ serviceIdentifier: "@migration.storage", parameterIndex: 0 }, { serviceIdentifier: "@migration.executed.storage", parameterIndex: 1 }]);
 
     builder.registerService(Configuration);
+
+    // Migrations
+    builder.registerService(TestMigration);
 
     // Services
     builder.registerService(SoundClient);
@@ -46,36 +50,36 @@ export async function bootstrap() {
     builder.registerService(UpdateCommand);
 
     // Migration Commands
-    builder.registerService(CurrentCommand, { name: "migrations.command.current", tags: ["command"] }, [
-        { serviceIdentifier: "@migrations.storage", parameterIndex: 0 }, {
-            serviceIdentifier: "@migrations.version.aliasResolver",
+    builder.registerService(CurrentCommand, { name: "migration.command.current", tags: ["command"] }, [
+        { serviceIdentifier: "@migration.storage", parameterIndex: 0 }, {
+            serviceIdentifier: "@migration.version.aliasResolver",
             parameterIndex: 1,
         }]);
-    builder.registerService(ExecuteCommand, { name: "migrations.command.execute", tags: ["command"] }, [
-        { serviceIdentifier: "@migrations.storage", parameterIndex: 0 },
-        { serviceIdentifier: "@migrations.executed.storage", parameterIndex: 1 },
+    builder.registerService(ExecuteCommand, { name: "migration.command.execute", tags: ["command"] }, [
+        { serviceIdentifier: "@migration.storage", parameterIndex: 0 },
+        { serviceIdentifier: "@migration.executed.storage", parameterIndex: 1 },
     ]);
-    builder.registerService(LatestCommand, { name: "migrations.command.latest", tags: ["command"] }, [
-        { serviceIdentifier: "@migrations.storage", parameterIndex: 0 }, {
-            serviceIdentifier: "@migrations.version.aliasResolver",
+    builder.registerService(LatestCommand, { name: "migration.command.latest", tags: ["command"] }, [
+        { serviceIdentifier: "@migration.storage", parameterIndex: 0 }, {
+            serviceIdentifier: "@migration.version.aliasResolver",
             parameterIndex: 1,
         },
     ]);
-    builder.registerService(ListCommand, { name: "migrations.command.list", tags: ["command"] }, [
-        { serviceIdentifier: "@migrations.storage", parameterIndex: 0 },
-        { serviceIdentifier: "@migrations.executed.storage", parameterIndex: 1 },
+    builder.registerService(ListCommand, { name: "migration.command.list", tags: ["command"] }, [
+        { serviceIdentifier: "@migration.storage", parameterIndex: 0 },
+        { serviceIdentifier: "@migration.executed.storage", parameterIndex: 1 },
     ]);
-    builder.registerService(MigrateCommand, { name: "migrations.command.migrate", tags: ["command"] }, [
-        { serviceIdentifier: "@migrations.storage", parameterIndex: 0 },
-        { serviceIdentifier: "@migrations.executed.storage", parameterIndex: 1 },
+    builder.registerService(MigrateCommand, { name: "migration.command.migrate", tags: ["command"] }, [
+        { serviceIdentifier: "@migration.storage", parameterIndex: 0 },
+        { serviceIdentifier: "@migration.executed.storage", parameterIndex: 1 },
     ]);
-    builder.registerService(StatusCommand, { name: "migrations.command.status", tags: ["command"] }, [
-        { serviceIdentifier: "@migrations.storage", parameterIndex: 0 },
-        { serviceIdentifier: "@migrations.executed.storage", parameterIndex: 1 },
+    builder.registerService(StatusCommand, { name: "migration.command.status", tags: ["command"] }, [
+        { serviceIdentifier: "@migration.storage", parameterIndex: 0 },
+        { serviceIdentifier: "@migration.executed.storage", parameterIndex: 1 },
     ]);
-    builder.registerService(UpToDateCommand, { name: "migrations.command.up-to-date", tags: ["command"] }, [
-        { serviceIdentifier: "@migrations.storage", parameterIndex: 0 },
-        { serviceIdentifier: "@migrations.executed.storage", parameterIndex: 1 },
+    builder.registerService(UpToDateCommand, { name: "migration.command.up-to-date", tags: ["command"] }, [
+        { serviceIdentifier: "@migration.storage", parameterIndex: 0 },
+        { serviceIdentifier: "@migration.executed.storage", parameterIndex: 1 },
     ]);
 
     builder.registerFactory(async (file: string) => {
@@ -109,7 +113,7 @@ export async function bootstrap() {
     container.setParameter("environment.file", joinToRunetimeDirectory(".env"));
     container.setParameter("identifier.file", joinToRunetimeDirectory(".id"));
     container.setParameter("configuration.file", joinToRunetimeDirectory("client.json"));
-    container.setParameter("migrations.file", joinToRunetimeDirectory("migrations.json"));
+    container.setParameter("migration.file", joinToRunetimeDirectory("migration.json"));
 
     return container;
 }
