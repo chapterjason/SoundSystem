@@ -1,89 +1,54 @@
-import { BidirectionalSocket, Command, CommandController, DataType } from "@soundsystem/network";
-import { Configuration } from "../Configuration/Configuration";
+import { CommandController } from "@soundsystem/network";
 import { Stream } from "@soundsystem/common";
 import { update } from "../Utils/Update";
-import * as Sentry from "@sentry/node";
-import { Span, TransactionContext } from "@sentry/types";
-import { SoundService } from "../Service/SoundService";
+import { SoundService } from "../Sound/SoundService";
+import { Inject, Service } from "@soundsystem/system";
 
+@Service("controller.sound", { tags: ["controller"] })
 export class SoundController extends CommandController {
 
-    public constructor() {
+    private service: SoundService;
+
+    public constructor(@Inject("@sound") service: SoundService) {
         super();
+        this.service = service;
 
-        this.set("idle", this.wrap({ op: "idle", name: "Set idle" }, this.idle).bind(this));
-        this.set("listen", this.wrap({ op: "listen", name: "Set listen" }, this.listen).bind(this));
-        this.set("single", this.wrap({ op: "single", name: "Set single" }, this.single).bind(this));
-        this.set("stream", this.wrap({ op: "stream", name: "Set stream" }, this.stream).bind(this));
-        this.set("mute", this.wrap({ op: "mute", name: "Mute" }, this.mute).bind(this));
-        this.set("unmute", this.wrap({ op: "unmute", name: "Unmute" }, this.unmute).bind(this));
-        this.set("volume", this.wrap({ op: "volume", name: "Set volume" }, this.volume).bind(this));
-        this.set("update", this.wrap({ op: "update", name: "Do update" }, this.update).bind(this));
+        this.set("idle", this.idle.bind(this));
+        this.set("listen", this.listen.bind(this));
+        this.set("single", this.single.bind(this));
+        this.set("stream", this.stream.bind(this));
+        this.set("mute", this.mute.bind(this));
+        this.set("unmute", this.unmute.bind(this));
+        this.set("volume", this.volume.bind(this));
+        this.set("update", this.update.bind(this));
     }
 
-    private wrap(context: TransactionContext, callback: (...args: any[]) => Promise<void>) {
-        return async (data: DataType, command: Command, socket: BidirectionalSocket) => {
-            const tracing = Sentry.startTransaction({
-                ...context,
-                data: {
-                    command: {
-                        id: command.getId(),
-                        command: command.getCommandName(),
-                        data: command.getAs(),
-                    },
-                },
-            });
-
-            try {
-                await callback(tracing, data, command, socket);
-            } catch (error) {
-                Sentry.captureException(error);
-            } finally {
-                tracing.finish();
-            }
-        };
+    private async idle() {
+        await this.service.idle();
     }
 
-    private async idle(tracing: Span) {
-        const service = new SoundService(tracing);
-
-        await service.idle();
+    private async listen(service: SoundService, server: string) {
+        await this.service.listen(server);
     }
 
-    private async listen(tracing: Span, server: string) {
-        const service = new SoundService(tracing);
-
-        await service.listen(server);
+    private async mute() {
+        await this.service.setMuted(true);
     }
 
-    private async mute(tracing: Span) {
-        const service = new SoundService(tracing);
-
-        await service.setMuted(true);
+    private async single(stream: Stream) {
+        await this.service.single(stream);
     }
 
-    private async single(tracing: Span, stream: Stream) {
-        const service = new SoundService(tracing);
-
-        await service.single(stream);
+    private async stream(stream: Stream) {
+        await this.service.stream(stream);
     }
 
-    private async stream(tracing: Span, stream: Stream) {
-        const service = new SoundService(tracing);
-
-        await service.stream(stream);
+    private async unmute() {
+        await this.service.setMuted(false);
     }
 
-    private async unmute(tracing: Span) {
-        const service = new SoundService(tracing);
-
-        await service.setMuted(false);
-    }
-
-    private async volume(tracing: Span, volume: number) {
-        const service = new SoundService(tracing);
-
-        await service.setVolume(volume);
+    private async volume(volume: number) {
+        await this.service.setVolume(volume);
     }
 
     private async update() {

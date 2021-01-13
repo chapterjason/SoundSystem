@@ -1,36 +1,8 @@
-import { CLIENT } from "./Singleton/Client";
-import { ENVIRONMENT } from "./Singleton/Environment";
-import { Configuration } from "./Configuration/Configuration";
-import { Command } from "@soundsystem/network";
-import { HOSTNAME } from "./constants";
-import { ID } from "./settings";
+import { ApplicationInterface } from "@mscs/console";
+import { Container } from "@soundsystem/system";
 
-export async function runtime() {
-    CLIENT.connect({
-        family: 4,
-        host: ENVIRONMENT.get("HOST"),
-        port: parseInt(ENVIRONMENT.get("SERVICE_PORT"), 10),
-    });
+export async function runtime(container: Container) {
+    const application = await container.get<ApplicationInterface>("application");
 
-    CLIENT.on("connect", async () => {
-        Configuration.afterSave = async (config) => {
-            const command = Command.create("configuration", {
-                ...config,
-                hostname: HOSTNAME,
-                id: ID(),
-            });
-
-            await CLIENT.request(command.toPacket());
-        };
-
-        await CLIENT.init();
-    });
-
-    CLIENT.on("error", (error) => {
-        throw error;
-    });
-
-    CLIENT.on("close", () => {
-        throw new Error("Connection closed.");
-    });
+    return await application.run();
 }

@@ -1,0 +1,28 @@
+{
+  "name": "@soundsystem/system",
+  "version": "1.0.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "prebuild": "rm -rf tsconfig.tsbuildinfo ./dist",
+    "build": "yarn run prebuild && tsc --build",
+    "test": "jest --detectOpenHandles --forceExit --runInBand"
+  },
+  "devDependencies": {
+    "@tsconfig/node14": "^1.0.0",
+    "@types/ini": "^1.3.30",
+    "@types/node": "^14.14.16",
+    "jest": "^26.6.3",
+    "ts-jest": "^26.4.4",
+    "typescript": "^4.1.3",
+    "utility-types": "^3.10.0"
+  },
+  "dependencies": {
+    "@soundsystem/common": "1.0.0",
+    "reflect-metadata": "^0.1.13",
+    "@mscs/process": "^0.4.0",
+    "ini": "^2.0.0"
+  }
+}

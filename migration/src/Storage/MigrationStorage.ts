@@ -10,6 +10,10 @@ export class MigrationStorage implements MigrationStorageInterface {
         this.migrations.push(migration);
     }
 
+    public addMigrations(migrations: MigrationInterface[]): void {
+        this.migrations.push(...migrations);
+    }
+
     public getAll(): MigrationList<MigrationInterface> {
         return new MigrationList(this.migrations);
     }

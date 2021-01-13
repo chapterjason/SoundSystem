@@ -5,6 +5,8 @@ export interface MigrationStorageInterface {
 
     add(migration: MigrationInterface): void;
 
+    addMigrations(migrations: MigrationInterface[]): void;
+
     getAll(): MigrationList<MigrationInterface>;
 
 }

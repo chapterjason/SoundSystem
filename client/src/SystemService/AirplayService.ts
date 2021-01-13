@@ -1,10 +1,10 @@
-import { SystemService } from "./SystemService";
-import { Span, Transaction } from "@sentry/types";
+import { Service, SystemService } from "@soundsystem/system";
 
+@Service("system.airplay", { tags: ["system"] })
 export class AirplayService extends SystemService {
 
-    public constructor(tracing: Span) {
-        super("airplay-playback", tracing);
+    public constructor() {
+        super("airplay-playback");
     }
 
 }

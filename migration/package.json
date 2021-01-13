@@ -18,5 +18,6 @@
     "typescript": "^4.1.3"
   },
   "dependencies": {
+    "@mscs/console": "^0.1.0"
   }
 }

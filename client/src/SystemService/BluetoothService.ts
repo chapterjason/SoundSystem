@@ -1,56 +1,33 @@
-import { SystemService } from "./SystemService";
-import { Span } from "@sentry/types";
-import * as Sentry from "@sentry/node";
+import { Service, SystemService } from "@soundsystem/system";
 
+@Service("system.bluetooth", { tags: ["system"] })
 export class BluetoothService {
 
     private stream: SystemService;
 
     private single: SystemService;
 
-    private tracing: Span;
+    private services: SystemService[] = [
+        new SystemService("bthelper@hci0"),
+        new SystemService("bt-agent"),
+        new SystemService("bluetooth"),
+        new SystemService("bluealsa"),
+    ];
 
-    public constructor(tracing: Span) {
-        this.tracing = tracing;
-
-        this.stream = new SystemService("bluemusic-playback", tracing);
-
-        this.single = new SystemService("bluetooth-playback", tracing);
+    public constructor() {
+        this.stream = new SystemService("bluemusic-playback");
+        this.single = new SystemService("bluetooth-playback");
     }
 
     public async start() {
-        const child = this.tracing.startChild({ op: `services:start:bluetooth` });
-
-        try {
-            const services = this.getServices(child);
-
-            child.setData("services", services.map(service => service.getServiceName()));
-
-            for await (const service of services) {
-                await service.start();
-            }
-        } catch (error) {
-            Sentry.captureException(error);
-        } finally {
-            child.finish();
+        for await (const service of this.services) {
+            await service.start();
         }
     }
 
     public async stop() {
-        const child = this.tracing.startChild({ op: `services:stop:bluetooth` });
-
-        try {
-            const services = this.getServices(child);
-
-            child.setData("services", services.map(service => service.getServiceName()));
-
-            for await (const service of services) {
-                await service.stop();
-            }
-        } catch (error) {
-            Sentry.captureException(error);
-        } finally {
-            child.finish();
+        for await (const service of this.services) {
+            await service.stop();
         }
     }
 
@@ -70,12 +47,4 @@ export class BluetoothService {
         await this.single.stop();
     }
 
-    protected getServices(tracing: Span) {
-        return [
-            new SystemService("bthelper@hci0", tracing),
-            new SystemService("bt-agent", tracing),
-            new SystemService("bluetooth", tracing),
-            new SystemService("bluealsa", tracing),
-        ];
-    }
 }

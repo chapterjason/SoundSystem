@@ -1,55 +1,36 @@
-import { execute } from "../Utils/Execute";
-import { EventEmitter } from "events";
-import { Span, Transaction } from "@sentry/types";
-import * as Sentry from "@sentry/node";
+import { Process } from "@mscs/process";
+import { Inject, Service } from "@soundsystem/system";
+import { DeviceService } from "../Service/DeviceService";
 
-export class AlsaService extends EventEmitter {
+@Service("system.alsa", { tags: ["system"] })
+export class AlsaService {
 
-    private tracing: Span;
+    private device: DeviceService;
 
-    public constructor(tracing: Span) {
-        super();
-        this.tracing = tracing;
+    public constructor(
+        @Inject("@device") device: DeviceService,
+    ) {
+        this.device = device;
     }
 
-    public async setVolume(volume: number, device: string = "Headphone") {
-        const child = this.tracing.startChild({ op: "alsa:volume" });
+    public async setVolume(volume: number) {
+        const device = this.device.get();
+        const volumeProcess = new Process(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
 
-        child.setData("volume", volume);
-        child.setData("device", device);
-
-        try {
-            return await execute(["amixer", "-M", "set", `'${device}'`, `${volume}%`]);
-        } catch (error) {
-            Sentry.captureException(error);
-        } finally {
-            child.finish();
-        }
+        return await volumeProcess.mustRun();
     }
 
-    public async mute(device: string = "Headphone") {
-        const child = this.tracing.startChild({ op: "alsa:mute" });
-        child.setData("device", device);
+    public async mute() {
+        const device = this.device.get();
+        const muteProcess = new Process(["amixer", "set", `'${device}'`, "mute"]);
 
-        try {
-            return await execute(["amixer", "set", `'${device}'`, "mute"]);
-        } catch (error) {
-            Sentry.captureException(error);
-        } finally {
-            child.finish();
-        }
+        return await muteProcess.mustRun();
     }
 
-    public async unmute(device: string = "Headphone") {
-        const child = this.tracing.startChild({ op: "alsa:unmute" });
-        child.setData("device", device);
+    public async unmute() {
+        const device = this.device.get();
+        const unmuteProcess = new Process(["amixer", "set", `'${device}'`, "unmute"]);
 
-        try {
-            return await execute(["amixer", "set", `'${device}'`, "unmute"]);
-        } catch (error) {
-            Sentry.captureException(error);
-        } finally {
-            child.finish();
-        }
+        return await unmuteProcess.mustRun();
     }
 }

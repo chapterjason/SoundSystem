@@ -1,10 +1,9 @@
-import path from "path";
 import { ConfigurationData } from "./ConfigurationData";
 import { existsSync, promises as fs } from "fs";
 import { Mode, Stream } from "@soundsystem/common";
-import { Span } from "@sentry/types";
-import * as Sentry from "@sentry/node";
+import { Inject, Service } from "@soundsystem/system";
 
+@Service("configuration")
 export class Configuration {
 
     public static empty: ConfigurationData = {
@@ -15,14 +14,12 @@ export class Configuration {
         muted: false,
     };
 
-    private static file: string = path.join(__dirname, "client.json");
-
     protected config: ConfigurationData | null = null;
 
-    private tracing: Span;
+    private readonly file: string;
 
-    public constructor(tracing: Span) {
-        this.tracing = tracing;
+    public constructor(@Inject("%configuration.file%") file: string) {
+        this.file = file;
     }
 
     public static afterSave: (config: ConfigurationData) => Promise<void> = async () => {
@@ -41,39 +38,22 @@ export class Configuration {
     }
 
     public async load(): Promise<ConfigurationData> {
-        const child = this.tracing.startChild({ op: "configuration:load" });
-
-        try {
-            if (!existsSync(Configuration.file)) {
-                await this.reset();
-            }
-
-            const buffer = await fs.readFile(Configuration.file);
-            const text = buffer.toString();
-
-            return JSON.parse(text) as ConfigurationData;
-        } catch (error) {
-            Sentry.captureException(error);
-            throw error;
-        } finally {
-            child.finish();
+        if (!existsSync(this.file)) {
+            await this.reset();
         }
+
+        const buffer = await fs.readFile(this.file);
+        const text = buffer.toString();
+
+        return JSON.parse(text) as ConfigurationData;
     }
 
     public async save() {
-        const child = this.tracing.startChild({ op: "configuration:save" });
+        const config = await this.get();
+        const text = JSON.stringify(config, null, "  ");
 
-        try {
-            const config = await this.get();
-            const text = JSON.stringify(config, null, "  ");
-
-            await fs.writeFile(Configuration.file, text);
-            await Configuration.afterSave(config);
-        } catch (error) {
-            Sentry.captureException(error);
-        } finally {
-            child.finish();
-        }
+        await fs.writeFile(this.file, text);
+        await Configuration.afterSave(config);
     }
 
     public async setMode(mode: Mode) {
@@ -85,7 +65,7 @@ export class Configuration {
     public async setStream(stream: Stream) {
         const config = await this.get();
 
-        config.stream =  stream;
+        config.stream = stream;
     }
 
     public async setVolume(volume: number) {

@@ -1,5 +1,5 @@
-export * from "./Alias/Alias";
-export * from "./Alias/AliasResolver";
+export * from "./Alias/VersionAlias";
+export * from "./Alias/VersionAliasResolver";
 
 export * from "./Calculator/MigrationPlanCalculator";
 export * from "./Calculator/MigrationStatusCalculator";
@@ -34,5 +34,13 @@ export * from "./Plan/MigrationPlanList";
 
 export * from "./Storage/MigrationStorage";
 export * from "./Storage/MigrationStorageInterface";
+
+export * from "./Command/CurrentCommand";
+export * from "./Command/StatusCommand";
+export * from "./Command/ListCommand";
+export * from "./Command/LatestCommand";
+export * from "./Command/MigrateCommand";
+export * from "./Command/ExecuteCommand";
+export * from "./Command/UpToDateCommand";
 
 

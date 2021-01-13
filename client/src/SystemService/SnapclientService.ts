@@ -1,32 +1,20 @@
 import { promises as fs } from "fs";
-import { SystemService } from "./SystemService";
-import { Span } from "@sentry/types";
-import * as Sentry from "@sentry/node";
 import * as ini from "ini";
+import { Service, SystemService } from "@soundsystem/system";
 
+@Service("system.snapclient", { tags: ["system"] })
 export class SnapclientService extends SystemService {
 
-    public constructor(tracing: Span) {
-        super("snapclient", tracing);
+    public constructor() {
+        super("snapclient");
     }
 
     public async setServer(server: string) {
-        const child = this.tracing.startChild({ op: "snapclient:set:server" });
-        child.setData("server", server);
+        const config = {
+            START_SNAPCLIENT: true,
+            SNAPCLIENT_OPTS: `-h ${server}`,
+        };
 
-        try {
-            const config = {
-                START_SNAPCLIENT: true,
-                SNAPCLIENT_OPTS: `-h ${server}`,
-            };
-
-            child.setData("config", config);
-
-            return await fs.writeFile("/etc/default/snapclient", ini.encode(config));
-        } catch (error) {
-            Sentry.captureException(error);
-        } finally {
-            child.finish();
-        }
+        return await fs.writeFile("/etc/default/snapclient", ini.encode(config));
     }
 }
