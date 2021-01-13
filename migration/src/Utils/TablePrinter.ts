@@ -30,13 +30,14 @@ export class TablePrinter {
     }
 
     private formatCell(content: string | number, index: number, lengths: number[]) {
-        const spaces = " ".repeat((lengths[index] - content.toString().length) + 1 /* Space after */);
+        const value = content.toString();
+        const spaces = " ".repeat((lengths[index] - value.length) + 1 /* Space after */);
 
-        return /* Space before => */ ` ${content}${spaces}`;
+        return /* Space before => */ ` ${value}${spaces}`;
     }
 
     private getSeparator(lengths: number[]) {
-        return `|${lengths.map(length => "-".repeat(length + 2 /* spaces around cell content */)).join("|")}|`;
+        return `+${lengths.map(length => "-".repeat(length + 2 /* spaces around cell content */)).join("+")}+`;
     }
 
     private rotate(matrix: (string | number)[][]) {
