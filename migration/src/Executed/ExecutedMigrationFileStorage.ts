@@ -1,5 +1,5 @@
 import { ExecutedMigrationStorageInterface } from "./ExecutedMigrationStorageInterface";
-import { promises as fs } from "fs";
+import { existsSync, promises as fs } from "fs";
 import { ExecutionResult } from "../Executor/ExecutionResult";
 import { ExecutedMigration } from "./ExecutedMigration";
 import { MigrationList } from "../List/MigrationList";
@@ -17,6 +17,10 @@ export class ExecutedMigrationFileStorage implements ExecutedMigrationStorageInt
     }
 
     public async load(): Promise<ExecutedMigrationData[]> {
+        if (!existsSync(this.file)) {
+            await this.save([]);
+        }
+
         const buffer = await fs.readFile(this.file);
         const data = buffer.toString();
 
