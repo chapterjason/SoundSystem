@@ -49,7 +49,7 @@ export class ExecuteCommand extends Command<ExecuteCommandArguments, ExecuteComm
 
         io.note(`Executing ${versions.join(", ")} ${direction}`);
 
-        const migrator = new Executor(this.executedMigrationStorage);
+        const migrator = new Executor(this.executedMigrationStorage, io);
 
         const results = await migrator.migrate(plan);
 

@@ -85,7 +85,7 @@ export class MigrateCommand extends Command<MigrateCommandArguments> {
 
         io.note(`Migrating ${plan.getDirection()} to ${version}`);
 
-        const migrator = new Executor(this.executedMigrationStorage);
+        const migrator = new Executor(this.executedMigrationStorage, io);
 
         await migrator.migrate(plan);
 

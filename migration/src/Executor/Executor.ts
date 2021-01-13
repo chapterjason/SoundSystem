@@ -5,13 +5,35 @@ import { ExecutionResult } from "./ExecutionResult";
 import { State } from "../Migration/State";
 import { ExecutedMigrationStorageInterface } from "../Executed/ExecutedMigrationStorageInterface";
 import { MigrationPlan } from "../Plan/MigrationPlan";
+import { StyledOutput } from "@mscs/console";
+import { MigrationInterface } from "../Migration/MigrationInterface";
 
 export class Executor {
 
     private executedMigrationStorage: ExecutedMigrationStorageInterface;
 
-    public constructor(executedMigrationStorage: ExecutedMigrationStorageInterface) {
+    private io: StyledOutput;
+
+    public constructor(executedMigrationStorage: ExecutedMigrationStorageInterface, io: StyledOutput) {
         this.executedMigrationStorage = executedMigrationStorage;
+        this.io = io;
+    }
+
+    public getMigrationHeader(plan: MigrationPlan, migration: MigrationInterface, direction: Direction): string {
+        const version = plan.getVersion();
+        const description = migration.getDescription();
+
+        let info = version;
+
+        if (description !== "") {
+            info += ` (${description})`;
+        }
+
+        if (direction === Direction.UP) {
+            return `++ migrating ${info}`;
+        }
+
+        return `++ reverting ${info}`;
     }
 
     public async migrate(plan: MigrationPlanList): Promise<ExecutionResult[]> {
@@ -55,8 +77,10 @@ export class Executor {
         } catch (error) {
             if (error instanceof SkipMigration) {
                 result.setSkipped(error);
+                this.io.error(`Migration ${version} skipped during ${result.getState()}. Reason: "${error.message}"`);
             } else {
                 result.setError(error);
+                this.io.error(`Migration ${version} failed during ${result.getState()}. Reason: "${error.message}"`);
             }
         }
 
@@ -66,6 +90,7 @@ export class Executor {
 
     private async executeMigration(migrationPlan: MigrationPlan, result: ExecutionResult): Promise<void> {
         const start = Date.now();
+        const version = migrationPlan.getVersion();
         const direction = migrationPlan.getDirection();
         const migration = migrationPlan.getMigration();
 
@@ -76,6 +101,8 @@ export class Executor {
         } else if (direction === Direction.DOWN) {
             await migration.preDown();
         }
+
+        this.io.note(this.getMigrationHeader(migrationPlan, migration, direction));
 
         result.setState(State.EXECUTE);
 
@@ -98,6 +125,8 @@ export class Executor {
         result.setDuration(stop - start);
 
         await this.executedMigrationStorage.complete(result);
+
+        this.io.note(`Migration ${version} ${direction} (took ${result.getDuration()}ms)`);
 
         result.setState(State.NONE);
 

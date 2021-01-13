@@ -4,7 +4,7 @@ import { MigrationMock } from "./Mock/MigrationMock";
 describe("Executor", () => {
 
     const executedMigrationStorage = new ExecutedMigrationMemoryStorage();
-    const executor = new Executor(executedMigrationStorage);
+    const executor = new Executor(executedMigrationStorage, io);
 
     afterEach(() => {
         executedMigrationStorage.clear();
