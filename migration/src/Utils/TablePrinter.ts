@@ -14,7 +14,7 @@ export class TablePrinter {
         const lengths = this.rotate([
             headers,
             ...rows,
-        ]).map(items => Math.max(...items.map(item => item.toString().length)));
+        ]).map(items => Math.max(...items.map(item => TextUtilities.stripTags(item.toString()).length)));
 
         output.writeln(this.getSeparator(lengths));
         output.writeln(this.formatRow(headers, lengths));
