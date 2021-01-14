@@ -73,7 +73,7 @@ export class ExecutionResult {
     }
 
     public toExecutedMigration() {
-        return new ExecutedMigration(this.version, this.timestamp, this.duration);
+        return new ExecutedMigration(this.version, this.timestamp, this.duration, this.direction);
     }
 
     public getState(): State {

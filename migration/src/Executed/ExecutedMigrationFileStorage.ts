@@ -50,7 +50,7 @@ export class ExecutedMigrationFileStorage implements ExecutedMigrationStorageInt
         if (!this.list) {
             const dataItems = await this.load();
             const items = dataItems
-                .map(dataItem => new ExecutedMigration(dataItem.version, dataItem.timestamp, dataItem.duration))
+                .map(dataItem => new ExecutedMigration(dataItem.version, dataItem.timestamp, dataItem.duration, dataItem.direction))
                 .sort((a, b) => alphanumericComparator(a.getVersion(), b.getVersion()));
 
             this.list = new MigrationList(items);
