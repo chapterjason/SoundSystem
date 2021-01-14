@@ -1,28 +1,30 @@
-import { OutputInterface } from "@mscs/console";
+import { OutputInterface, StyledOutput, TextUtilities } from "@mscs/console";
 
 export class TablePrinter {
 
-    private output: OutputInterface;
+    private io: StyledOutput;
 
-    public constructor(output: OutputInterface) {
-        this.output = output;
+    public constructor(io: StyledOutput) {
+        this.io = io;
     }
 
     public printTable(headers: string[], rows: (string | number)[][]) {
+        const output = this.io.getOutput();
+
         const lengths = this.rotate([
             headers,
             ...rows,
         ]).map(items => Math.max(...items.map(item => item.toString().length)));
 
-        this.output.writeln(this.getSeparator(lengths));
-        this.output.writeln(this.formatRow(headers, lengths));
-        this.output.writeln(this.getSeparator(lengths));
+        output.writeln(this.getSeparator(lengths));
+        output.writeln(this.formatRow(headers, lengths));
+        output.writeln(this.getSeparator(lengths));
 
         for (const row of rows) {
-            this.output.writeln(this.formatRow(row, lengths));
+            output.writeln(this.formatRow(row, lengths));
         }
 
-        this.output.writeln(this.getSeparator(lengths));
+        output.writeln(this.getSeparator(lengths));
     }
 
     private formatRow(row: (string | number)[], lengths: number[]) {
@@ -31,7 +33,8 @@ export class TablePrinter {
 
     private formatCell(content: string | number, index: number, lengths: number[]) {
         const value = content.toString();
-        const spaces = " ".repeat((lengths[index] - value.length) + 1 /* Space after */);
+        const length = TextUtilities.stripTags(value).length;
+        const spaces = " ".repeat((lengths[index] - length) + 1 /* Space after */);
 
         return /* Space before => */ ` ${value}${spaces}`;
     }

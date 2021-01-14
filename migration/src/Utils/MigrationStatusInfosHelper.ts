@@ -91,7 +91,7 @@ export class MigrationStatusInfosHelper {
             ["Latest", await this.getFormattedVersionAlias(VersionAlias.LATEST)],
         ];
 
-        const printer = new TablePrinter(io.getOutput());
+        const printer = new TablePrinter(io);
         const headers = ["Key", "Value"];
 
         printer.printTable(headers, migrations);
