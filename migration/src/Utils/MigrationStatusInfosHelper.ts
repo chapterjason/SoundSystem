@@ -62,7 +62,7 @@ export class MigrationStatusInfosHelper {
             rows.push(row);
         }
 
-        const printer = new TablePrinter(io.getOutput());
+        const printer = new TablePrinter(io);
 
         printer.printTable(headers, rows);
 
